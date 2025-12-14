@@ -23,6 +23,7 @@
     "@akashic/trigger": "^2.1.3",
     "@cross-border-bridge/memory-queue": "^2.0.0",
     "@cross-border-bridge/memory-queue-data-bus": "^2.0.0",
-    "@cross-border-bridge/post-message-data-bus": "^2.0.0"
+    "@cross-border-bridge/post-message-data-bus": "^2.0.0",
+    "socket.io-client": "^4.8.1"
   }
 }
