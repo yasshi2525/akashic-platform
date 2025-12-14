@@ -64,10 +64,11 @@
 
 - [MIT License](./LICENSE)
 
-> [!IMPORTANT] \
+> [!IMPORTANT]
+>
 > [`./agvw-like`](./agvw-like/) は DWANGO Co., Ltd. が [MIT License](https://github.com/akashic-games/agvw/blob/main/LICENSE) で公開している [`@akashic/agvw`](https://github.com/akashic-games/agvw) をリバースエンジニアリングにして作成したものです。
 > 詳細は [`./agvw-like/README.md`](./agvw-like/README.md) を参照してください。
 
 ## Author
 
-- yasshi2525 [X](https://x.com/yasshi2525)
+- yasshi2525 ([X](https://x.com/yasshi2525))

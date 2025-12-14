@@ -14,8 +14,8 @@ minifyスクリプトファイルのみ提供の [`@akashic/agvw`](https://githu
 This project contains code reconstructed from:
 
 - **@akashic/agvw**
-  Copyright (c) 2023 DWANGO Co., Ltd.
-  Licensed under the MIT License.
+  Copyright (c) 2023 DWANGO Co., Ltd. \
+  Licensed under the MIT License. \
   Original source: https://github.com/akashic-games/agvw
 
 The following modifications and additions were made by **yasshi2525 (2025)**:
