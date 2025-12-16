@@ -11,6 +11,7 @@ export class SessionLike implements Session {
     _socketOptions: SocketOptions | null;
     _errorListeners: ((err: Error) => void)[] = [];
     _socket: Socket | null;
+    _onErrorBound: (err: Error) => void;
 
     constructor(url: string, opts: SessionOptions) {
         if (opts.socketType !== ProtocolType.WebSocket) {
@@ -22,36 +23,39 @@ export class SessionLike implements Session {
         this._validationData = opts.validationData;
         this._socketOptions = opts.socketOpts;
         this._socket = null;
+        this._onErrorBound = this._onError.bind(this);
     }
 
     open(cb: (err: Error | null) => void) {
+        if (this._socket) {
+            cb(new Error("socket was already connetcted."));
+            return;
+        }
         this._socket = this._socketOptions
             ? io(this._url, this._socketOptions)
             : io(this._url);
         this._socket.io.on("open", () => {
             cb(null);
         });
-        this._socket.io.on("error", (err) => {
-            for (const cb of this._errorListeners) {
-                cb(err);
-            }
-        });
+        this._socket.io.on("error", this._onErrorBound);
     }
 
-    on(type: string, cb: (err: Error) => void): void {
+    on(type: "error", cb: (err: Error) => void) {
         if (type !== "error") {
             throw new Error(`unsupported event type = ${type}`);
         }
         this._errorListeners.push(cb);
     }
 
-    close(cb: (msg: string) => void): void {
+    close(cb: (msg: string) => void) {
         if (!this._socket) {
-            cb("socket is not initialized.");
+            cb("socket was already disconnected.");
             return;
         }
+        this._socket.io.off("error", this._onErrorBound);
         this._socket.on("disconnect", (reason) => {
             cb(reason);
+            this._socket = null;
         });
         this._socket.disconnect();
     }
