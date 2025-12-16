@@ -2,8 +2,8 @@ import { SocketOptions } from "socket.io-client";
 import { ProtocolType } from "./akashic-gameview";
 
 export interface PlayInfo {
-    playId: number;
-    playToken: string;
+    playId: string;
+    token: string;
 }
 
 export interface SessionOptions {
