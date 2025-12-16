@@ -1,7 +1,9 @@
 import { io, Socket, SocketOptions } from "socket.io-client";
+import type { AMFlow } from "@akashic/amflow";
 import { ProtocolType } from "./akashic-gameview";
 import { PlayInfo, SessionOptions } from "./parameters";
-import { Session } from "./Session";
+import { CreateClientParameterObject, Session } from "./Session";
+import { AMFlowClient } from "./AMFlowClient";
 
 export class SessionLike implements Session {
     _url: string;
@@ -52,5 +54,22 @@ export class SessionLike implements Session {
             cb(reason);
         });
         this._socket.disconnect();
+    }
+
+    createClient(
+        opts: CreateClientParameterObject,
+        cb: (err: Error | null, client: AMFlow | null) => void,
+    ): void {
+        if (!this._socket) {
+            cb(new Error("socket was already disconnected."), null);
+        }
+        const client = new AMFlowClient({ socket: this._socket! });
+        cb(null, client);
+    }
+
+    _onError(err: Error) {
+        for (const cb of this._errorListeners) {
+            cb(err);
+        }
     }
 }

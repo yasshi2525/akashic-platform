@@ -4,7 +4,11 @@
   "description": "playlogClient like implementation",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
+    "preinstall": "npm --prefix ../schema/amflow/client run build",
     "build": "tsc"
   },
   "keywords": [],
@@ -15,6 +19,8 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@akashic/amflow": "^3.3.0",
+    "@yasshi2525/amflow-client-event-schema": "file:../schema/amflow/client",
     "socket.io-client": "^4.8.1"
   }
 }
