@@ -1,0 +1,22 @@
+{
+  "name": "@yasshi2525/amflow-event-schema",
+  "version": "0.1.0",
+  "description": "AMFlow event schema",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "author": "yasshi2525",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@akashic/amflow": "^3.3.0",
+    "@akashic/playlog": "^3.4.1",
+    "prettier": "^3.7.4",
+    "typescript": "^5.9.3"
+  }
+}
