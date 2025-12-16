@@ -63,7 +63,7 @@ export class SessionLike implements Session {
     createClient(
         opts: CreateClientParameterObject,
         cb: (err: Error | null, client: AMFlow | null) => void,
-    ): void {
+    ) {
         if (!this._socket) {
             cb(new Error("socket was already disconnected."), null);
         }
