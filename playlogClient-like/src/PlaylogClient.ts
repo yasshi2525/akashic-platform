@@ -1,4 +1,4 @@
-import { ProtocolType } from "../akashic-gameview";
+import { ProtocolType } from "./akashic-gameview";
 import { SessionOptions } from "./parameters";
 import { Session } from "./Session";
 

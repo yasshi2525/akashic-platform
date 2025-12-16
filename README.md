@@ -50,6 +50,10 @@
 
 ビューアーの基盤モジュールです。[`@akashic/agvw`](https://github.com/akashic-games/agvw) を元に制作しています。
 
+### playlogClient-like
+
+[`@akashic/agvw`](https://github.com/akashic-games/agvw) が使用している `playlogClient` モジュールの実装です。当該モジュールのソースが公開されていないため、独自に実装しています。
+
 ### akashic-server
 
 プレイごとに起動されるサーバー。

@@ -1,4 +1,4 @@
-import { ProtocolType } from "../akashic-gameview";
+import { ProtocolType } from "./akashic-gameview";
 import { PlaylogClient } from "./PlaylogClient";
 import { Session } from "./Session";
 import { SessionLike } from "./SessionLike";

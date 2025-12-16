@@ -1,4 +1,5 @@
 import { SocketOptions } from "socket.io-client";
+import { ProtocolType } from "./akashic-gameview";
 
 export interface PlayInfo {
     playId: number;

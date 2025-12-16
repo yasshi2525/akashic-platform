@@ -23,7 +23,6 @@ The following modifications and additions were made by **yasshi2525 (2025)**:
 - TypeScript へ再構成（リバースエンジニアリング）
 - minify されたコードの復元
 - 型定義の補完
-- playlogClient の簡易実装 ([`./src/playlogClient-like`](./src/playlogClient-like))
 
 The reconstructed portions are provided under the MIT License,
 but only modifications and newly written code are copyrighted by yasshi2525.

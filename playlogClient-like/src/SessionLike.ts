@@ -1,5 +1,5 @@
 import { io, Socket, SocketOptions } from "socket.io-client";
-import { ProtocolType } from "../akashic-gameview";
+import { ProtocolType } from "./akashic-gameview";
 import { PlayInfo, SessionOptions } from "./parameters";
 import { Session } from "./Session";
 
