@@ -1,11 +1,27 @@
 import { io, Socket, SocketOptions } from "socket.io-client";
 import type { AMFlow } from "@akashic/amflow";
 import { ProtocolType } from "./akashic-gameview";
-import { PlayInfo, SessionOptions } from "./parameters";
-import { CreateClientParameterObject, Session } from "./Session";
 import { AMFlowClient } from "./AMFlowClient";
 
-export class SessionLike implements Session {
+export interface CreateClientParameterObject {
+    usePrimaryChannel: boolean;
+}
+
+export interface PlayInfo {
+    playId: string;
+    token: string;
+}
+
+export interface SessionOptions {
+    /**
+     * {@link ProtocolType}
+     */
+    socketType: number;
+    validationData: PlayInfo;
+    socketOpts: SocketOptions | null;
+}
+
+export class SessionLike {
     _url: string;
     _validationData: PlayInfo;
     _socketOptions: SocketOptions | null;
