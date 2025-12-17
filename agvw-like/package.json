@@ -4,10 +4,12 @@
   "description": "agvw like implementation",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "preinstall": "npm --prefix ../playlogClient-like run build",
-    "build": "tsc",
-    "watch": "tsc -w"
+    "build": "tsc"
   },
   "keywords": [],
   "author": "yasshi2525",
