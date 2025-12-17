@@ -8,10 +8,22 @@ import { XhrDownloader } from "./Downloader";
 
 interface AkashicGameViewParameterObject {
     container: HTMLElement;
-    sharedObject: GameViewSharedObject | null;
-    baseDownloader: XhrDownloader | undefined;
-    window: Window;
-    untrustedFrameUrl: string;
+    /**
+     * @default null
+     */
+    sharedObject?: GameViewSharedObject;
+    /**
+     * @default XhrDownloader
+     */
+    baseDownloader?: XhrDownloader;
+    /**
+     * @default window
+     */
+    window?: Window;
+    /**
+     * @default null
+     */
+    untrustedFrameUrl?: string;
     trustedChildOrigin: RegExp;
     width: number;
     height: number;

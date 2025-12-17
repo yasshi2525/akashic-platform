@@ -7,8 +7,8 @@ import { GameViewElement } from "./DomElement";
 
 interface GameViewSharedObjectParameterObject {
     baseDownloader: XhrDownloader | undefined;
-    window: Window | null;
-    untrustedFrameUrl: string | null;
+    window: Window | undefined;
+    untrustedFrameUrl: string | undefined;
     trustedChildOrigin: RegExp;
     untrustedFrameTargetOrigin: string | undefined;
 }
@@ -19,7 +19,7 @@ export class GameViewSharedObject {
     scriptManager: ScriptManager;
     downloader: RetryDownloader;
     bridgeDemux: PostMessageBridgeDemux;
-    untrustedFrameUrl: string | null | undefined;
+    untrustedFrameUrl: string | undefined;
     untrustedFrameTargetOrigin: string | null;
 
     constructor(param: GameViewSharedObjectParameterObject | null) {
