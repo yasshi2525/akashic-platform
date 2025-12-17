@@ -1,7 +1,8 @@
 import * as g from "@akashic/akashic-engine";
 import * as GameDriver from "@akashic/game-driver";
-import * as PdiBrowser from "@akashic/pdi-browser";
+import type * as PdiBrowser from "@akashic/pdi-browser";
 import * as PlaylogClient from "@yasshi2525/playlog-client-like";
+import { ErrorFactory } from "./Error";
 
 export const isPlaylogClientUrl = (url: string) =>
     /.*\/playlogClientV.*\.js$/.test(url);
@@ -66,17 +67,15 @@ export const detectRuntimes = (win: Window, urls: string[]) => {
             },
         ] as const;
     } else {
-        // NOTE: 元のコードでは require() によって解決を試みているので、下記の処理と同等と判断
+        // NOTE: 元のコードではこのあと require() によって解決を試みているのが、
+        // require("@akashic/pdi-browser") に相当する処理を import で代替しようとしたところサーバー側で window が見つからずエラーとなった。
+        // これは動的インポートをこのプロジェクト構成では再現できないための挙動と思われる。
+        // そのため、このコードに達した時点で require() による解決を諦めてエラーとした
         return [
+            ErrorFactory.createLoadModuleError(
+                new Error("failed to detect runtimes"),
+            ),
             null,
-            {
-                g,
-                GameDriver,
-                PdiBrowser,
-                PlaylogClient,
-            },
-        ] as const;
-        // NOTE: 元のコードでは @akashic/playlog-client の require 失敗時にエラーとしているが、
-        // 本プロジェクトでは @yasshi2525/playlog-client-like は import 済みのため、エラーケースなし
+        ];
     }
 };
