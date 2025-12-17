@@ -10,7 +10,7 @@
   ],
   "type": "module",
   "scripts": {
-    "preinstall": "npm --prefix ../playlogClient-like run build",
+    "prepare": "npm run build -w @yasshi2525/playlog-client-like",
     "build": "tsup"
   },
   "keywords": [],
@@ -36,6 +36,6 @@
     "@cross-border-bridge/memory-queue": "^2.0.0",
     "@cross-border-bridge/memory-queue-data-bus": "^2.0.0",
     "@cross-border-bridge/post-message-data-bus": "^2.0.0",
-    "@yasshi2525/playlog-client-like": "file:../playlogClient-like"
+    "@yasshi2525/playlog-client-like": "^0.1.0"
   }
 }

@@ -1,0 +1,15 @@
+{
+  "name": "@yasshi2525/akashic-platform",
+  "version": "0.1.0",
+  "private": true,
+  "author": "yasshi2525",
+  "license": "MIT",
+  "workspaces": [
+    "schema/amflow/common",
+    "schema/amflow/client",
+    "schema/amflow/server",
+    "playlogClient-like",
+    "agvw-like",
+    "akashic-client"
+  ]
+}

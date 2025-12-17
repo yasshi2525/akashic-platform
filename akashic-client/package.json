@@ -1,9 +1,12 @@
 {
   "name": "@yasshi2525/akashic-client",
+  "version": "0.1.0",
   "private": true,
+  "license": "MIT",
+  "author": "yasshi2525",
   "type": "module",
   "scripts": {
-    "preinstall": "npm --prefix ../agvw-like run build",
+    "prepare": "npm run build -w @yasshi2525/agvw-like",
     "build": "react-router build",
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
@@ -12,10 +15,8 @@
   "dependencies": {
     "@react-router/node": "7.10.1",
     "@react-router/serve": "7.10.1",
-    "@yasshi2525/agvw-like": "file:../agvw-like",
+    "@yasshi2525/agvw-like": "^0.1.0",
     "isbot": "^5.1.31",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3",
     "react-router": "7.10.1"
   },
   "devDependencies": {
@@ -24,9 +25,16 @@
     "@types/node": "^22",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
+    "prettier": "^3.7.4",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
     "tailwindcss": "^4.1.13",
-    "typescript": "^5.9.2",
+    "typescript": "^5.9.3",
     "vite": "^7.1.7",
     "vite-tsconfig-paths": "^5.1.4"
+  },
+  "peerDependencies": {
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
   }
 }

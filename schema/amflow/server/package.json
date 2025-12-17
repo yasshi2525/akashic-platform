@@ -11,7 +11,7 @@
   "author": "yasshi2525",
   "license": "MIT",
   "scripts": {
-    "preinstall": "npm --prefix ../common run build",
+    "prepare": "npm run build -w @yasshi2525/amflow-event-schema",
     "build": "tsc"
   },
   "devDependencies": {
@@ -19,6 +19,6 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@yasshi2525/amflow-event-schema": "file:../common"
+    "@yasshi2525/amflow-event-schema": "^0.1.0"
   }
 }

@@ -8,7 +8,7 @@
     "dist"
   ],
   "scripts": {
-    "preinstall": "npm --prefix ../schema/amflow/client run build",
+    "prepare": "npm run build -w @yasshi2525/amflow-client-event-schema",
     "build": "tsc"
   },
   "keywords": [],
@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@akashic/amflow": "^3.3.0",
-    "@yasshi2525/amflow-client-event-schema": "file:../schema/amflow/client",
+    "@yasshi2525/amflow-client-event-schema": "^0.1.0",
     "socket.io-client": "^4.8.1"
   }
 }
