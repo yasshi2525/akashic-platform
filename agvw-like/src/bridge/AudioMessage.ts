@@ -7,4 +7,4 @@ export const AudioMessage = {
     Stop: "audio:stop",
     ChangeVolume: "audio:changeVolume",
     ChangeRate: "audio:changeRate",
-};
+} as const;
