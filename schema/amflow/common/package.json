@@ -15,7 +15,7 @@
   },
   "devDependencies": {
     "@akashic/amflow": "^3.3.0",
-    "@akashic/playlog": "^3.4.1",
+    "@akashic/playlog": "^3.3.0",
     "prettier": "^3.7.4",
     "typescript": "^5.9.3"
   }
