@@ -1,7 +1,7 @@
-import * as g from "@akashic/akashic-engine";
-import * as GameDriver from "@akashic/game-driver";
+import type * as g from "@akashic/akashic-engine";
+import type * as GameDriver from "@akashic/game-driver";
 import type * as PdiBrowser from "@akashic/pdi-browser";
-import * as PlaylogClient from "@yasshi2525/playlog-client-like";
+import type * as PlaylogClient from "@yasshi2525/playlog-client-like";
 import { ErrorFactory } from "./Error";
 
 export const isPlaylogClientUrl = (url: string) =>
@@ -67,15 +67,42 @@ export const detectRuntimes = (win: Window, urls: string[]) => {
             },
         ] as const;
     } else {
-        // NOTE: 元のコードではこのあと require() によって解決を試みているのが、
-        // require("@akashic/pdi-browser") に相当する処理を import で代替しようとしたところサーバー側で window が見つからずエラーとなった。
-        // これは動的インポートをこのプロジェクト構成では再現できないための挙動と思われる。
-        // そのため、このコードに達した時点で require() による解決を諦めてエラーとした
-        return [
-            ErrorFactory.createLoadModuleError(
-                new Error("failed to detect runtimes"),
-            ),
-            null,
-        ];
+        try {
+            if (!_g) {
+                _g = require("@akashic/akashic-engine");
+            }
+            if (!_GameDriver) {
+                _GameDriver = require("@akashic/game-driver");
+            }
+            if (!_PdiBrowser) {
+                _PdiBrowser = require("@akashic/pdi-browser");
+            }
+            if (!playlogClient) {
+                playlogClient = require("@yasshi2525/playlog-client-like");
+            }
+            if (_g && _GameDriver && _PdiBrowser && playlogClient) {
+                return [
+                    null,
+                    {
+                        g: _g,
+                        GameDriver: _GameDriver,
+                        PdiBrowser: _PdiBrowser,
+                        PlaylogClient: playlogClient,
+                    },
+                ] as const;
+            } else {
+                return [
+                    ErrorFactory.createLoadModuleError(
+                        new Error("unknown failure for require()"),
+                    ),
+                    null,
+                ] as const;
+            }
+        } catch (e) {
+            return [
+                ErrorFactory.createLoadModuleError(e as Error),
+                null,
+            ] as const;
+        }
     }
 };
