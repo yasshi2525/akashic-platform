@@ -2,20 +2,22 @@
   "name": "@yasshi2525/playlog-client-like",
   "version": "0.1.0",
   "description": "playlogClient like implementation",
-  "main": "dist/index.js",
+  "main": "dist/index.global.js",
   "types": "dist/index.d.ts",
   "files": [
-    "dist"
+    "dist/**/*.js",
+    "dist/**/*.d.ts"
   ],
   "scripts": {
     "prepare": "npm run build -w @yasshi2525/amflow-client-event-schema",
-    "build": "tsc"
+    "build": "tsup"
   },
   "keywords": [],
   "author": "yasshi2525",
   "license": "MIT",
   "devDependencies": {
     "prettier": "^3.7.4",
+    "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },
   "dependencies": {
