@@ -1,6 +1,7 @@
 {
   "name": "@yasshi2525/playlog-client-like",
   "version": "0.1.0",
+  "private": true,
   "description": "playlogClient like implementation",
   "main": "dist/index.global.js",
   "types": "dist/index.d.ts",
