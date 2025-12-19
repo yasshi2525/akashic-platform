@@ -5,29 +5,26 @@
   "description": "",
   "license": "MIT",
   "author": "yasshi2525",
-  "main": "index.js",
+  "type": "module",
   "scripts": {
-    "prepare": "npm run build -w @yasshi2525/agvw-like && node setup/updateEngineFiles.mjs",
+    "prepare": "npm run build -w @yasshi2525/agvw-like && node setup/updateEngineFiles.js",
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "start": "next start"
   },
   "dependencies": {
     "@yasshi2525/agvw-like": "^0.1.0",
     "engine-files-v3": "npm:@akashic/engine-files@^3.13.2",
-    "next": "16.0.10",
-    "react": "19.2.1",
-    "react-dom": "19.2.1"
+    "next": "^16.1.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.0.10",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "@tailwindcss/postcss": "^4.1.18",
+    "@types/node": "25.0.3",
+    "@types/react": "19.2.7",
+    "prettier": "^3.7.4",
+    "tailwindcss": "^4.1.18",
+    "typescript": "^5.9.3"
   }
 }
