@@ -38,9 +38,9 @@ interface ContentLayout {
 
 export interface ContentParameterObject {
     contentUrl: string;
-    contentArea: Rect | null;
-    zIndex: number | null;
-    contentLayout: ContentLayout | null;
+    contentArea?: Rect;
+    zIndex?: number;
+    contentLayout?: ContentLayout;
 }
 
 export abstract class Content {

@@ -91,8 +91,8 @@ class GameDriverProxy {
 interface UntrustedGameLoaderParameterObject {
     engineConfig: EngineConfig;
     shared: GameViewSharedObject;
-    customizer: GameLoaderCustomizer | null;
-    audioPdiHandler: ProxyAudioHandlerSet | null;
+    customizer: GameLoaderCustomizer | undefined;
+    audioPdiHandler: ProxyAudioHandlerSet | undefined;
     contentWindow: Window;
     targetOrigin: string | null;
 }
@@ -113,8 +113,8 @@ export class UntrustedGameLoader implements GameLoader {
     _teardownAMFlowProxy: (() => void) | null;
     _usingCustomAmflow: boolean;
     _shared: GameViewSharedObject;
-    _customizer: GameLoaderCustomizer | null;
-    _audioPdiHandler: ProxyAudioHandlerSet | null;
+    _customizer: GameLoaderCustomizer | undefined;
+    _audioPdiHandler: ProxyAudioHandlerSet | undefined;
     _engineConfig: EngineConfig;
     _targetOrigin: string | null;
     _contentWindow: Window;

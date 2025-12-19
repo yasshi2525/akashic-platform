@@ -24,16 +24,17 @@ export interface PlayConfig {
     playToken: string;
     /**
      * {@link ProtocolType}
+     * @default ProtocolType.WebSocket
      */
-    protocol: number | null;
+    protocol?: number;
     /**
      * {@link ExecutionMode}
      */
     executionMode: number;
     playlogServerUrl: string;
-    replayData: ReplayData | null;
-    replayTargetTimeFunc: (() => number) | undefined;
-    replayOriginDate: number | undefined;
+    replayData?: ReplayData;
+    replayTargetTimeFunc?: () => number;
+    replayOriginDate?: number;
 }
 
 export interface MinimalGame {
@@ -49,8 +50,8 @@ export interface GameLoaderStartParameterObject {
     pause: boolean;
     player: Player;
     playConfig: PlayConfig;
-    replayData: ReplayData | null;
-    initialEvents: Event[] | null;
+    replayData: ReplayData | undefined;
+    initialEvents: Event[] | undefined;
     argument: GameMainParameterObject["args"];
     contentUrl: string;
     parentHtmlElement: HTMLDivElement;

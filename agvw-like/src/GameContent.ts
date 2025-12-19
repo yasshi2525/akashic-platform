@@ -37,17 +37,29 @@ import { ErrorFactory } from "./Error";
 import { ObjectList } from "./utils";
 
 interface ResponedEngineConfig {
-    engine_urls: string[] | null;
-    external: string[] | null;
-    untrusted: boolean | undefined;
-    runInIframe: boolean | undefined;
+    /**
+     * @default []
+     */
+    engine_urls?: string[];
+    /**
+     * @default []
+     */
+    external?: string[];
+    /**
+     * @default false
+     */
+    untrusted?: boolean;
+    /**
+     * @default false
+     */
+    runInIframe?: boolean;
 }
 
 export interface EngineConfig extends ResponedEngineConfig {
     engine_urls: string[];
     external: string[];
     content_url: string;
-    asset_base_url: string | null;
+    asset_base_url?: string;
 }
 
 export interface GameLoaderCustomizer {
@@ -63,20 +75,24 @@ export interface GameLoaderCustomizer {
 interface GameContentParameterObject extends ContentParameterObject {
     player: Player;
     playConfig: PlayConfig;
-    untrustedFrameUrl: string | null;
-    untrustedFrameTargetOrigin: string;
-    argument: GameContentArgument | null;
-    pause: boolean | undefined;
-    initialEvents: Event[] | null;
-    untrusted: boolean | undefined;
-    runInIframe: boolean | undefined;
-    gameLoaderCustomizer: GameLoaderCustomizer | null;
-    audioPdiHandlers: ProxyAudioHandlerSet | null;
+    untrustedFrameUrl?: string;
+    untrustedFrameTargetOrigin?: string;
+    argument?: GameContentArgument;
+    pause?: boolean;
+    initialEvents?: Event[];
+    untrusted?: boolean;
+    runInIframe?: boolean;
+    gameLoaderCustomizer?: GameLoaderCustomizer;
+    audioPdiHandlers?: ProxyAudioHandlerSet;
     /**
      * {@link EventDropPolicy}
+     * @default EventDropPolicy.InReplay
      */
-    eventDropPolicy: number | null;
-    tabIndex: string | null;
+    eventDropPolicy?: number;
+    /**
+     * @default "0"
+     */
+    tabIndex?: string;
 }
 
 interface SkippingListener {
@@ -131,15 +147,15 @@ export class GameContent extends Content {
     _handleDroppedDomEvent_bound: DroppedDomEventListener;
     _player: Player;
     _playConfig: PlayConfig;
-    _untrustedFrameUrl: string | null;
-    _untrustedFrameTargetOrigin: string;
-    _argument: GameContentArgument | null;
+    _untrustedFrameUrl: string | undefined;
+    _untrustedFrameTargetOrigin: string | undefined;
+    _argument: GameContentArgument | undefined;
     _pauseOnStart: boolean;
-    _initialEvents: Event[] | null;
+    _initialEvents: Event[] | undefined;
     _givenUntrusted: boolean | undefined;
     _givenRunInIframe: boolean;
-    _customizer: GameLoaderCustomizer | null;
-    _audioPdiHandlers: ProxyAudioHandlerSet | null;
+    _customizer: GameLoaderCustomizer | undefined;
+    _audioPdiHandlers: ProxyAudioHandlerSet | undefined;
     _tabIndex: string;
     _loader: GameLoader | null;
     _element: GameContentElement | null;
@@ -841,7 +857,7 @@ export class GameContent extends Content {
         }
     }
 
-    _handleGameArgument(arg: GameContentArgument | null) {
+    _handleGameArgument(arg: GameContentArgument | undefined) {
         if (arg && arg.agv) {
             if (
                 arg.agv.disableDropEventInReplay &&

@@ -41,9 +41,9 @@ export interface AcquirePlaylogClientAMFlowInfo {
 }
 
 export interface TrustedGameLoaderBaseParameterObject {
-    customizer: GameLoaderCustomizer | null;
+    customizer: GameLoaderCustomizer | undefined;
     engineConfig: EngineConfig;
-    audioPdiHandler: ProxyAudioHandlerSet | null;
+    audioPdiHandler: ProxyAudioHandlerSet | undefined;
     window: Window | undefined;
 }
 
@@ -77,9 +77,9 @@ export abstract class TrustedGameLoaderBase implements GameLoader {
     fps: number;
     resizablePrimarySurface: boolean;
     _replayOriginDateOffset: number;
-    _customizer: GameLoaderCustomizer | null;
+    _customizer: GameLoaderCustomizer | undefined;
     _engineConfig: EngineConfig;
-    _audioPdiHandler: ProxyAudioHandlerSet | null;
+    _audioPdiHandler: ProxyAudioHandlerSet | undefined;
     _globalObject: Window;
     _param: GameLoaderStartParameterObject | null;
     _rawLoadGameConfiguration: Platform["loadGameConfiguration"] | null;
