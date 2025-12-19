@@ -12,7 +12,6 @@ import type {
     LoopConfiguration,
     MemoryAmflowClient,
 } from "@akashic/game-driver";
-import { LoopMode } from "@akashic/game-driver";
 import type * as PdiBrowser from "@akashic/pdi-browser";
 import type { Platform, PlatformParameterObject } from "@akashic/pdi-browser";
 import type { ProxyAudioHandlerSet } from "@akashic/pdi-browser/lib/full/plugin/ProxyAudioPlugin/ProxyAudioHandlerSet";
@@ -636,8 +635,9 @@ export abstract class TrustedGameLoaderBase implements GameLoader {
         targetTimeFunc?: () => number,
         originDate?: number,
     ) {
+        // NOTE: _GameDriver,は _downloadScripts() の中で代入済み
         return {
-            loopMode: LoopMode.Realtime,
+            loopMode: this._GameDriver!.LoopMode.Realtime,
             delayIgnoreThreshold:
                 TrustedGameLoaderBase.REALTIME_DELAY_IGNORE_THRESHOLD,
             jumpTryThreshold: TrustedGameLoaderBase.REALTIME_JUMP_TRY_THRESHOLD,
@@ -650,8 +650,9 @@ export abstract class TrustedGameLoaderBase implements GameLoader {
         targetTimeFunc?: () => number,
         originDate?: number,
     ) {
+        // NOTE: _GameDriver,は _downloadScripts() の中で代入済み
         return {
-            loopMode: LoopMode.Replay,
+            loopMode: this._GameDriver!.LoopMode.Replay,
             delayIgnoreThreshold: Number.MAX_VALUE,
             jumpTryThreshold: Number.MAX_VALUE,
             targetTimeFunc,
