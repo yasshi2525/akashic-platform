@@ -24,7 +24,7 @@ export const isEngineFilesUrl = (url: string) =>
 
 export const detectEngineFilesObject = (win: Window, url: string) => {
     const m = url.match(/.*\/(engineFilesV.*)\.js$/);
-    if (m) {
+    if (m && win[m[1] as keyof Window]) {
         const engineFile = win[m[1] as keyof Window];
         return {
             g: engineFile.akashicEngine as typeof g,

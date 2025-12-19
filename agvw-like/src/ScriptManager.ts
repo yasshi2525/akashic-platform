@@ -66,7 +66,7 @@ export class ScriptManager {
         if (loaded[src]) {
             setTimeout(() => cb(null), 0);
         } else {
-            if (this._loadingTableMap.has(win)) {
+            if (!this._loadingTableMap.has(win)) {
                 this._loadingTableMap.set(win, {});
             }
             const loading = this._loadingTableMap.get(win)!;
