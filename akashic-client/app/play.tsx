@@ -17,26 +17,27 @@ const fetcher = async (url: string) => {
     return res.json();
 };
 
-export default function Play({ contentId }: { contentId: string }) {
+export default function Play({
+    contentId,
+    playId,
+}: {
+    contentId: string;
+    playId: string;
+}) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const {
-        data: play,
-        isLoading: isStarting,
-        error: startError,
-    } = useSWR<{ playId: string }>(`/api/play/${contentId}`, fetcher);
     const { data, isLoading, error } = useSWR<{ playToken: string }, string>(
-        play ? `${playlogServerUrl}/join?playId=${play.playId}` : null,
+        `${playlogServerUrl}/join?playId=${playId}`,
         fetcher,
     );
 
     useEffect(() => {
-        if (!containerRef.current || !play || !data) {
+        if (!containerRef.current || !data) {
             return;
         }
         const agv = new AkashicGameView({
             container: containerRef.current,
-            width: containerRef.current.clientWidth,
-            height: containerRef.current.clientHeight,
+            width: 1280,
+            height: 720,
             trustedChildOrigin: /.*/,
         });
         const content = new GameContent({
@@ -45,7 +46,7 @@ export default function Play({ contentId }: { contentId: string }) {
                 name: "admin-name",
             },
             playConfig: {
-                playId: play.playId,
+                playId,
                 playToken: data.playToken,
                 executionMode: ExecutionMode.Passive,
                 playlogServerUrl,
@@ -62,21 +63,12 @@ export default function Play({ contentId }: { contentId: string }) {
             agv.destroy();
             console.log("akashic game view was destroyed.");
         };
-    }, [play, data]);
-
-    if (isStarting) {
-        return <div>Play 作成中...</div>;
-    }
-
-    if (startError) {
-        return <div>Play 作成失敗: ${startError}</div>;
-    }
+    }, [data]);
 
     if (isLoading) {
         return (
             <>
-                <div>Play 作成完了: playId = {play?.playId}</div>
-                <div>Play 参加中...</div>
+                <div>入室中です...</div>
             </>
         );
     }
@@ -84,16 +76,14 @@ export default function Play({ contentId }: { contentId: string }) {
     if (error) {
         return (
             <>
-                <div>Play 作成完了: playId = {play?.playId}</div>
-                <div>Play 参加失敗: ${error}</div>
+                <div>入室に失敗しました: {error}</div>
             </>
         );
     }
 
     return (
         <>
-            <div>Play 作成完了: playId = {play?.playId}</div>
-            <div>Play 参加完了: playToken = {data?.playToken}</div>
+            <div>入室しました。ゲームを起動します。</div>
             <div ref={containerRef}></div>
         </>
     );
