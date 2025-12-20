@@ -44,6 +44,9 @@ export class RunnerManager {
             socketType: ProtocolType.WebSocket,
             validationData: { playId: param.playId, token: param.playToken },
         });
+        session.on("error", (err) => {
+            console.error("error on session", err);
+        });
         const amflow = await new Promise<AMFlow>((resolve, reject) => {
             session.open((err) => {
                 if (err) {
