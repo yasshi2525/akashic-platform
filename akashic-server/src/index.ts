@@ -9,11 +9,14 @@ const storageUrl = process.env.STORAGE_URL ?? "http://localhost:3031";
 const runnerManager = new RunnerManager({ storageUrl });
 
 app.post("/start", async (req, res) => {
-    const { contentUrl, assetBaseUrl, configurationUrl } = req.body;
+    const { contentUrl, assetBaseUrl, configurationUrl, playerId, playerName } =
+        req.body;
     if (
         !contentUrl?.toString() ||
         !assetBaseUrl?.toString() ||
-        !configurationUrl?.toString()
+        !configurationUrl?.toString() ||
+        !playerId?.toString() ||
+        !playerName?.toString()
     ) {
         res.status(400);
         res.send("unsufficient parameter was specified.");
@@ -47,6 +50,8 @@ app.post("/start", async (req, res) => {
                         configurationUrl: configurationUrl.toString(),
                         playId,
                         playToken,
+                        playerId,
+                        playerName,
                     })
                     .catch((err) => {
                         res.status(500);

@@ -1,6 +1,6 @@
 import type { AMFlow } from "@akashic/amflow";
 import { RunnerV3 } from "@akashic/headless-driver";
-import { Session } from "@yasshi2525/playlog-client-like";
+import { Session, SessionLike } from "@yasshi2525/playlog-client-like";
 
 /**
  * `akashic-gameview` の ProtocolType と同じ。
@@ -21,6 +21,8 @@ interface RunnerStartParameterObject {
     configurationUrl: string;
     playId: string;
     playToken: string;
+    playerId: string;
+    playerName: string;
 }
 
 export class RunnerManager {
@@ -114,8 +116,11 @@ export class RunnerManager {
                 `failed to start runner (runnerId = ${runner.runnerId}, playId = ${runner.playId})`,
             );
         }
+        amflow.sendEvent([0x0, 0, param.playerId, param.playerName]);
         this._nextRunnerId++;
     }
+
+    join(playerId: string, playerName: string) {}
 
     end(playId: string) {}
 }

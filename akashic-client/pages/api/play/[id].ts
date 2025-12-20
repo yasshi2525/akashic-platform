@@ -15,6 +15,8 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
                 configurationUrl: `${baseUrl}/content/${contentId}/game.json`,
                 assetBaseUrl: `${baseUrl}/content/${contentId}`,
                 contentUrl: `${baseUrl}/api/content/${contentId}`,
+                playerId: req.body.playerId,
+                playerName: req.body.playerName,
             }),
         })
             .then((serverRes) => {

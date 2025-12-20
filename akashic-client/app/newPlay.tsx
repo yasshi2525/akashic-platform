@@ -17,7 +17,16 @@ export default function NewPlay({
     const handleCreation = () => {
         if (!disabledCreationButton) {
             setDisabledCreationButton(true);
-            fetch(`/api/play/${contentId}`)
+            fetch(`/api/play/${contentId}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    playerId: "admin",
+                    playerName: "admin-player",
+                }),
+            })
                 .then((res) => {
                     if (res.status === 200) {
                         res.json().then(({ playId }) => {
