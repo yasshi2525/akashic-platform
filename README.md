@@ -6,12 +6,10 @@
 [dwango](https://dwango.co.jp/) 提供の [Akashic Engine](https://akashic-games.github.io/) のマルチプレイモードに準拠したゲームをプレイ可能にする Web サービス実装です。
 
 - 用語
-
   - ゲーム: ユーザーが投稿したもの
   - プレイ: ゲームを起動したもの
 
 - メイン機能
-
   - ゲーム投稿
   - プレイ開始
   - プレイ参加
@@ -21,6 +19,19 @@
   - ゲーム一覧
   - プレイ一覧
   - ユーザー名取得プラグインの代替実装
+
+## 構成図
+
+本プラットフォームは以下の3つのプロセスから構成されます。
+
+- akashic-server
+  実行中の各プレイの実処理を進める。
+- akashic-storage
+  実行中の全プレイ情報を保管する。
+- client
+  各種操作できるWebアプリケーション
+
+![アーキテクチャ図](./architecture.png)
 
 ## リポジトリ構成
 
@@ -57,12 +68,38 @@
 ### akashic-server
 
 プレイごとに起動されるサーバー。
-`akashic sever` がクライアントと密結合なため独自に実装します。
+`akashic seve` がクライアントと密結合なため独自に実装します。
 
 ### akashic-storage
 
 プレイ時の実行時情報の保存と配信機能。
-`akashic sever` のメモリ効率が悪いため独自に実装します。
+`akashic seve` のメモリ効率が悪いため独自に実装します。
+
+## インストール方法・使い方
+
+### インストール
+
+```sh
+npm install
+```
+
+### 実行方法
+
+> [!NOTE]
+>
+> 下記3つは現状、すべてフォアグラウンドで実行されます
+
+```sh
+npm run run -w ./akashic-storage
+npm run run -w ./akashic-server
+npm run dev -w ./akashic-client # 暫定
+```
+
+設定変更は `./akashic-storage`, `./akashic-server`, `./akashic-client` 配下に `.env` を置くことでできます。 `.env.example` を参考にしてください。
+
+`./akashic-client/public/content/[id]` にゲームデータ（`game.zip`を解凍したもの）を配置すると当該ゲームで遊ぶことができます。
+
+`http://localhost:3000` にアクセスするとゲームで遊ぶことができます。
 
 ## LICENSE
 
