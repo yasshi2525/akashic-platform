@@ -72,6 +72,7 @@ export const initializeSocket = (
     socket.on(ListenEvent.PutStartPoint, (playId, startPoint, cb) => {
         try {
             server.getStore(playId).putStartPoint(startPoint);
+            cb(null);
         } catch (err) {
             cb((err as Error).message);
         }
