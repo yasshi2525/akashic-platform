@@ -10,7 +10,7 @@
   "scripts": {
     "prepare": "npm run build -w @yasshi2525/playlog-client-like",
     "build": "tsc",
-    "run": "node dist/index.js"
+    "run": "node --env-file-if-exists=.env dist/index.js"
   },
   "author": "yasshi2525",
   "license": "MIT",
