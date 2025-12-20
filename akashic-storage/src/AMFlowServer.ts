@@ -96,9 +96,7 @@ export class AMFlowServer {
     _createStore(playId: string) {
         const store = new AMFlowStore(playId);
         store.onTick(this._findTickBroadCaster(playId));
-        store.offTick(this._findTickBroadCaster(playId));
         store.onEvent(this._findEventBroadCaster(playId));
-        store.offEvent(this._findEventBroadCaster(playId));
         return store;
     }
 
