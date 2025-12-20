@@ -1,0 +1,23 @@
+{
+  "name": "@yasshi2525/akashic-server",
+  "version": "0.1.0",
+  "description": "",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "yasshi2525",
+  "license": "MIT",
+  "devDependencies": {
+    "prettier": "^3.7.4",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@akashic/amflow": "^3.3.0",
+    "socket.io": "^4.8.1"
+  }
+}

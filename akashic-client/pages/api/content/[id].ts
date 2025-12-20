@@ -25,9 +25,10 @@ const playlogClientPath =
 const engineUrls = [...engineFilePaths, playlogClientPath];
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
+    const baseUrl = `http://${req.headers["host"]}`;
     res.status(200).json({
-        engine_urls: engineUrls.map(
-            (path) => `http://${req.headers["host"]}${path}`,
-        ),
+        engine_urls: engineUrls.map((path) => baseUrl + path),
+        content_url: `${baseUrl}/content/${req.query.id}/game.json`,
+        asset_base_url: `${baseUrl}/content/${req.query.id}`,
     });
 }

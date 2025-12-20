@@ -2,6 +2,9 @@
 /public/akashic
 /config
 
+# user data
+/public/content
+
 # dependencies
 /node_modules
 /.pnp

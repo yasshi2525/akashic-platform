@@ -7,7 +7,10 @@
   "author": "yasshi2525",
   "type": "module",
   "scripts": {
-    "prepare": "npm run build -w @yasshi2525/playlog-client-like && npm run build -w @yasshi2525/agvw-like && node setup/updateEngineFiles.js && node setup/updatePlaylogClientLike.js",
+    "prepare": "npm run build -w @yasshi2525/playlog-client-like && npm run build -w @yasshi2525/agvw-like && npm run setup",
+    "setup": "npm run setup:engineFiles && npm run setup:playlogClient",
+    "setup:engineFiles": "node setup/updateEngineFiles.js",
+    "setup:playlogClient": "node setup/updatePlaylogClientLike.js",
     "dev": "next dev",
     "build": "next build",
     "start": "next start"
@@ -16,7 +19,8 @@
     "@yasshi2525/agvw-like": "^0.1.0",
     "next": "^16.1.0",
     "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "react-dom": "^19.2.3",
+    "swr": "^2.3.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",

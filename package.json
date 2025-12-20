@@ -10,6 +10,8 @@
     "schema/amflow/server",
     "playlogClient-like",
     "agvw-like",
-    "akashic-client"
+    "akashic-client",
+    "akashic-server",
+    "akashic-storage"
   ]
 }

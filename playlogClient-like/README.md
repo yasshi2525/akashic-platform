@@ -6,3 +6,7 @@
 
 ディストリビューションファイルには `socket.io-client` もバンドルされています。
 これは本ライブラリ利用するクライアント側で別途モジュール解決させることができなかったための措置です。
+
+> [!NOTE]
+>
+> `usePrimaryChannel` に対応する機能は未実装です。 `usePrimaryChannel = false` のときのみ新規 `Socket` を作る実装が必要です
