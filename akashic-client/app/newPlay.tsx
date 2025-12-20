@@ -2,12 +2,18 @@
 
 import { useState } from "react";
 
+const playlogServerUrl = "http://localhost:3031";
+
 export default function NewPlay({
     contentId,
     handleNewPlay,
 }: {
     contentId: string;
-    handleNewPlay: (playInfo: { contentId: string; playId: string }) => void;
+    handleNewPlay: (playInfo: {
+        contentId: string;
+        playId: string;
+        playToken: string;
+    }) => void;
 }) {
     const [disabledCreationButton, setDisabledCreationButton] = useState(false);
     const [disabledJoinButton, setDisabledJoinButton] = useState(false);
@@ -47,7 +53,19 @@ export default function NewPlay({
         if (!playId) {
             setErrMsg("入室に失敗しました。");
         } else {
-            handleNewPlay({ contentId, playId });
+            fetch(`${playlogServerUrl}/join?playId=${playId}`)
+                .then((res) => {
+                    if (res.status === 200) {
+                        res.json().then(({ playToken }) => {
+                            handleNewPlay({ contentId, playId, playToken });
+                        });
+                    } else {
+                        res.text().then((msg) => setErrMsg(msg));
+                    }
+                })
+                .catch((err) => {
+                    setErrMsg(`Error: ${(err as Error).message}`);
+                });
         }
     };
 

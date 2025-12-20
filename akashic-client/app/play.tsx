@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import useSWR from "swr";
 import {
     AkashicGameView,
     ExecutionMode,
@@ -9,29 +8,21 @@ import {
 } from "@yasshi2525/agvw-like";
 
 const playlogServerUrl = "http://localhost:3031";
-const fetcher = async (url: string) => {
-    const res = await fetch(url);
-    if (!res.ok) {
-        throw new Error(await res.text());
-    }
-    return res.json();
-};
 
 export default function Play({
     contentId,
     playId,
+    playToken,
 }: {
     contentId: string;
     playId: string;
+    playToken: string;
 }) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const { data, isLoading, error } = useSWR<{ playToken: string }, string>(
-        `${playlogServerUrl}/join?playId=${playId}`,
-        fetcher,
-    );
+    let initialized = false;
 
     useEffect(() => {
-        if (!containerRef.current || !data) {
+        if (!containerRef?.current || initialized) {
             return;
         }
         const agv = new AkashicGameView({
@@ -47,7 +38,7 @@ export default function Play({
             },
             playConfig: {
                 playId,
-                playToken: data.playToken,
+                playToken,
                 executionMode: ExecutionMode.Passive,
                 playlogServerUrl,
             },
@@ -59,27 +50,8 @@ export default function Play({
             },
         });
         agv.addContent(content);
-        return () => {
-            agv.destroy();
-            console.log("akashic game view was destroyed.");
-        };
-    }, [data]);
-
-    if (isLoading) {
-        return (
-            <>
-                <div>入室中です...</div>
-            </>
-        );
-    }
-
-    if (error) {
-        return (
-            <>
-                <div>入室に失敗しました: {error}</div>
-            </>
-        );
-    }
+        initialized = true;
+    }, []);
 
     return (
         <>
