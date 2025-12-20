@@ -44,29 +44,29 @@ export const srvEvMap = {
 export type ServerEventName = keyof typeof srvEvMap;
 
 const cliSchema = {
-    [cliEvMap.Open]: (playId: string, cb: (err: Error | null) => void) => {},
-    [cliEvMap.Close]: (playId: string, cb: (err: Error | null) => void) => {},
+    [cliEvMap.Open]: (playId: string, cb: (err: string | null) => void) => {},
+    [cliEvMap.Close]: (playId: string, cb: (err: string | null) => void) => {},
     [cliEvMap.Authenticate]: (
         playId: string,
         token: string,
-        cb: (err: Error | null, permission: Permission | undefined) => void,
+        cb: (err: string | null, permission: Permission | undefined) => void,
     ) => {},
     [cliEvMap.SendTick]: (playId: string, tick: Tick) => {},
     [cliEvMap.SendEvent]: (playId: string, event: Event) => {},
     [cliEvMap.GetTickList]: (
         playId: string,
         opts: GetTickListOptions,
-        cb: (err: Error | null, tickList: TickList | undefined) => void,
+        cb: (err: string | null, tickList: TickList | undefined) => void,
     ) => {},
     [cliEvMap.PutStartPoint]: (
         playId: string,
         startPoint: StartPoint,
-        cb: (err: Error | null) => void,
+        cb: (err: string | null) => void,
     ) => {},
     [cliEvMap.GetStartPoint]: (
         playId: string,
         opts: GetStartPointOptions,
-        cb: (err: Error | null, startPoint: StartPoint | undefined) => void,
+        cb: (err: string | null, startPoint: StartPoint | undefined) => void,
     ) => {},
 } as const satisfies Record<ClientEvent, unknown>;
 

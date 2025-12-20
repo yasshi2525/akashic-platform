@@ -16,7 +16,7 @@ export const initializeSocket = (
             server.join(playId, socket);
             cb(null);
         } catch (err) {
-            cb(err as Error);
+            cb((err as Error).message);
         }
     });
     socket.on(ListenEvent.Close, (playId, cb) => {
@@ -24,7 +24,7 @@ export const initializeSocket = (
             server.leave(playId, socket);
             cb(null);
         } catch (err) {
-            cb(err as Error);
+            cb((err as Error).message);
         }
     });
     socket.on(ListenEvent.Authenticate, (playId, token, cb) => {
@@ -32,7 +32,7 @@ export const initializeSocket = (
             const permission = server.getStore(playId).authenticate(token);
             cb(null, permission);
         } catch (err) {
-            cb(err as Error, undefined);
+            cb((err as Error).message, undefined);
         }
     });
     socket.on(ListenEvent.SendTick, (playId, tick) => {
@@ -51,10 +51,10 @@ export const initializeSocket = (
             if (tickList) {
                 cb(null, tickList);
             } else {
-                cb(new Error("failed to get tick list"), undefined);
+                cb("failed to get tick list", undefined);
             }
         } catch (err) {
-            cb(err as Error, undefined);
+            cb((err as Error).message, undefined);
         }
     });
     socket.on(ListenEvent.GetStartPoint, (playId, opts, cb) => {
@@ -63,17 +63,17 @@ export const initializeSocket = (
             if (startPoint) {
                 cb(null, startPoint);
             } else {
-                cb(new Error("failed to get start point"), undefined);
+                cb("failed to get start point", undefined);
             }
         } catch (err) {
-            cb(err as Error, undefined);
+            cb((err as Error).message, undefined);
         }
     });
     socket.on(ListenEvent.PutStartPoint, (playId, startPoint, cb) => {
         try {
             server.getStore(playId).putStartPoint(startPoint);
         } catch (err) {
-            cb(err as Error);
+            cb((err as Error).message);
         }
     });
 };

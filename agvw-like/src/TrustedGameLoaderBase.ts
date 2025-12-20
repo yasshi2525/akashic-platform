@@ -374,8 +374,7 @@ export abstract class TrustedGameLoaderBase implements GameLoader {
     }
 
     _startGameDriver(driver: Driver) {
-        // NOTE: driver は _startGame() で代入済み
-        this.driver!.initialize(this._createInitializeParameter(), (err) => {
+        driver.initialize(this._createInitializeParameter(), (err) => {
             // NOTE: _param は start() で代入済み
             if (err) {
                 this._param!.errorHandler(

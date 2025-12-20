@@ -47,9 +47,13 @@ export class AMFlowClient implements AMFlow {
         this._socket.on(ListenEvent.Tick, this._onTickBound);
         this._socket.on(ListenEvent.Event, this._onEventBound);
         this._socket.emit(EmitEvent.Open, playId, (err) => {
+            this._playId = playId;
             if (callback) {
-                this._playId = playId;
-                callback(err);
+                if (err) {
+                    callback(new Error(err));
+                } else {
+                    callback(null);
+                }
             }
         });
     }
@@ -67,7 +71,11 @@ export class AMFlowClient implements AMFlow {
                 this._playId = null;
             }
             if (callback) {
-                callback(err);
+                if (err) {
+                    callback(new Error(err));
+                } else {
+                    callback(null);
+                }
             }
         });
     }
@@ -76,9 +84,7 @@ export class AMFlowClient implements AMFlow {
         callback: (error: Error | null, permission?: Permission) => void,
     ) {
         if (!this._playId) {
-            if (callback) {
-                callback(new Error("no player id was hold"));
-            }
+            callback(new Error("no player id was hold"));
             return;
         }
         this._socket.emit(
@@ -86,8 +92,10 @@ export class AMFlowClient implements AMFlow {
             this._playId,
             token,
             (err, permission) => {
-                if (callback) {
-                    callback(err, permission);
+                if (err) {
+                    callback(new Error(err));
+                } else {
+                    callback(null, permission);
                 }
             },
         );
@@ -130,9 +138,7 @@ export class AMFlowClient implements AMFlow {
             callback
         ) {
             if (!this._playId) {
-                if (callback) {
-                    callback(new Error("no player id was hold"));
-                }
+                callback(new Error("no player id was hold"));
                 return;
             }
             this._socket.emit(
@@ -140,7 +146,11 @@ export class AMFlowClient implements AMFlow {
                 this._playId,
                 { begin: optsOrBegin, end: endOrCallbeck },
                 (err, tickList) => {
-                    callback(err, tickList);
+                    if (err) {
+                        callback(new Error(err));
+                    } else {
+                        callback(null, tickList);
+                    }
                 },
             );
         } else if (
@@ -148,9 +158,7 @@ export class AMFlowClient implements AMFlow {
             typeof endOrCallbeck !== "number"
         ) {
             if (!this._playId) {
-                if (callback) {
-                    callback(new Error("no player id was hold"));
-                }
+                endOrCallbeck(new Error("no player id was hold"));
                 return;
             }
             this._socket.emit(
@@ -158,7 +166,11 @@ export class AMFlowClient implements AMFlow {
                 this._playId,
                 optsOrBegin,
                 (err, tickList) => {
-                    endOrCallbeck(err, tickList);
+                    if (err) {
+                        endOrCallbeck(new Error(err));
+                    } else {
+                        endOrCallbeck(null, tickList);
+                    }
                 },
             );
         }
@@ -168,16 +180,20 @@ export class AMFlowClient implements AMFlow {
         callback: (error: Error | null) => void,
     ) {
         if (!this._playId) {
-            if (callback) {
-                callback(new Error("no player id was hold"));
-            }
+            callback(new Error("no player id was hold"));
             return;
         }
         this._socket.emit(
             EmitEvent.PutStartPoint,
             this._playId,
             startPoint,
-            (err) => callback(err),
+            (err) => {
+                if (err) {
+                    callback(new Error(err));
+                } else {
+                    callback(null);
+                }
+            },
         );
     }
     getStartPoint(
@@ -185,9 +201,7 @@ export class AMFlowClient implements AMFlow {
         callback: (error: Error | null, startPoint?: StartPoint) => void,
     ) {
         if (!this._playId) {
-            if (callback) {
-                callback(new Error("no player id was hold"));
-            }
+            callback(new Error("no player id was hold"));
             return;
         }
         this._socket.emit(
@@ -195,7 +209,11 @@ export class AMFlowClient implements AMFlow {
             this._playId,
             opts,
             (err, startPoint) => {
-                callback(err, startPoint);
+                if (err) {
+                    callback(new Error(err));
+                } else {
+                    callback(null, startPoint);
+                }
             },
         );
     }
