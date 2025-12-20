@@ -149,7 +149,7 @@ export class AMFlowClient implements AMFlow {
                     if (err) {
                         callback(new Error(err));
                     } else {
-                        callback(null, tickList);
+                        callback(null, tickList ?? undefined);
                     }
                 },
             );
@@ -169,7 +169,7 @@ export class AMFlowClient implements AMFlow {
                     if (err) {
                         endOrCallbeck(new Error(err));
                     } else {
-                        endOrCallbeck(null, tickList);
+                        endOrCallbeck(null, tickList ?? undefined);
                     }
                 },
             );

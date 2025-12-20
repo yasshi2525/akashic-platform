@@ -56,7 +56,7 @@ const cliSchema = {
     [cliEvMap.GetTickList]: (
         playId: string,
         opts: GetTickListOptions,
-        cb: (err: string | null, tickList: TickList | undefined) => void,
+        cb: (err: string | null, tickList: TickList | null | undefined) => void,
     ) => {},
     [cliEvMap.PutStartPoint]: (
         playId: string,

@@ -47,12 +47,9 @@ export const initializeSocket = (
     });
     socket.on(ListenEvent.GetTickList, (playId, opts, cb) => {
         try {
+            console.log("request tick list", playId, opts);
             const tickList = server.getStore(playId).getTickList(opts);
-            if (tickList) {
-                cb(null, tickList);
-            } else {
-                cb("failed to get tick list", undefined);
-            }
+            cb(null, tickList); // NOTE: tickList が null なのは正常
         } catch (err) {
             cb((err as Error).message, undefined);
         }
