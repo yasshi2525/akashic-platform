@@ -9,11 +9,13 @@ import { initializeSocket } from "./initializeSocket";
 
 const app = express();
 
-const allowClientOrigin = process.env.CLIENT_ORIGIN;
-if (allowClientOrigin) {
+const allowOrigins = [process.env.CLIENT_ORIGIN].filter(
+    (str) => str,
+) as string[];
+if (allowOrigins.length > 0) {
     app.use(
         cors({
-            origin: allowClientOrigin,
+            origin: allowOrigins,
         }),
     );
 }
@@ -21,10 +23,10 @@ if (allowClientOrigin) {
 const http = createServer(app);
 const io = new Server(
     http,
-    allowClientOrigin
+    allowOrigins.length > 0
         ? {
               cors: {
-                  origin: allowClientOrigin,
+                  origin: allowOrigins,
               },
           }
         : undefined,
@@ -85,6 +87,6 @@ app.get("/end", (req, res) => {
     }
 });
 
-http.listen({ host, port }, () => {
-    console.log(`start to listen http://${host}:${port}`);
+http.listen(port, () => {
+    console.log(`start to listen port ${port}`);
 });

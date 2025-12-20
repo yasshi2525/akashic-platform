@@ -19,8 +19,9 @@ try {
     const rootPath = path.resolve(path.dirname(entryPath), ".."); // dist/index.js → package.json
     const version = require(path.join(rootPath, "package.json")).version;
     const fileName = `playlogClientV${version.replace(/[\.-]/g, "_")}.js`;
+    const srcPath = path.join(rootPath, "dist", "index.global.js");
     const destPath = path.join(destDir, fileName);
-    fs.copyFileSync(entryPath, destPath);
+    fs.copyFileSync(srcPath, destPath);
     console.log("end to copy playlogClientLike");
     console.log("start to generate playlogClientVersion.json");
     const versionFilePath = path.resolve(

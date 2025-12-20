@@ -12,7 +12,7 @@ export default defineConfig({
     entry: ["src/index.ts"],
     globalName,
     target: "es6",
-    format: "iife",
+    format: ["iife", "cjs"],
     platform: "browser",
     dts: true,
     sourcemap: true,

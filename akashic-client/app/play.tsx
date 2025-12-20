@@ -23,10 +23,7 @@ export default function Play({ contentId }: { contentId: string }) {
         data: play,
         isLoading: isStarting,
         error: startError,
-    } = useSWR<{ playId: string; playToken: string }, string>(
-        `${playlogServerUrl}/start`,
-        fetcher,
-    );
+    } = useSWR<{ playId: string }>(`/api/play/${contentId}`, fetcher);
     const { data, isLoading, error } = useSWR<{ playToken: string }, string>(
         play ? `${playlogServerUrl}/join?playId=${play.playId}` : null,
         fetcher,
@@ -57,7 +54,7 @@ export default function Play({ contentId }: { contentId: string }) {
         });
         content.addErrorListener({
             onError: (err) => {
-                console.error(err);
+                console.error(err, (err as any).cause);
             },
         });
         agv.addContent(content);

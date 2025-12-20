@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "playlogClient like implementation",
-  "main": "dist/index.global.js",
+  "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist/**/*.js",

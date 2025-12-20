@@ -18,13 +18,13 @@ export interface SessionOptions {
      */
     socketType: number;
     validationData: PlayInfo;
-    socketOpts: SocketOptions | null;
+    socketOpts?: SocketOptions | null;
 }
 
 export class SessionLike {
     _url: string;
     _validationData: PlayInfo;
-    _socketOptions: SocketOptions | null;
+    _socketOptions: SocketOptions | null | undefined;
     _errorListeners: ((err: Error) => void)[] = [];
     _socket: Socket | null;
     _onErrorBound: (err: Error) => void;

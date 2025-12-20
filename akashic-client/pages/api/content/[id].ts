@@ -30,5 +30,8 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         engine_urls: engineUrls.map((path) => baseUrl + path),
         content_url: `${baseUrl}/content/${req.query.id}/game.json`,
         asset_base_url: `${baseUrl}/content/${req.query.id}`,
+        untrusted: false,
+        content_id: req.query.id,
+        external: [],
     });
 }
