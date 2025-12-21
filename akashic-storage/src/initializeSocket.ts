@@ -27,17 +27,19 @@ export const initializeSocket = (
             cb((err as Error).message);
         }
     });
-    socket.on(ListenEvent.Authenticate, (playId, token, cb) => {
+    socket.on(ListenEvent.Authenticate, async (playId, token, cb) => {
         try {
-            const permission = server.getStore(playId).authenticate(token);
+            const permission = await server
+                .getStore(playId)
+                .authenticate(token);
             cb(null, permission);
         } catch (err) {
             cb((err as Error).message, undefined);
         }
     });
-    socket.on(ListenEvent.SendTick, (playId, tick) => {
+    socket.on(ListenEvent.SendTick, async (playId, tick) => {
         try {
-            server.getStore(playId).sendTick(tick);
+            await server.getStore(playId).sendTick(tick);
         } catch (err) {}
     });
     socket.on(ListenEvent.SendEvent, (playId, event) => {
@@ -45,18 +47,19 @@ export const initializeSocket = (
             server.getStore(playId).sendEvent(event);
         } catch (err) {}
     });
-    socket.on(ListenEvent.GetTickList, (playId, opts, cb) => {
+    socket.on(ListenEvent.GetTickList, async (playId, opts, cb) => {
         try {
-            console.log("request tick list", playId, opts);
-            const tickList = server.getStore(playId).getTickList(opts);
+            const tickList = await server.getStore(playId).getTickList(opts);
             cb(null, tickList); // NOTE: tickList が null なのは正常
         } catch (err) {
             cb((err as Error).message, undefined);
         }
     });
-    socket.on(ListenEvent.GetStartPoint, (playId, opts, cb) => {
+    socket.on(ListenEvent.GetStartPoint, async (playId, opts, cb) => {
         try {
-            const startPoint = server.getStore(playId).getStartPoint(opts);
+            const startPoint = await server
+                .getStore(playId)
+                .getStartPoint(opts);
             if (startPoint) {
                 cb(null, startPoint);
             } else {
@@ -66,9 +69,9 @@ export const initializeSocket = (
             cb((err as Error).message, undefined);
         }
     });
-    socket.on(ListenEvent.PutStartPoint, (playId, startPoint, cb) => {
+    socket.on(ListenEvent.PutStartPoint, async (playId, startPoint, cb) => {
         try {
-            server.getStore(playId).putStartPoint(startPoint);
+            await server.getStore(playId).putStartPoint(startPoint);
             cb(null);
         } catch (err) {
             cb((err as Error).message);

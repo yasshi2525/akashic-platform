@@ -1,38 +1,27 @@
 import type { Socket } from "socket.io";
 import type { Permission } from "@akashic/amflow";
 import type { Event, Tick } from "@akashic/playlog";
-import { AMFlowStore } from "@akashic/headless-driver";
 import {
     ListenSchema,
     EmitSchema,
     EmitEvent,
 } from "@yasshi2525/amflow-server-event-schema";
+import { RedisConnection } from "./createRedisConnection";
+import { RedisAMFlowStore } from "./RedisAMFlowStore";
 
-const activePermission: Permission = {
-    readTick: true,
-    writeTick: true,
-    sendEvent: true,
-    subscribeEvent: true,
-    subscribeTick: true,
-    maxEventPriority: 2,
-};
-
-const passivePermission: Permission = {
-    readTick: true,
-    writeTick: false,
-    sendEvent: true,
-    subscribeEvent: false,
-    subscribeTick: true,
-    maxEventPriority: 2,
-};
+interface AMFlowServerParameterObject {
+    redis: RedisConnection;
+}
 
 export class AMFlowServer {
-    _stores: Map<string, AMFlowStore>;
+    _redis: RedisConnection;
+    _stores: Map<string, RedisAMFlowStore>;
     _tickBroadcaster: Map<string, (tick: Tick) => void>;
     _eventBroadcaster: Map<string, (event: Event) => void>;
     _clients: Map<string, Set<Socket<ListenSchema, EmitSchema>>>;
 
-    constructor() {
+    constructor(param: AMFlowServerParameterObject) {
+        this._redis = param.redis;
         this._stores = new Map();
         this._clients = new Map();
         this._tickBroadcaster = new Map();
@@ -47,17 +36,17 @@ export class AMFlowServer {
         this._stores.set(playId, this._createStore(playId));
     }
 
-    end(playId: string) {
-        this._stores.get(playId)?.destroy();
+    async end(playId: string) {
+        await this._stores.get(playId)?.destroy();
         this._stores.delete(playId);
         this._tickBroadcaster.delete(playId);
         this._eventBroadcaster.delete(playId);
         this._clients.delete(playId);
     }
 
-    generateToken(playId: string, isActive: boolean) {
-        return this.getStore(playId).createPlayToken(
-            isActive ? activePermission : passivePermission,
+    async generateToken(playId: string, isActive: boolean) {
+        return await this.getStore(playId).createPlayToken(
+            isActive ? "active" : "passive",
         );
     }
 
@@ -77,10 +66,12 @@ export class AMFlowServer {
         return store;
     }
 
-    destroy() {
-        for (const store of this._stores.values()) {
-            store.destroy();
-        }
+    async destroy() {
+        await Promise.all(
+            [...this._stores.values()].map(
+                async (store) => await store.destroy(),
+            ),
+        );
         this._stores.clear();
         this._clients.clear();
     }
@@ -94,7 +85,10 @@ export class AMFlowServer {
     }
 
     _createStore(playId: string) {
-        const store = new AMFlowStore(playId);
+        const store = new RedisAMFlowStore({
+            redis: this._redis,
+            playId,
+        });
         store.onTick(this._findTickBroadCaster(playId));
         store.onEvent(this._findEventBroadCaster(playId));
         return store;
