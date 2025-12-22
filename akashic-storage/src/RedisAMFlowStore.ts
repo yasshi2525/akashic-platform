@@ -236,6 +236,7 @@ export class RedisAMFlowStore extends AMFlowStoreBase {
             genKey(RedisKey.Token, this.playId, token),
             permissionType,
         );
+        return token;
     }
 
     _toTickList(

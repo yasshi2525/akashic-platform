@@ -49,12 +49,12 @@ export class HttpServer {
 
         const http = createServer(app);
 
-        app.get("/start", (req, res) => {
+        app.get("/start", async (req, res) => {
             res.header;
             const playId = this._playManager.generateId();
             try {
                 const server = this._playManager.start(playId);
-                const playToken = server.generateToken(true);
+                const playToken = await server.generateToken(true);
                 res.json({ playId, playToken });
             } catch (err) {
                 res.status(422).send(
@@ -63,13 +63,13 @@ export class HttpServer {
             }
         });
 
-        app.get("/join", (req, res) => {
+        app.get("/join", async (req, res) => {
             const playId = req.query.playId;
             if (!playId?.toString()) {
                 res.status(400).send("no playId was specified.");
             } else {
                 try {
-                    const playToken = this._amfManager
+                    const playToken = await this._amfManager
                         .getServer(playId.toString())
                         .generateToken(false);
                     res.json({ playToken });
@@ -81,13 +81,13 @@ export class HttpServer {
             }
         });
 
-        app.get("/end", (req, res) => {
+        app.get("/end", async (req, res) => {
             const playId = req.query.playId;
             if (!playId?.toString()) {
                 res.status(400).send("no playId was specified.");
             } else {
                 try {
-                    this._playManager.end(playId.toString());
+                    await this._playManager.end(playId.toString());
                     res.status(200);
                 } catch (err) {
                     res.status(422).send(
