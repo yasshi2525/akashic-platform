@@ -107,10 +107,22 @@ export class AMFlowClient implements AMFlow {
         this._socket.emit(EmitEvent.SendTick, this._playId, tick);
     }
     onTick(handler: (tick: Tick) => void) {
+        if (!this._playId) {
+            return;
+        }
         this._tickHandlers.push(handler);
+        if (this._tickHandlers.length === 1) {
+            this._socket.emit(EmitEvent.SubscribeTick, this._playId);
+        }
     }
     offTick(handler: (tick: Tick) => void) {
+        if (!this._playId) {
+            return;
+        }
         this._tickHandlers = this._tickHandlers.filter((h) => h !== handler);
+        if (this._tickHandlers.length === 0) {
+            this._socket.emit(EmitEvent.UnsubscribeTick, this._playId);
+        }
     }
     sendEvent(event: Event) {
         if (!this._playId) {
@@ -119,10 +131,22 @@ export class AMFlowClient implements AMFlow {
         this._socket.emit(EmitEvent.SendEvent, this._playId, event);
     }
     onEvent(handler: (event: Event) => void) {
+        if (!this._playId) {
+            return;
+        }
         this._eventHandlers.push(handler);
+        if (this._eventHandlers.length === 1) {
+            this._socket.emit(EmitEvent.SubscribeEvent, this._playId);
+        }
     }
     offEvent(handler: (event: Event) => void) {
+        if (!this._playId) {
+            return;
+        }
         this._eventHandlers = this._eventHandlers.filter((h) => h !== handler);
+        if (this._eventHandlers.length === 0) {
+            this._socket.emit(EmitEvent.UnsubscribeEvent, this._playId);
+        }
     }
 
     getTickList(
