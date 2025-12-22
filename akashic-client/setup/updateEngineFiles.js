@@ -30,6 +30,7 @@
 // * create destdir initially.
 // * use release engineFile instead of debug that.
 // * remove build enviroment specifical code of original repository.
+// * append license comments to distribution file.
 import fs from "fs";
 import { createRequire } from "module";
 import path from "path";
@@ -66,7 +67,18 @@ try {
         versions[key].fileName = fileName;
 
         const destPath = path.join(destDir, fileName);
-        fs.copyFileSync(engineFilesPath, destPath);
+
+        const license = fs
+            .readFileSync(path.join(rootPath, "LICENSE"), {
+                encoding: "utf-8",
+            })
+            .split("\n")
+            .map((str) => `//! ${str}\n`)
+            .join("");
+        fs.writeFileSync(destPath, license, { encoding: "utf-8" });
+        fs.appendFileSync(destPath, fs.readFileSync(engineFilesPath), {
+            encoding: "utf-8",
+        });
     }
     console.log("end to copy engineFiles");
 
