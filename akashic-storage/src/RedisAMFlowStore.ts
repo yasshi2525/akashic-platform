@@ -143,16 +143,16 @@ export class RedisAMFlowStore extends AMFlowStoreBase {
 
         if (isFirst) {
             const ids = await this._redis.zRange(
-                genKey(RedisZSetKey.StartPointByFrame),
+                genKey(RedisZSetKey.StartPointByFrame, this.playId),
                 0,
                 0,
             );
             return this._restoreStartPointFromIds(ids);
         } else if (opts.timestamp != null) {
             const ids = await this._redis.zRange(
-                genKey(RedisZSetKey.StartPointByTimestamp),
-                0,
+                genKey(RedisZSetKey.StartPointByTimestamp, this.playId),
                 "(" + opts.timestamp,
+                0,
                 {
                     BY: "SCORE",
                     REV: true,
@@ -165,9 +165,9 @@ export class RedisAMFlowStore extends AMFlowStoreBase {
             return this._restoreStartPointFromIds(ids);
         } else if (opts.frame != null) {
             const ids = await this._redis.zRange(
-                genKey(RedisZSetKey.StartPointByFrame),
-                0,
+                genKey(RedisZSetKey.StartPointByFrame, this.playId),
                 opts.frame - 1,
+                0,
                 {
                     BY: "SCORE",
                     REV: true,
