@@ -1,15 +1,15 @@
-import { AMFlowServer } from "./AMFlowServer";
+import { AMFlowServerManager } from "./AMFlowServerManager";
 
 interface PlayManagerParameterObject {
-    amfServer: AMFlowServer;
+    amfManager: AMFlowServerManager;
 }
 
 export class PlayManager {
-    _amfServer: AMFlowServer;
+    _amfManager: AMFlowServerManager;
     _nextId: number;
 
     constructor(param: PlayManagerParameterObject) {
-        this._amfServer = param.amfServer;
+        this._amfManager = param.amfManager;
         this._nextId = 1;
     }
 
@@ -20,10 +20,10 @@ export class PlayManager {
     }
 
     start(playId: string) {
-        this._amfServer.start(playId);
+        return this._amfManager.start(playId);
     }
 
-    end(playId: string) {
-        this._amfServer.end(playId);
+    async end(playId: string) {
+        await this._amfManager.end(playId);
     }
 }

@@ -1,11 +1,11 @@
 import { Server, createServer } from "node:http";
 import * as express from "express";
 import * as cors from "cors";
-import { AMFlowServer } from "./AMFlowServer";
+import { AMFlowServerManager } from "./AMFlowServerManager";
 import { PlayManager } from "./PlayManager";
 
 interface HttpServerParameterObject {
-    amfServer: AMFlowServer;
+    amfManager: AMFlowServerManager;
     playManager: PlayManager;
     /**
      * if undefined or empty array, skip setting cors.
@@ -14,12 +14,12 @@ interface HttpServerParameterObject {
 }
 
 export class HttpServer {
-    _amfServer: AMFlowServer;
+    _amfManager: AMFlowServerManager;
     _playManager: PlayManager;
     _http: Server;
 
     constructor(param: HttpServerParameterObject) {
-        this._amfServer = param.amfServer;
+        this._amfManager = param.amfManager;
         this._playManager = param.playManager;
         this._http = this._createHttp(param.allowOrigins);
     }
@@ -53,8 +53,8 @@ export class HttpServer {
             res.header;
             const playId = this._playManager.generateId();
             try {
-                this._playManager.start(playId);
-                const playToken = this._amfServer.generateToken(playId, true);
+                const server = this._playManager.start(playId);
+                const playToken = server.generateToken(true);
                 res.json({ playId, playToken });
             } catch (err) {
                 res.status(422).send(
@@ -69,10 +69,9 @@ export class HttpServer {
                 res.status(400).send("no playId was specified.");
             } else {
                 try {
-                    const playToken = this._amfServer.generateToken(
-                        playId.toString(),
-                        false,
-                    );
+                    const playToken = this._amfManager
+                        .getServer(playId.toString())
+                        .generateToken(false);
                     res.json({ playToken });
                 } catch (err) {
                     res.status(422).send(

@@ -13,14 +13,6 @@ Akashic Engine の実行時情報を保管するサーバー実装です。
   - APIアクセス制御（特にプレイ開始と終了）
     - akashic-server と共通の認証トークンを持っているかで判別する
 
-> [!CAUTION]
->
-> PlaylogのEventの扱い方が現状下記のように誤っていて、Playlogの仕様に従っていません。
-> 現状: Passive/Active → sendEvent → そのまま全プレイヤーに broadcast
-> 仕様: Passive/Active → sendEvent → Activeのみ受信 → Active側でTickを生成し sendTick （Tickの中に順序立てられたEventが格納されている）→ Tickを全プレイヤーにbroadcast
->
-> 現状、なにをサブスクライブするかクライアントからサーバーに伝える処理がないので playlogClient-like の改修が必要。ただ、パッシブインスタンスの場合、どこで onTickが呼ばれるのか分からないが、呼ばれる前提で組んでみる。
-
 > [!NOTE]
 >
 > Socket.io での送信効率が現状悪い。
