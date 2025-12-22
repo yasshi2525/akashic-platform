@@ -43,8 +43,8 @@ app.post("/start", async (req, res) => {
                     `failed to start. cause = "invalid data was responded from storage server"`,
                 );
             } else {
-                await runnerManager
-                    .start({
+                try {
+                    await runnerManager.start({
                         contentUrl: contentUrl.toString(),
                         assetBaseUrl: assetBaseUrl.toString(),
                         configurationUrl: configurationUrl.toString(),
@@ -52,14 +52,14 @@ app.post("/start", async (req, res) => {
                         playToken,
                         playerId,
                         playerName,
-                    })
-                    .catch((err) => {
-                        res.status(500);
-                        res.send(
-                            `failed to start. cause = ${(err as Error).message}`,
-                        );
                     });
-                res.json({ playId });
+                    res.json({ playId });
+                } catch (err) {
+                    res.status(500);
+                    res.send(
+                        `failed to start. cause = ${(err as Error).message}`,
+                    );
+                }
             }
         } else {
             const err = await playRes.text();
