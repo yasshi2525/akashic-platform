@@ -94,7 +94,7 @@ export class RedisAMFlowStore extends AMFlowStoreBase {
         );
         this._warnIfNotFoundEventRecord(opts, rawEvList);
         const evList = rawEvList
-            .filter(({ event }) => !event)
+            .filter(({ event }) => event)
             .map(({ tick, eventId, event }) => {
                 try {
                     return {
@@ -111,7 +111,7 @@ export class RedisAMFlowStore extends AMFlowStoreBase {
                     };
                 }
             })
-            .filter(({ event }) => !event) as { tick: number; event: Event }[];
+            .filter(({ event }) => event) as { tick: number; event: Event }[];
         return [from, to, this._toTickList(from, to, evList)];
     }
 
