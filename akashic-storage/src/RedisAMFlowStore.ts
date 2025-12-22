@@ -37,7 +37,7 @@ export class RedisAMFlowStore extends AMFlowStoreBase {
     constructor(param: RedisAMFlowStoreParameterObject) {
         super(param.playId);
         this._redis = param.redis;
-        this._latestTickFrame = 0;
+        this._latestTickFrame = -1;
         this._nextUnfilteredEventId = 1;
         this._nextSnapshotId = 1;
         this._isDestroyed = false;
