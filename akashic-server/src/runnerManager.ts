@@ -109,6 +109,7 @@ export class RunnerManager {
         });
         runner.errorTrigger.add((err) => {
             console.error(`error on runner ${runner.runnerId}`, err);
+            runner.stop();
         });
         const game = await runner.start({ paused: false });
         if (!game) {
