@@ -18,10 +18,19 @@ try {
     const entryPath = require.resolve("@yasshi2525/playlog-client-like");
     const rootPath = path.resolve(path.dirname(entryPath), ".."); // dist/index.js → package.json
     const version = require(path.join(rootPath, "package.json")).version;
-    const fileName = `playlogClientV${version.replace(/[\.-]/g, "_")}.js`;
-    const srcPath = path.join(rootPath, "dist", "index.global.js");
-    const destPath = path.join(destDir, fileName);
-    fs.copyFileSync(srcPath, destPath);
+    const fileNames = ["", ".map"].map(
+        (suffix) =>
+            `playlogClientV${version.replace(/[\.-]/g, "_")}.js${suffix}`,
+    );
+    const srcPaths = ["", ".map"].map((suffix) =>
+        path.join(rootPath, "dist", `index.global.js${suffix}`),
+    );
+    const destPaths = fileNames.map((fileName) => path.join(destDir, fileName));
+    for (let i = 0; i < srcPaths.length; i++) {
+        if (fs.existsSync(srcPaths[i])) {
+            fs.copyFileSync(srcPaths[i], destPaths[i]);
+        }
+    }
     console.log("end to copy playlogClientLike");
     console.log("start to generate playlogClientVersion.json");
     const versionFilePath = path.resolve(
@@ -39,7 +48,7 @@ try {
         JSON.stringify(
             {
                 version,
-                fileName,
+                fileName: fileNames[0],
             },
             null,
             2,
