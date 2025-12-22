@@ -20,6 +20,9 @@ import {
     ListenSchema,
     ListenEvent,
     EmitEvent,
+    BadRequestError,
+    createAMFlowError,
+    NotImplementedError,
 } from "@yasshi2525/amflow-client-event-schema";
 
 interface AMFlowClientParameterObject {
@@ -44,109 +47,101 @@ export class AMFlowClient implements AMFlow {
     }
 
     open(playId: string, callback?: (error: Error | null) => void) {
-        if (this._isOpened) {
-            if (callback) {
-                callback(new Error("session is already opened."));
-            }
-            return;
-        }
-        this._socket.on(ListenEvent.Tick, this._onTickBound);
-        this._socket.on(ListenEvent.Event, this._onEventBound);
-        this._socket.emit(EmitEvent.Open, playId, (err) => {
-            this._isOpened = true;
-            if (callback) {
-                if (err) {
-                    callback(new Error(err));
-                } else {
-                    callback(null);
+        if (this._assertsUnOpen(callback)) {
+            this._socket.on(ListenEvent.Tick, this._onTickBound);
+            this._socket.on(ListenEvent.Event, this._onEventBound);
+            this._socket.emit(EmitEvent.Open, playId, (err) => {
+                this._isOpened = true;
+                if (callback) {
+                    if (err) {
+                        callback(createAMFlowError(err));
+                    } else {
+                        callback(null);
+                    }
                 }
-            }
-        });
+            });
+        }
     }
     close(callback?: (error: Error | null) => void) {
-        if (!this._isOpened) {
-            if (callback) {
-                callback(new Error("session isn't opened."));
-            }
-            return;
-        }
-        this._socket.off(ListenEvent.Tick, this._onTickBound);
-        this._socket.off(ListenEvent.Event, this._onEventBound);
-        this._socket.emit(EmitEvent.Close, (err) => {
-            if (!err) {
-                this._isOpened = false;
-            }
-            if (callback) {
-                if (err) {
-                    callback(new Error(err));
-                } else {
-                    callback(null);
+        if (this._assertsOpen(callback)) {
+            this._socket.off(ListenEvent.Tick, this._onTickBound);
+            this._socket.off(ListenEvent.Event, this._onEventBound);
+            this._socket.emit(EmitEvent.Close, (err) => {
+                if (!err) {
+                    this._isOpened = false;
                 }
-            }
-        });
+                if (callback) {
+                    if (err) {
+                        callback(createAMFlowError(err));
+                    } else {
+                        callback(null);
+                    }
+                }
+            });
+        }
     }
     authenticate(
         token: string,
         callback: (error: Error | null, permission?: Permission) => void,
     ) {
-        if (!this._isOpened) {
-            callback(new Error("session isn't opened."));
-            return;
+        if (this._assertsOpen(callback)) {
+            this._socket.emit(
+                EmitEvent.Authenticate,
+                token,
+                (err, permission) => {
+                    if (err) {
+                        callback(createAMFlowError(err));
+                    } else {
+                        callback(null, permission);
+                    }
+                },
+            );
         }
-        this._socket.emit(EmitEvent.Authenticate, token, (err, permission) => {
-            if (err) {
-                callback(new Error(err));
-            } else {
-                callback(null, permission);
-            }
-        });
     }
     sendTick(tick: Tick) {
-        if (!this._isOpened) {
-            return;
+        if (this._assertsOpen()) {
+            this._socket.emit(EmitEvent.SendTick, tick);
         }
-        this._socket.emit(EmitEvent.SendTick, tick);
     }
     onTick(handler: (tick: Tick) => void) {
-        if (!this._isOpened) {
-            return;
-        }
-        this._tickHandlers.push(handler);
-        if (this._tickHandlers.length === 1) {
-            this._socket.emit(EmitEvent.SubscribeTick);
+        if (this._assertsOpen()) {
+            this._tickHandlers.push(handler);
+            if (this._tickHandlers.length === 1) {
+                this._socket.emit(EmitEvent.SubscribeTick);
+            }
         }
     }
     offTick(handler: (tick: Tick) => void) {
-        if (!this._isOpened) {
-            return;
-        }
-        this._tickHandlers = this._tickHandlers.filter((h) => h !== handler);
-        if (this._tickHandlers.length === 0) {
-            this._socket.emit(EmitEvent.UnsubscribeTick);
+        if (this._assertsOpen()) {
+            this._tickHandlers = this._tickHandlers.filter(
+                (h) => h !== handler,
+            );
+            if (this._tickHandlers.length === 0) {
+                this._socket.emit(EmitEvent.UnsubscribeTick);
+            }
         }
     }
     sendEvent(event: Event) {
-        if (!this._isOpened) {
-            return;
+        if (this._assertsOpen()) {
+            this._socket.emit(EmitEvent.SendEvent, event);
         }
-        this._socket.emit(EmitEvent.SendEvent, event);
     }
     onEvent(handler: (event: Event) => void) {
-        if (!this._isOpened) {
-            return;
-        }
-        this._eventHandlers.push(handler);
-        if (this._eventHandlers.length === 1) {
-            this._socket.emit(EmitEvent.SubscribeEvent);
+        if (this._assertsOpen()) {
+            this._eventHandlers.push(handler);
+            if (this._eventHandlers.length === 1) {
+                this._socket.emit(EmitEvent.SubscribeEvent);
+            }
         }
     }
     offEvent(handler: (event: Event) => void) {
-        if (!this._isOpened) {
-            return;
-        }
-        this._eventHandlers = this._eventHandlers.filter((h) => h !== handler);
-        if (this._eventHandlers.length === 0) {
-            this._socket.emit(EmitEvent.UnsubscribeEvent);
+        if (this._assertsOpen()) {
+            this._eventHandlers = this._eventHandlers.filter(
+                (h) => h !== handler,
+            );
+            if (this._eventHandlers.length === 0) {
+                this._socket.emit(EmitEvent.UnsubscribeEvent);
+            }
         }
     }
 
@@ -162,73 +157,69 @@ export class AMFlowClient implements AMFlow {
             typeof endOrCallbeck === "number" &&
             callback
         ) {
-            if (!this._isOpened) {
-                callback(new Error("session isn't opened."));
-                return;
+            if (this._assertsOpen(callback)) {
+                this._socket.emit(
+                    EmitEvent.GetTickList,
+                    { begin: optsOrBegin, end: endOrCallbeck },
+                    (err, tickList) => {
+                        if (err) {
+                            callback(createAMFlowError(err));
+                        } else {
+                            callback(null, tickList ?? undefined);
+                        }
+                    },
+                );
             }
-            this._socket.emit(
-                EmitEvent.GetTickList,
-                { begin: optsOrBegin, end: endOrCallbeck },
-                (err, tickList) => {
-                    if (err) {
-                        callback(new Error(err));
-                    } else {
-                        callback(null, tickList ?? undefined);
-                    }
-                },
-            );
         } else if (
             typeof optsOrBegin !== "number" &&
             typeof endOrCallbeck !== "number"
         ) {
-            if (!this._isOpened) {
-                endOrCallbeck(new Error("session isn't opened."));
-                return;
+            if (this._assertsOpen(endOrCallbeck)) {
+                this._socket.emit(
+                    EmitEvent.GetTickList,
+                    optsOrBegin,
+                    (err, tickList) => {
+                        if (err) {
+                            endOrCallbeck(createAMFlowError(err));
+                        } else {
+                            endOrCallbeck(null, tickList ?? undefined);
+                        }
+                    },
+                );
             }
-            this._socket.emit(
-                EmitEvent.GetTickList,
-                optsOrBegin,
-                (err, tickList) => {
-                    if (err) {
-                        endOrCallbeck(new Error(err));
-                    } else {
-                        endOrCallbeck(null, tickList ?? undefined);
-                    }
-                },
-            );
         }
     }
     putStartPoint(
         startPoint: StartPoint,
         callback: (error: Error | null) => void,
     ) {
-        if (!this._isOpened) {
-            callback(new Error("session isn't opened."));
-            return;
+        if (this._assertsOpen(callback)) {
+            this._socket.emit(EmitEvent.PutStartPoint, startPoint, (err) => {
+                if (err) {
+                    callback(createAMFlowError(err));
+                } else {
+                    callback(null);
+                }
+            });
         }
-        this._socket.emit(EmitEvent.PutStartPoint, startPoint, (err) => {
-            if (err) {
-                callback(new Error(err));
-            } else {
-                callback(null);
-            }
-        });
     }
     getStartPoint(
         opts: GetStartPointOptions,
         callback: (error: Error | null, startPoint?: StartPoint) => void,
     ) {
-        if (!this._isOpened) {
-            callback(new Error("session isn't opened."));
-            return;
+        if (this._assertsOpen(callback)) {
+            this._socket.emit(
+                EmitEvent.GetStartPoint,
+                opts,
+                (err, startPoint) => {
+                    if (err) {
+                        callback(createAMFlowError(err));
+                    } else {
+                        callback(null, startPoint ?? undefined);
+                    }
+                },
+            );
         }
-        this._socket.emit(EmitEvent.GetStartPoint, opts, (err, startPoint) => {
-            if (err) {
-                callback(new Error(err));
-            } else {
-                callback(null, startPoint);
-            }
-        });
     }
     putStorageData(
         key: StorageKey,
@@ -236,13 +227,13 @@ export class AMFlowClient implements AMFlow {
         options: any,
         callback: (err: Error | null) => void,
     ) {
-        callback(new Error("not supported"));
+        callback(new NotImplementedError("not supported"));
     }
     getStorageData(
         keys: StorageReadKey[],
         callback: (error: Error | null, values?: StorageData[]) => void,
     ) {
-        callback(new Error("not supported"));
+        callback(new NotImplementedError("not supported"));
     }
 
     _onTick(tick: Tick) {
@@ -255,5 +246,25 @@ export class AMFlowClient implements AMFlow {
         for (const handler of this._eventHandlers) {
             handler(event);
         }
+    }
+
+    _assertsUnOpen(cb?: (err: Error | null, ...data: any[]) => void) {
+        if (this._isOpened) {
+            if (cb) {
+                cb(new BadRequestError("session is already opened."));
+            }
+            return false;
+        }
+        return true;
+    }
+
+    _assertsOpen(cb?: (err: Error | null, ...data: any[]) => void) {
+        if (!this._isOpened) {
+            if (cb) {
+                cb(new BadRequestError("session isn't opened."));
+            }
+            return false;
+        }
+        return true;
     }
 }

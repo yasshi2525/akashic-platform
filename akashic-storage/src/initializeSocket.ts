@@ -4,6 +4,12 @@ import {
     ListenSchema,
     EmitSchema,
     ListenEvent,
+    AMFlowError,
+    AMFlowErrorName,
+    amflowErrorNames,
+    AMFlowErrorNameType,
+    BadRequestError,
+    PermissionError,
 } from "@yasshi2525/amflow-server-event-schema";
 import { AMFlowServerManager } from "./AMFlowServerManager";
 import { AMFlowServer } from "./AMFlowServer";
@@ -14,9 +20,33 @@ export const initializeSocket = (
 ) => {
     let server: AMFlowServer | null = null;
     let permission: Permission | null = null;
+    const assertsUnOpen = () => {
+        if (server) {
+            throw new BadRequestError("session was already opened.");
+        }
+    };
     const assertsOpen = () => {
         if (server == null) {
-            throw new Error("this session isn't opened.");
+            throw new BadRequestError("session is not opened.");
+        }
+    };
+    const handleError = (
+        err: unknown,
+        cb: (err: AMFlowError | null, ...data: any[]) => void,
+    ) => {
+        if (
+            err instanceof Error &&
+            amflowErrorNames.some((name) => name === err.name)
+        ) {
+            cb({
+                name: err.name as AMFlowErrorNameType,
+                message: err.message,
+            });
+        } else {
+            cb({
+                name: AMFlowErrorName.RuntimeError,
+                message: "unknown error is occurred.",
+            });
         }
     };
     socket.on("disconnect", () => {
@@ -24,23 +54,22 @@ export const initializeSocket = (
     });
     socket.on(ListenEvent.Open, (playId, cb) => {
         try {
-            if (server) {
-                throw new Error("this session was already opened");
-            }
+            assertsUnOpen();
             server = amfManager.getServer(playId);
             server.join(socket);
             cb(null);
         } catch (err) {
-            cb((err as Error).message);
+            handleError(err, cb);
         }
     });
     socket.on(ListenEvent.Close, (cb) => {
         try {
             assertsOpen();
             server!.leave(socket);
+            server = null;
             cb(null);
         } catch (err) {
-            cb((err as Error).message);
+            handleError(err, cb);
         }
     });
     socket.on(ListenEvent.Authenticate, async (token, cb) => {
@@ -49,7 +78,7 @@ export const initializeSocket = (
             permission = await server!.authenticate(token);
             cb(null, permission);
         } catch (err) {
-            cb((err as Error).message, undefined);
+            handleError(err, cb);
         }
     });
     socket.on(ListenEvent.SendTick, async (tick) => {
@@ -104,40 +133,36 @@ export const initializeSocket = (
         try {
             assertsOpen();
             if (!permission?.readTick) {
-                return;
+                throw new PermissionError();
             }
             const tickList = await server!.getTickList(opts);
             cb(null, tickList); // NOTE: tickList が null なのは正常
         } catch (err) {
-            cb((err as Error).message, undefined);
+            handleError(err, cb);
         }
     });
     socket.on(ListenEvent.GetStartPoint, async (opts, cb) => {
         try {
             assertsOpen();
             if (!permission?.readTick) {
-                cb("permission error", undefined);
+                throw new PermissionError();
             }
             const startPoint = await server!.getStartPoint(opts);
-            if (startPoint) {
-                cb(null, startPoint);
-            } else {
-                cb("failed to get start point", undefined);
-            }
+            cb(null, startPoint); // NOTE: startPoint が null なのは正常
         } catch (err) {
-            cb((err as Error).message, undefined);
+            handleError(err, cb);
         }
     });
     socket.on(ListenEvent.PutStartPoint, async (startPoint, cb) => {
         try {
             assertsOpen();
             if (!permission?.writeTick) {
-                cb("permission error");
+                throw new PermissionError();
             }
             await server!.putStartPoint(startPoint);
             cb(null);
         } catch (err) {
-            cb((err as Error).message);
+            handleError(err, cb);
         }
     });
 };

@@ -1,4 +1,5 @@
 import type { Permission } from "@akashic/amflow";
+import { InvalidStatusError } from "@yasshi2525/amflow-server-event-schema";
 
 const keys = ["amf:token", "amf:event", "amf:startpoint"] as const;
 type KeyType = (typeof keys)[number];
@@ -80,6 +81,10 @@ export const toPermission = (permissionType: PermissionType) => {
         case "passive":
             return passivePermission;
         default:
-            throw new Error(`invalid permission type = ${permissionType}`);
+            console.warn(
+                `invalid permissionType "${permissionType}" was specified.`,
+            );
+            // message はクライアントに送り返すのでセキュリティリスクを考慮し、入れていない
+            throw new InvalidStatusError();
     }
 };

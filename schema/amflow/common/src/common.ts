@@ -5,6 +5,7 @@ import type {
     StartPoint,
 } from "@akashic/amflow";
 import type { Event, Tick, TickList } from "@akashic/playlog";
+import { AMFlowError } from "./error";
 
 const cliEvents = [
     "amf:open",
@@ -52,11 +53,17 @@ export const srvEvMap = {
 export type ServerEventName = keyof typeof srvEvMap;
 
 const cliSchema = {
-    [cliEvMap.Open]: (playId: string, cb: (err: string | null) => void) => {},
-    [cliEvMap.Close]: (cb: (err: string | null) => void) => {},
+    [cliEvMap.Open]: (
+        playId: string,
+        cb: (err: AMFlowError | null) => void,
+    ) => {},
+    [cliEvMap.Close]: (cb: (err: AMFlowError | null) => void) => {},
     [cliEvMap.Authenticate]: (
         token: string,
-        cb: (err: string | null, permission: Permission | undefined) => void,
+        cb: (
+            err: AMFlowError | null,
+            permission: Permission | undefined,
+        ) => void,
     ) => {},
     [cliEvMap.SendTick]: (tick: Tick) => {},
     [cliEvMap.SubscribeTick]: () => {},
@@ -66,15 +73,21 @@ const cliSchema = {
     [cliEvMap.UnsubscribeEvent]: () => {},
     [cliEvMap.GetTickList]: (
         opts: GetTickListOptions,
-        cb: (err: string | null, tickList: TickList | null | undefined) => void,
+        cb: (
+            err: AMFlowError | null,
+            tickList: TickList | null | undefined,
+        ) => void,
     ) => {},
     [cliEvMap.PutStartPoint]: (
         startPoint: StartPoint,
-        cb: (err: string | null) => void,
+        cb: (err: AMFlowError | null) => void,
     ) => {},
     [cliEvMap.GetStartPoint]: (
         opts: GetStartPointOptions,
-        cb: (err: string | null, startPoint: StartPoint | undefined) => void,
+        cb: (
+            err: AMFlowError | null,
+            startPoint: StartPoint | null | undefined,
+        ) => void,
     ) => {},
 } as const satisfies Record<ClientEvent, unknown>;
 

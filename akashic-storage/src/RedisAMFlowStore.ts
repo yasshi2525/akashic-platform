@@ -11,6 +11,7 @@ import {
     EventIndex,
     EventFlagsMask,
 } from "@akashic/playlog";
+import { BadRequestError } from "@yasshi2525/amflow-server-event-schema";
 import { RedisConnection } from "./createRedisConnection";
 import {
     genKey,
@@ -47,7 +48,7 @@ export class RedisAMFlowStore extends AMFlowStoreBase {
             genKey(RedisKey.Token, this.playId, token),
         );
         if (!permissionType) {
-            throw new Error("invalid token");
+            throw new BadRequestError("invalid token");
         }
         return toPermission(permissionType as PermissionType);
     }

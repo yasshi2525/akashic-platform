@@ -1,4 +1,5 @@
 import type { Socket } from "socket.io";
+import { InvalidStatusError } from "@yasshi2525/amflow-server-event-schema";
 import { RedisConnection } from "./createRedisConnection";
 import { RedisAMFlowStore } from "./RedisAMFlowStore";
 import { AMFlowServer } from "./AMFlowServer";
@@ -41,7 +42,8 @@ export class AMFlowServerManager {
     getServer(playId: string) {
         const server = this._servers.get(playId);
         if (!server) {
-            throw new Error(`unregistered playId "${playId}"`);
+            console.warn(`invalid playId "${playId}" was specified.`);
+            throw new InvalidStatusError("invalid playId was specified.");
         }
         return server;
     }
