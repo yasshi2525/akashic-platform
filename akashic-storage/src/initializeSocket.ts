@@ -12,12 +12,9 @@ export const initializeSocket = (
     amfManager: AMFlowServerManager,
 ) => {
     let server: AMFlowServer | null = null;
-    const throwsIfInvalidPlayId = (playId: string) => {
+    const assertsOpen = () => {
         if (server == null) {
             throw new Error("this session isn't opened.");
-        }
-        if (server.getPlayId() !== playId) {
-            throw new Error("invalid playId was specified.");
         }
     };
     socket.on("disconnect", () => {
@@ -35,72 +32,72 @@ export const initializeSocket = (
             cb((err as Error).message);
         }
     });
-    socket.on(ListenEvent.Close, (playId, cb) => {
+    socket.on(ListenEvent.Close, (cb) => {
         try {
-            throwsIfInvalidPlayId(playId);
+            assertsOpen();
             server!.leave(socket);
             cb(null);
         } catch (err) {
             cb((err as Error).message);
         }
     });
-    socket.on(ListenEvent.Authenticate, async (playId, token, cb) => {
+    socket.on(ListenEvent.Authenticate, async (token, cb) => {
         try {
-            throwsIfInvalidPlayId(playId);
+            assertsOpen();
             const permission = await server!.authenticate(token);
             cb(null, permission);
         } catch (err) {
             cb((err as Error).message, undefined);
         }
     });
-    socket.on(ListenEvent.SendTick, async (playId, tick) => {
+    socket.on(ListenEvent.SendTick, async (tick) => {
         try {
-            throwsIfInvalidPlayId(playId);
+            assertsOpen();
             await server!.sendTick(tick);
         } catch (err) {}
     });
-    socket.on(ListenEvent.SendEvent, (playId, event) => {
+    socket.on(ListenEvent.SendEvent, (event) => {
         try {
-            throwsIfInvalidPlayId(playId);
+            assertsOpen();
             server!.sendEvent(event);
         } catch (err) {}
     });
-    socket.on(ListenEvent.SubscribeTick, (playId) => {
+    socket.on(ListenEvent.SubscribeTick, () => {
         try {
-            throwsIfInvalidPlayId(playId);
+            assertsOpen();
             server!.subscribeTick(socket);
         } catch (err) {}
     });
-    socket.on(ListenEvent.UnsubscribeTick, (playId) => {
+    socket.on(ListenEvent.UnsubscribeTick, () => {
         try {
-            throwsIfInvalidPlayId(playId);
+            assertsOpen();
             server!.unsubscribeTick(socket);
         } catch (err) {}
     });
-    socket.on(ListenEvent.SubscribeEvent, (playId) => {
+    socket.on(ListenEvent.SubscribeEvent, () => {
         try {
-            throwsIfInvalidPlayId(playId);
+            assertsOpen();
             server!.subscribeEvent(socket);
         } catch (err) {}
     });
-    socket.on(ListenEvent.UnsubscribeEvent, (playId) => {
+    socket.on(ListenEvent.UnsubscribeEvent, () => {
         try {
-            throwsIfInvalidPlayId(playId);
+            assertsOpen();
             server!.unsubscribeEvent(socket);
         } catch (err) {}
     });
-    socket.on(ListenEvent.GetTickList, async (playId, opts, cb) => {
+    socket.on(ListenEvent.GetTickList, async (opts, cb) => {
         try {
-            throwsIfInvalidPlayId(playId);
+            assertsOpen();
             const tickList = await server!.getTickList(opts);
             cb(null, tickList); // NOTE: tickList が null なのは正常
         } catch (err) {
             cb((err as Error).message, undefined);
         }
     });
-    socket.on(ListenEvent.GetStartPoint, async (playId, opts, cb) => {
+    socket.on(ListenEvent.GetStartPoint, async (opts, cb) => {
         try {
-            throwsIfInvalidPlayId(playId);
+            assertsOpen();
             const startPoint = await server!.getStartPoint(opts);
             if (startPoint) {
                 cb(null, startPoint);
@@ -111,9 +108,9 @@ export const initializeSocket = (
             cb((err as Error).message, undefined);
         }
     });
-    socket.on(ListenEvent.PutStartPoint, async (playId, startPoint, cb) => {
+    socket.on(ListenEvent.PutStartPoint, async (startPoint, cb) => {
         try {
-            throwsIfInvalidPlayId(playId);
+            assertsOpen();
             await server!.putStartPoint(startPoint);
             cb(null);
         } catch (err) {

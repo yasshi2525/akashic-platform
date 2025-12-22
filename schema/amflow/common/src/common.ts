@@ -53,30 +53,26 @@ export type ServerEventName = keyof typeof srvEvMap;
 
 const cliSchema = {
     [cliEvMap.Open]: (playId: string, cb: (err: string | null) => void) => {},
-    [cliEvMap.Close]: (playId: string, cb: (err: string | null) => void) => {},
+    [cliEvMap.Close]: (cb: (err: string | null) => void) => {},
     [cliEvMap.Authenticate]: (
-        playId: string,
         token: string,
         cb: (err: string | null, permission: Permission | undefined) => void,
     ) => {},
-    [cliEvMap.SendTick]: (playId: string, tick: Tick) => {},
-    [cliEvMap.SubscribeTick]: (playId: string) => {},
-    [cliEvMap.UnsubscribeTick]: (playId: string) => {},
-    [cliEvMap.SendEvent]: (playId: string, event: Event) => {},
-    [cliEvMap.SubscribeEvent]: (playId: string) => {},
-    [cliEvMap.UnsubscribeEvent]: (playId: string) => {},
+    [cliEvMap.SendTick]: (tick: Tick) => {},
+    [cliEvMap.SubscribeTick]: () => {},
+    [cliEvMap.UnsubscribeTick]: () => {},
+    [cliEvMap.SendEvent]: (event: Event) => {},
+    [cliEvMap.SubscribeEvent]: () => {},
+    [cliEvMap.UnsubscribeEvent]: () => {},
     [cliEvMap.GetTickList]: (
-        playId: string,
         opts: GetTickListOptions,
         cb: (err: string | null, tickList: TickList | null | undefined) => void,
     ) => {},
     [cliEvMap.PutStartPoint]: (
-        playId: string,
         startPoint: StartPoint,
         cb: (err: string | null) => void,
     ) => {},
     [cliEvMap.GetStartPoint]: (
-        playId: string,
         opts: GetStartPointOptions,
         cb: (err: string | null, startPoint: StartPoint | undefined) => void,
     ) => {},
