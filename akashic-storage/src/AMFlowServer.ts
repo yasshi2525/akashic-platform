@@ -1,6 +1,11 @@
 import type { Socket } from "socket.io";
-import type { Event, Tick } from "@akashic/playlog";
-import { EmitEvent } from "@yasshi2525/amflow-server-event-schema";
+import type { Event } from "@akashic/playlog";
+import {
+    EmitEvent,
+    TickPack,
+    ListenSchema,
+    ListenEvent,
+} from "@yasshi2525/amflow-server-event-schema";
 import { RedisAMFlowStore } from "./RedisAMFlowStore";
 import {
     GetStartPointOptions,
@@ -19,8 +24,8 @@ export class AMFlowServer {
     _clients: Set<Socket>;
     _tickSubscribers: Set<Socket>;
     _eventSubscribers: Set<Socket>;
-    _broadcastTickBound: (tick: Tick) => void;
-    _broadcastEventBound: (tick: Event) => void;
+    _broadcastTickBound: ListenSchema[typeof ListenEvent.SendTickPack];
+    _broadcastEventBound: ListenSchema[typeof ListenEvent.SendEvent];
 
     constructor(param: AMFlowServerParameterObject) {
         this._playId = param.playId;
@@ -58,8 +63,8 @@ export class AMFlowServer {
         return await this._store.authenticate(token);
     }
 
-    async sendTick(tick: Tick) {
-        await this._store.sendTick(tick);
+    async sendTickPack(tickPack: TickPack) {
+        await this._store.sendTickPack(tickPack);
     }
 
     sendEvent(event: Event) {
@@ -107,9 +112,9 @@ export class AMFlowServer {
         await this._store.destroy();
     }
 
-    _broadcastTick(tick: Tick) {
+    _broadcastTick(tickPack: TickPack) {
         for (const client of this._tickSubscribers) {
-            client.emit(EmitEvent.Tick, tick);
+            client.emit(EmitEvent.TickPack, tickPack);
         }
     }
 

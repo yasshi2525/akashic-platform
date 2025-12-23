@@ -1,6 +1,6 @@
 import type { AMFlow } from "@akashic/amflow";
 import { RunnerV3 } from "@akashic/headless-driver";
-import { Session, SessionLike } from "@yasshi2525/playlog-client-like";
+import { Session } from "@yasshi2525/playlog-client-like";
 
 /**
  * `akashic-gameview` の ProtocolType と同じ。
@@ -57,6 +57,7 @@ export class RunnerManager {
                     session.createClient(
                         {
                             usePrimaryChannel: true,
+                            maxPreservingTickSize: 5,
                         },
                         (err, client) => {
                             if (err) {

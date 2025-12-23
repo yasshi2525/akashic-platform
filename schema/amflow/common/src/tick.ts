@@ -56,53 +56,14 @@ export const toTickList = (
     pack: TickPack,
     cb?: (err: Error | null) => void,
 ) => {
-    if (typeof pack === "number") {
+    if (isNumber(pack)) {
         return [[pack]] as Tick[];
-    } else if (typeof pack === "object") {
-        if (Array.isArray(pack)) {
-            if (pack.length > 0) {
-                if (typeof pack[0] === "number") {
-                    return [pack as Tick];
-                } else {
-                    if (cb) {
-                        cb(
-                            new InvalidStatusError(
-                                "received invalid pack: invalid value in array.",
-                            ),
-                        );
-                    }
-                    return [];
-                }
-            } else {
-                if (cb) {
-                    cb(
-                        new InvalidStatusError(
-                            "received invalid pack: empty array.",
-                        ),
-                    );
-                }
-                return [];
-            }
-        } else if (
-            "from" in pack &&
-            typeof pack.from === "number" &&
-            "to" in pack &&
-            typeof pack.to === "number" &&
-            pack.from <= pack.to
-        ) {
-            return new Array(pack.to - pack.from + 1)
-                .fill(undefined)
-                .map((_, i) => [pack.from + i] as Tick);
-        } else {
-            if (cb) {
-                cb(
-                    new InvalidStatusError(
-                        "received invalid pack: object's properties are invalid.",
-                    ),
-                );
-            }
-            return [];
-        }
+    } else if (isTick(pack)) {
+        return [pack as Tick];
+    } else if (isTickFrame(pack)) {
+        return new Array(pack.to - pack.from + 1)
+            .fill(undefined)
+            .map((_, i) => [pack.from + i] as Tick);
     } else {
         if (cb) {
             cb(
@@ -114,3 +75,26 @@ export const toTickList = (
         return [];
     }
 };
+
+const isTickFrame = (pack: TickPack): pack is TickFrame =>
+    typeof pack === "object" &&
+    !Array.isArray(pack) &&
+    "from" in pack &&
+    typeof pack.from === "number" &&
+    "to" in pack &&
+    typeof pack.to === "number" &&
+    pack.from <= pack.to;
+
+const isTick = (pack: TickPack): pack is Tick =>
+    typeof pack === "object" &&
+    Array.isArray(pack) &&
+    pack.length > 0 &&
+    typeof pack[0] === "number";
+
+const isNumber = (pack: TickPack): pack is number => typeof pack === "number";
+
+export const convertTickPack = {
+    isTickFrame,
+    isTick,
+    isNumber,
+} as const;

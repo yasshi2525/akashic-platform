@@ -6,7 +6,7 @@ import type {
     Permission,
     StartPoint,
 } from "@akashic/amflow";
-import type {
+import {
     Tick,
     Event,
     StorageKey,
@@ -14,12 +14,16 @@ import type {
     StorageReadKey,
     StorageData,
     TickList,
+    TickIndex,
 } from "@akashic/playlog";
 import {
     EmitSchema,
     ListenSchema,
     ListenEvent,
     EmitEvent,
+    TickPack,
+    toTickList,
+    toTickPack,
     BadRequestError,
     createAMFlowError,
     NotImplementedError,
@@ -27,28 +31,38 @@ import {
 
 interface AMFlowClientParameterObject {
     socket: Socket;
+    /**
+     * sendTick する際、このサイズになるまで送信を保留します。
+     * Event が含まれている場合は即時送信します。
+     * @default 0
+     */
+    maxPreservingTickSize?: number;
 }
 
 export class AMFlowClient implements AMFlow {
     _socket: Socket<ListenSchema, EmitSchema>;
     _isOpened: boolean;
+    _maxPreservingTickSize: number;
+    _preservingTicks: Tick[];
     _tickHandlers: ((tick: Tick) => void)[];
     _eventHandlers: ((event: Event) => void)[];
-    _onTickBound: ListenSchema[typeof ListenEvent.Tick];
+    _onTickPackBound: ListenSchema[typeof ListenEvent.TickPack];
     _onEventBound: ListenSchema[typeof ListenEvent.Event];
 
     constructor(param: AMFlowClientParameterObject) {
         this._socket = param.socket;
         this._isOpened = false;
+        this._maxPreservingTickSize = param.maxPreservingTickSize ?? 0;
+        this._preservingTicks = [];
         this._tickHandlers = [];
         this._eventHandlers = [];
-        this._onTickBound = this._onTick.bind(this);
+        this._onTickPackBound = this._onTickPack.bind(this);
         this._onEventBound = this._onEvent.bind(this);
     }
 
     open(playId: string, callback?: (error: Error | null) => void) {
         if (this._assertsUnOpen(callback)) {
-            this._socket.on(ListenEvent.Tick, this._onTickBound);
+            this._socket.on(ListenEvent.TickPack, this._onTickPackBound);
             this._socket.on(ListenEvent.Event, this._onEventBound);
             this._socket.emit(EmitEvent.Open, playId, (err) => {
                 this._isOpened = true;
@@ -64,7 +78,7 @@ export class AMFlowClient implements AMFlow {
     }
     close(callback?: (error: Error | null) => void) {
         if (this._assertsOpen(callback)) {
-            this._socket.off(ListenEvent.Tick, this._onTickBound);
+            this._socket.off(ListenEvent.TickPack, this._onTickPackBound);
             this._socket.off(ListenEvent.Event, this._onEventBound);
             this._socket.emit(EmitEvent.Close, (err) => {
                 if (!err) {
@@ -100,7 +114,7 @@ export class AMFlowClient implements AMFlow {
     }
     sendTick(tick: Tick) {
         if (this._assertsOpen()) {
-            this._socket.emit(EmitEvent.SendTick, tick);
+            this._handleSendingTick(tick);
         }
     }
     onTick(handler: (tick: Tick) => void) {
@@ -236,9 +250,11 @@ export class AMFlowClient implements AMFlow {
         callback(new NotImplementedError("not supported"));
     }
 
-    _onTick(tick: Tick) {
-        for (const handler of this._tickHandlers) {
-            handler(tick);
+    _onTickPack(tickPack: TickPack) {
+        for (const tick of toTickList(tickPack)) {
+            for (const handler of this._tickHandlers) {
+                handler(tick);
+            }
         }
     }
 
@@ -266,5 +282,18 @@ export class AMFlowClient implements AMFlow {
             return false;
         }
         return true;
+    }
+
+    _handleSendingTick(tick: Tick) {
+        this._preservingTicks.push(tick);
+        if (
+            tick[TickIndex.Events] ||
+            this._preservingTicks.length >= this._maxPreservingTickSize
+        ) {
+            for (const pack of toTickPack(this._preservingTicks)) {
+                this._socket.emit(EmitEvent.SendTickPack, pack);
+            }
+            this._preservingTicks = [];
+        }
     }
 }

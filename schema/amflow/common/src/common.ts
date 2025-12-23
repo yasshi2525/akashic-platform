@@ -4,14 +4,15 @@ import type {
     Permission,
     StartPoint,
 } from "@akashic/amflow";
-import type { Event, Tick, TickList } from "@akashic/playlog";
+import type { Event, TickList } from "@akashic/playlog";
 import { AMFlowError } from "./error";
+import { TickPack } from "./tick";
 
 const cliEvents = [
     "amf:open",
     "amf:close",
     "amf:authenticate",
-    "amf:sendTick",
+    "amf:sendTickPack",
     "amf:subscribeTick",
     "amf:unsubscribeTick",
     "amf:sendEvent",
@@ -28,7 +29,7 @@ export const cliEvMap = {
     Open: "amf:open",
     Close: "amf:close",
     Authenticate: "amf:authenticate",
-    SendTick: "amf:sendTick",
+    SendTickPack: "amf:sendTickPack",
     SubscribeTick: "amf:subscribeTick",
     UnsubscribeTick: "amf:unsubscribeTick",
     SendEvent: "amf:sendEvent",
@@ -41,12 +42,12 @@ export const cliEvMap = {
 
 export type ClientEventName = keyof typeof cliEvMap;
 
-const srvEvents = ["amf:[t]", "amf:[e]"] as const;
+const srvEvents = ["amf:[tp]", "amf:[e]"] as const;
 
 export type ServerEvent = (typeof srvEvents)[number];
 
 export const srvEvMap = {
-    Tick: "amf:[t]",
+    TickPack: "amf:[tp]",
     Event: "amf:[e]",
 } as const satisfies Record<string, ServerEvent>;
 
@@ -65,7 +66,7 @@ const cliSchema = {
             permission: Permission | undefined,
         ) => void,
     ) => {},
-    [cliEvMap.SendTick]: (tick: Tick) => {},
+    [cliEvMap.SendTickPack]: (tickPack: TickPack) => {},
     [cliEvMap.SubscribeTick]: () => {},
     [cliEvMap.UnsubscribeTick]: () => {},
     [cliEvMap.SendEvent]: (event: Event) => {},
@@ -94,7 +95,7 @@ const cliSchema = {
 export type ClientEventSchema = typeof cliSchema;
 
 const srvSchema = {
-    [srvEvMap.Tick]: (tick: Tick) => {},
+    [srvEvMap.TickPack]: (tickPack: TickPack) => {},
     [srvEvMap.Event]: (event: Event) => {},
 } as const satisfies Record<ServerEvent, unknown>;
 

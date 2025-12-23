@@ -42,7 +42,7 @@ export abstract class AMFlowStoreBase {
         this.playId = playId;
     }
 
-    _sendTick(tick: Tick) {
+    sendTick(tick: Tick) {
         this.sendTickTrigger.fire(tick);
     }
 

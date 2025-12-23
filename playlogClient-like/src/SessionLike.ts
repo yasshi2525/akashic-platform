@@ -5,6 +5,12 @@ import { AMFlowClient } from "./AMFlowClient";
 
 export interface CreateClientParameterObject {
     usePrimaryChannel: boolean;
+    /**
+     * sendTick する際、このサイズになるまで送信を保留します。
+     * Event が含まれている場合は即時送信します。
+     * @default 0
+     */
+    maxPreservingTickSize?: number;
 }
 
 export interface PlayInfo {
@@ -83,7 +89,10 @@ export class SessionLike {
         if (!this._socket) {
             cb(new Error("socket was already disconnected."), null);
         }
-        const client = new AMFlowClient({ socket: this._socket! });
+        const client = new AMFlowClient({
+            socket: this._socket!,
+            maxPreservingTickSize: opts.maxPreservingTickSize,
+        });
         cb(null, client);
     }
 

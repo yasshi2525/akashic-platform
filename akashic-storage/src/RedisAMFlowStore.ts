@@ -11,7 +11,12 @@ import {
     EventIndex,
     EventFlagsMask,
 } from "@akashic/playlog";
-import { BadRequestError } from "@yasshi2525/amflow-server-event-schema";
+import {
+    BadRequestError,
+    convertTickPack,
+    TickPack,
+    toTickList,
+} from "@yasshi2525/amflow-server-event-schema";
 import { RedisConnection } from "./createRedisConnection";
 import {
     genKey,
@@ -53,9 +58,11 @@ export class RedisAMFlowStore extends AMFlowStoreBase {
         return toPermission(permissionType as PermissionType);
     }
 
-    async sendTick(tick: Tick) {
-        await this._pushTick(tick);
-        this._sendTick(tick);
+    async sendTickPack(tickPack: TickPack) {
+        await this._pushTick(tickPack);
+        for (const tick of toTickList(tickPack)) {
+            this.sendTick(tick);
+        }
     }
 
     async getTickList(opts: GetTickListOptions): Promise<TickList | null> {
@@ -284,37 +291,53 @@ export class RedisAMFlowStore extends AMFlowStoreBase {
         }
     }
 
-    async _pushTick(tick: Tick) {
-        if (tick[TickIndex.Frame] <= this._latestTickFrame) {
-            // illegal age tick
-            return;
-        }
-        this._latestTickFrame = tick[TickIndex.Frame];
-
-        if (tick[TickIndex.Events]) {
-            const unfilteredEvents = this._genEventIds(
-                tick[TickIndex.Events].filter(
-                    (event) =>
+    async _pushTick(tickPack: TickPack) {
+        if (convertTickPack.isNumber(tickPack)) {
+            if (tickPack <= this._latestTickFrame) {
+                // illegal age tick
+                return;
+            }
+            this._latestTickFrame = tickPack;
+        } else if (convertTickPack.isTickFrame(tickPack)) {
+            if (tickPack.to <= this._latestTickFrame) {
+                // illegal age tick
+                return;
+            }
+            this._latestTickFrame = tickPack.to;
+        } else if (convertTickPack.isTick(tickPack)) {
+            if (tickPack[TickIndex.Frame] <= this._latestTickFrame) {
+                // illegal age tick
+                return;
+            }
+            this._latestTickFrame = tickPack[TickIndex.Frame];
+            if (tickPack[TickIndex.Events]) {
+                const unfilteredEvents = this._genEventIds(
+                    tickPack[TickIndex.Events].filter(
+                        (event) =>
+                            !(
+                                event[EventIndex.EventFlags] &
+                                EventFlagsMask.Transient
+                            ),
+                    ),
+                );
+                await this._storeUnfilteredEvents(
+                    tickPack[TickIndex.Frame],
+                    unfilteredEvents,
+                );
+                const filteredEvents = unfilteredEvents.filter(
+                    ({ event }) =>
                         !(
                             event[EventIndex.EventFlags] &
-                            EventFlagsMask.Transient
+                            EventFlagsMask.Ignorable
                         ),
-                ),
-            );
-            await this._storeUnfilteredEvents(
-                tick[TickIndex.Frame],
-                unfilteredEvents,
-            );
-            const filteredEvents = unfilteredEvents.filter(
-                ({ event }) =>
-                    !(event[EventIndex.EventFlags] & EventFlagsMask.Ignorable),
-            );
-            await this._storeFilteredEvents(
-                tick[TickIndex.Frame],
-                filteredEvents,
-            );
-            await this._storeEvents(unfilteredEvents);
-            this._nextUnfilteredEventId += unfilteredEvents.length;
+                );
+                await this._storeFilteredEvents(
+                    tickPack[TickIndex.Frame],
+                    filteredEvents,
+                );
+                await this._storeEvents(unfilteredEvents);
+                this._nextUnfilteredEventId += unfilteredEvents.length;
+            }
         }
     }
 

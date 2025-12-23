@@ -81,13 +81,13 @@ export const initializeSocket = (
             handleError(err, cb);
         }
     });
-    socket.on(ListenEvent.SendTick, async (tick) => {
+    socket.on(ListenEvent.SendTickPack, async (tickPack) => {
         try {
             assertsOpen();
             if (!permission?.writeTick) {
                 return;
             }
-            await server!.sendTick(tick);
+            await server!.sendTickPack(tickPack);
         } catch (err) {}
     });
     socket.on(ListenEvent.SendEvent, (event) => {
