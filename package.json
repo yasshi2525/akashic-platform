@@ -12,6 +12,7 @@
     "agvw-like",
     "akashic-client",
     "akashic-server",
-    "akashic-storage"
+    "akashic-storage",
+    "webapp"
   ]
 }

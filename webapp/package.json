@@ -1,0 +1,39 @@
+{
+  "name": "@yasshi2525/webapp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "files": [],
+  "type": "module",
+  "scripts": {
+    "prepare": "npm run build -w @yasshi2525/playlog-client-like",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "author": "yasshi2525",
+  "license": "MIT",
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
+    "@types/react": "^19.2.7",
+    "@yasshi2525/playlog-client-like": "^0.1.0",
+    "engine-files-v3": "npm:@akashic/engine-files@^3.13.2",
+    "prettier": "^3.7.4",
+    "tailwindcss": "^4.1.18",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@emotion/cache": "^11.14.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/material": "^7.3.6",
+    "@mui/material-nextjs": "^7.3.6",
+    "@yasshi2525/akashic-client": "^0.1.0",
+    "next": "^16.1.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "swr": "^2.3.8"
+  }
+}
