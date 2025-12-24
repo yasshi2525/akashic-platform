@@ -28,7 +28,7 @@
   実行中の各プレイの実処理を進める。
 - akashic-storage
   実行中の全プレイ情報を保管する。
-- client
+- webapp
   各種操作できるWebアプリケーション
 
 ![アーキテクチャ図](./architecture.png)
@@ -83,7 +83,7 @@ npm install
 ```sh
 npm run run -w ./akashic-storage
 npm run run -w ./akashic-server
-npm run dev -w ./akashic-client # 暫定
+npm run dev -w ./webapp
 ```
 
 設定変更は `./akashic-storage`, `./akashic-server`, `./akashic-client` 配下に `.env` を置くことでできます。 `.env.example` を参考にしてください。
