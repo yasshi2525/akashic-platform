@@ -25,9 +25,10 @@ export function SiteHeader() {
     return (
         <AppBar
             position="sticky"
+            component="header"
             sx={{
-                backgroundColor: theme.palette.background.paper,
                 borderBottom: 1,
+                borderColor: theme.palette.background.default,
             }}
         >
             <Container maxWidth="xl">

@@ -2,9 +2,10 @@ import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ThemeProvider } from "@mui/material";
+import { Box, CssBaseline, ThemeProvider } from "@mui/material";
 import { theme } from "@/theme";
 import { SiteHeader } from "@/site-header";
+import { SiteFooter } from "@/site-footer";
 
 const geistSans = Geist({
     subsets: ["latin"],
@@ -31,8 +32,20 @@ export default function RootLayout({
             <body>
                 <AppRouterCacheProvider>
                     <ThemeProvider theme={theme}>
-                        <SiteHeader />
-                        {children}
+                        <CssBaseline />
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                minHeight: "100vh",
+                            }}
+                        >
+                            <SiteHeader />
+                            <Box component="main" sx={{ flexGrow: 1 }}>
+                                {children}
+                            </Box>
+                            <SiteFooter />
+                        </Box>
                     </ThemeProvider>
                 </AppRouterCacheProvider>
             </body>
