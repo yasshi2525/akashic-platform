@@ -43,11 +43,6 @@
 
 クライアント・サーバー両者で必要なスキーマ定義置き場
 
-### akashic-client
-
-ブラウザ上に表示されるプレイのビューアー。
-`akashic serve` がデバッグ用の作りのため独自に実装します。
-
 ### agvw-like
 
 ビューアーの基盤モジュールです。[`@akashic/agvw`](https://github.com/akashic-games/agvw) を元に制作しています。
@@ -86,9 +81,9 @@ npm run run -w ./akashic-server
 npm run dev -w ./webapp
 ```
 
-設定変更は `./akashic-storage`, `./akashic-server`, `./akashic-client` 配下に `.env` を置くことでできます。 `.env.example` を参考にしてください。
+設定変更は `./akashic-storage`, `./akashic-server`, `./webapp` 配下に `.env` を置くことでできます。 `.env.example` を参考にしてください。
 
-`./akashic-client/public/content/[id]` にゲームデータ（`game.zip`を解凍したもの）を配置すると当該ゲームで遊ぶことができます。
+`./webapp/public/content/[id]` にゲームデータ（`game.zip`を解凍したもの）を配置すると当該ゲームで遊ぶことができます。
 
 `http://localhost:3000` にアクセスするとゲームで遊ぶことができます。
 
