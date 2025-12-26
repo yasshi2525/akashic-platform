@@ -9,9 +9,11 @@
   "type": "module",
   "scripts": {
     "prepare": "npm run build -w @yasshi2525/playlog-client-like && npm run build -w @yasshi2525/agvw-like && npm run setup",
-    "setup": "npm run setup:engineFiles && npm run setup:playlogClient",
+    "setup": "npm run setup:engineFiles && npm run setup:playlogClient && npm run setup:db",
     "setup:engineFiles": "node setup/updateEngineFiles.js",
     "setup:playlogClient": "node setup/updatePlaylogClientLike.js",
+    "setup:db": "prisma generate",
+    "db:push": "prisma db push",
     "dev": "next dev",
     "build": "next build",
     "start": "next start"
@@ -24,16 +26,20 @@
     "@yasshi2525/playlog-client-like": "^0.1.0",
     "engine-files-v3": "npm:@akashic/engine-files@^3.13.2",
     "prettier": "^3.7.4",
+    "prisma": "^7.2.0",
     "tailwindcss": "^4.1.18",
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@auth/prisma-adapter": "^2.11.1",
     "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
     "@mui/material-nextjs": "^7.3.6",
+    "@prisma/adapter-pg": "^7.2.0",
+    "@prisma/client": "^7.2.0",
     "@yasshi2525/agvw-like": "^0.1.0",
     "next": "^16.1.0",
     "next-auth": "^5.0.0-beta.30",
