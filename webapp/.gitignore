@@ -1,4 +1,4 @@
-.env
+.env.local
 
 # generating by scripts
 /public/akashic
