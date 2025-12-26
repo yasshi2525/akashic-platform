@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Box, CssBaseline, ThemeProvider } from "@mui/material";
-import { theme } from "@/theme";
-import { SiteHeader } from "@/site-header";
-import { SiteFooter } from "@/site-footer";
+import { theme } from "@/lib/client/theme";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 
 const geistSans = Geist({
     subsets: ["latin"],
