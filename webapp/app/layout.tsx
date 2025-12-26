@@ -3,7 +3,9 @@ import type { Metadata } from "next";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Box, CssBaseline, ThemeProvider } from "@mui/material";
+import { getAuth } from "@/lib/server/auth";
 import { theme } from "@/lib/client/theme";
+import { AuthProvider } from "@/components/auth-provider";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
@@ -21,9 +23,10 @@ export const metadata: Metadata = {
         "みんなで遊べるゲームをみんなで遊ぼう。自作ゲームを投稿して遊べるサイトです。",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
     children,
 }: Readonly<{ children: ReactNode }>) {
+    const user = await getAuth();
     return (
         <html
             lang="ja"
@@ -31,22 +34,24 @@ export default function RootLayout({
         >
             <body>
                 <AppRouterCacheProvider>
-                    <ThemeProvider theme={theme}>
-                        <CssBaseline />
-                        <Box
-                            sx={{
-                                display: "flex",
-                                flexDirection: "column",
-                                minHeight: "100vh",
-                            }}
-                        >
-                            <SiteHeader />
-                            <Box component="main" sx={{ flexGrow: 1 }}>
-                                {children}
+                    <AuthProvider user={user}>
+                        <ThemeProvider theme={theme}>
+                            <CssBaseline />
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    minHeight: "100vh",
+                                }}
+                            >
+                                <SiteHeader />
+                                <Box component="main" sx={{ flexGrow: 1 }}>
+                                    {children}
+                                </Box>
+                                <SiteFooter />
                             </Box>
-                            <SiteFooter />
-                        </Box>
-                    </ThemeProvider>
+                        </ThemeProvider>
+                    </AuthProvider>
                 </AppRouterCacheProvider>
             </body>
         </html>

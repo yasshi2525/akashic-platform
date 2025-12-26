@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import {
     AppBar,
@@ -12,15 +11,11 @@ import {
     Typography,
     useTheme,
 } from "@mui/material";
-
-const mockUser = {
-    playerId: "user1",
-    playerName: "プレイヤー1",
-};
+import { useAuth } from "@/lib/client/useAuth";
 
 export function SiteHeader() {
     const theme = useTheme();
-    const [user] = useState(mockUser);
+    const [user] = useAuth();
 
     return (
         <AppBar
@@ -81,7 +76,7 @@ export function SiteHeader() {
                                 color: theme.palette.text.secondary,
                             }}
                         >
-                            {user.playerName}
+                            {user?.name}
                         </Typography>
                     </Box>
                 </Toolbar>
