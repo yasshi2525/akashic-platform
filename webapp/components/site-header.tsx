@@ -12,6 +12,7 @@ import {
     useTheme,
 } from "@mui/material";
 import { useAuth } from "@/lib/client/useAuth";
+import { SignIn } from "./sign-in";
 
 export function SiteHeader() {
     const theme = useTheme();
@@ -74,10 +75,12 @@ export function SiteHeader() {
                             variant="body1"
                             sx={{
                                 color: theme.palette.text.secondary,
+                                mr: 2,
                             }}
                         >
                             {user?.name}
                         </Typography>
+                        {user?.authType !== "oauth" ? <SignIn /> : undefined}
                     </Box>
                 </Toolbar>
             </Container>

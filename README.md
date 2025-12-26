@@ -69,6 +69,28 @@
 npm install
 ```
 
+### セットアップ
+
+> [!NOTE]
+>
+> TODO
+>
+> - 環境設定定義を一箇所にまとめる
+> - セットアップスクリプトの定義
+> - 一括起動スクリプトの定義
+
+#### akashic-storage, akashic-server
+
+`.env.local.example` の記述を参考に `.env.local` を配置してください。
+
+#### webapp
+
+```sh
+npx -w ./webapp auth secret
+```
+
+`.env.local.example` の記述を参考に `.env.local` にパラメタを追記してください。
+
 ### 実行方法
 
 > [!NOTE]
