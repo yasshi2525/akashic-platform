@@ -11,7 +11,7 @@
   "scripts": {
     "prepare": "npm run build -w @yasshi2525/amflow-server-event-schema",
     "build": "tsc",
-    "run": "node --env-file-if-exists=.env.local dist/index.js"
+    "run": "node --env-file-if-exists=.env dist/index.js"
   },
   "license": "MIT",
   "author": "yasshi2525",

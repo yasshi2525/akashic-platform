@@ -63,6 +63,11 @@
 
 ## インストール方法・使い方
 
+### 前提ソフトウェア
+
+- PostgreSQL: ユーザー・ゲーム情報・プレイ情報の保管
+- Redis: ゲーム実行時情報の保管
+
 ### インストール
 
 ```sh
@@ -81,15 +86,17 @@ npm install
 
 #### akashic-storage, akashic-server
 
-`.env.local.example` の記述を参考に `.env.local` を配置してください。
+`.env.example` の記述を参考に `.env` を配置してください。
 
 #### webapp
+
+`.env.example` の記述を参考に `.env` を配置してください。
 
 ```sh
 npx -w ./webapp auth secret
 ```
 
-`.env.local.example` の記述を参考に `.env.local` にパラメタを追記してください。
+`.env.local` が作成されます。
 
 ### 実行方法
 
