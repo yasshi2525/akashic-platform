@@ -4,10 +4,6 @@ import { ActionDispatch, useEffect } from "react";
 import { Guest, User } from "@/lib/types";
 import { AuthAction } from "@/lib/client/auth-action";
 
-async function fetcher(key: string) {
-    return fetch(key).then((res) => res.json()) as Promise<User>;
-}
-
 export function AuthGuest({
     user,
     dispatcher,
