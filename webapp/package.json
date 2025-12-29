@@ -13,7 +13,7 @@
     "setup:engineFiles": "node setup/updateEngineFiles.js",
     "setup:playlogClient": "node setup/updatePlaylogClientLike.js",
     "setup:db": "prisma generate",
-    "db:push": "prisma db push",
+    "db:reset": "prisma db push --force-reset && npm run setup:db",
     "dev": "next dev",
     "build": "next build",
     "start": "next start"

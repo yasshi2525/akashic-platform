@@ -129,10 +129,12 @@ export async function registerContent({
                 },
             });
         }
+        const icon = "icon" + path.extname(iconFile.name);
         const contentId = (
             await prisma.content.create({
                 data: {
                     gameId,
+                    icon,
                 },
             })
         ).id;
@@ -142,6 +144,20 @@ export async function registerContent({
             "content",
             contentId.toString(),
         );
+        if (fs.existsSync(baseDir)) {
+            console.warn(
+                `failed to create content directory (contentId = "${contentId}", reason = "already exists ${baseDir}")`,
+            );
+            await prisma.content.delete({
+                where: {
+                    id: contentId,
+                },
+            });
+            return {
+                ok: false,
+                reason: "InternalError",
+            };
+        }
         for (const filePath of Object.keys(gameZip.files)) {
             const file = gameZip.file(filePath);
             if (file) {
@@ -160,6 +176,7 @@ export async function registerContent({
                 }
             }
         }
+        fs.writeFileSync(path.join(baseDir, icon), await iconFile.bytes());
         return {
             ok: true,
             contentId,
