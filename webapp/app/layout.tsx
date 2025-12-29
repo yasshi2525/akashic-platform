@@ -8,6 +8,7 @@ import { theme } from "@/lib/client/theme";
 import { AuthProvider } from "@/components/auth-provider";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { ToastMessage } from "@/components/toast-message";
 
 const geistSans = Geist({
     subsets: ["latin"],
@@ -49,6 +50,7 @@ export default async function RootLayout({
                                     {children}
                                 </Box>
                                 <SiteFooter />
+                                <ToastMessage />
                             </Box>
                         </ThemeProvider>
                     </AuthProvider>

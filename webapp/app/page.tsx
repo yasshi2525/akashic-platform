@@ -1,3 +1,5 @@
+"use client";
+
 import { RoomList } from "@/components/room-list";
 
 export default function Home() {
