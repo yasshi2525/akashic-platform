@@ -63,7 +63,7 @@ export function RoomList() {
                 </Box>
                 <Button
                     component={Link}
-                    href="/create-play"
+                    href="/new-play"
                     variant="contained"
                     size="large"
                     startIcon={<Add />}

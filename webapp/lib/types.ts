@@ -21,6 +21,17 @@ export interface OAuthUser extends User {
 export const GUEST_IDKEY = "guest_id";
 export const GUEST_NAME = "ゲスト";
 
+export const GAMELIST_LIMITS = 10;
+
+export interface GameInfo {
+    id: number;
+    title: string;
+    iconURL: string;
+    description: string;
+    publisher: { id: string; name: string };
+    contentId: number;
+}
+
 export const supportedAkashicVersions = ["3"];
 export const supportedAkashicModes: NicoliveSupportedModes[] = [
     "multi",

@@ -1,0 +1,74 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/server/prisma";
+import { GameInfo, GAMELIST_LIMITS } from "@/lib/types";
+
+export async function GET(req: NextRequest) {
+    const keyword = req.nextUrl.searchParams.get("keyword") ?? undefined;
+    const limits = parseInt(
+        req.nextUrl.searchParams.get("limits") ?? GAMELIST_LIMITS.toString(),
+    );
+    const page = parseInt(req.nextUrl.searchParams.get("page") ?? "0");
+
+    const containsKeyword: Awaited<
+        NonNullable<Parameters<typeof prisma.game.findMany>[0]>["where"]
+    > = keyword
+        ? {
+              OR: [
+                  {
+                      title: {
+                          contains: keyword,
+                      },
+                  },
+                  {
+                      description: {
+                          contains: keyword,
+                      },
+                  },
+              ],
+          }
+        : undefined;
+
+    const result = await prisma.game.findMany({
+        take: limits,
+        skip: page * limits,
+        where: containsKeyword,
+        orderBy: {
+            id: "desc",
+        },
+        select: {
+            id: true,
+            title: true,
+            description: true,
+            publisher: {
+                select: {
+                    id: true,
+                    name: true,
+                },
+            },
+            versions: {
+                take: 1,
+                select: {
+                    id: true,
+                    icon: true,
+                },
+                orderBy: {
+                    id: "desc",
+                },
+            },
+        },
+    });
+    return NextResponse.json({
+        ok: true,
+        data: result.map(({ id, title, description, publisher, versions }) => ({
+            id,
+            title,
+            iconURL: `/content/${versions[0].id}/${versions[0].icon}`,
+            publisher: {
+                id: publisher.id,
+                name: publisher.name!,
+            },
+            description,
+            contentId: versions[0].id,
+        })) satisfies GameInfo[],
+    });
+}
