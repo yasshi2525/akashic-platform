@@ -1,7 +1,9 @@
 "use client";
 
 import { MouseEvent, useState } from "react";
+import { signOut } from "next-auth/react";
 import {
+    Button,
     IconButton,
     Menu,
     MenuItem,
@@ -9,11 +11,84 @@ import {
     Typography,
     useTheme,
 } from "@mui/material";
-import { AddCircle, Settings } from "@mui/icons-material";
+import { AddCircle, Logout, Settings } from "@mui/icons-material";
+import { User } from "@/lib/types";
 import { useAuth } from "@/lib/client/useAuth";
 import { UserLabel } from "./user-label";
 import { SignIn } from "./sign-in";
-import Link from "next/link";
+
+interface MenuProps {
+    anchorEl?: HTMLElement;
+    handleClose: () => void;
+}
+
+function AnonymousMenu({ anchorEl, handleClose }: MenuProps) {
+    return (
+        <Menu
+            anchorEl={anchorEl}
+            open={!!anchorEl}
+            onClose={handleClose}
+            onClick={handleClose}
+        >
+            <MenuItem>
+                <SignIn />
+            </MenuItem>
+        </Menu>
+    );
+}
+
+interface AuthorizedMenuProps extends MenuProps {
+    user: User;
+}
+
+function AuthorizedMenu({ user, anchorEl, handleClose }: AuthorizedMenuProps) {
+    const theme = useTheme();
+    const [signouting, setIsSignouting] = useState(false);
+
+    function handleSignOut() {
+        if (signouting) {
+            return;
+        }
+        setIsSignouting(true);
+        signOut();
+    }
+
+    return (
+        <Menu
+            anchorEl={anchorEl}
+            open={!!anchorEl}
+            onClose={handleClose}
+            onClick={handleClose}
+        >
+            <MenuItem divider={true} sx={{ pb: 1 }}>
+                <Button
+                    href="/new-game"
+                    style={{
+                        color: "inherit",
+                    }}
+                >
+                    <AddCircle />
+                    <Typography variant="body1" sx={{ ml: 1 }}>
+                        ゲームを投稿
+                    </Typography>
+                </Button>
+            </MenuItem>
+            <MenuItem>
+                <Button
+                    onClick={handleSignOut}
+                    style={{
+                        color: theme.palette.text.secondary,
+                    }}
+                >
+                    <Logout />
+                    <Typography variant="body1" sx={{ ml: 1 }}>
+                        サインアウト
+                    </Typography>
+                </Button>
+            </MenuItem>
+        </Menu>
+    );
+}
 
 export function UserMenu() {
     const theme = useTheme();
@@ -34,35 +109,15 @@ export function UserMenu() {
             <IconButton aria-label="settings" onClick={handleClick}>
                 <Settings fontSize="large" />
             </IconButton>
-            <Menu
-                anchorEl={anchorEl}
-                open={!!anchorEl}
-                onClose={handleClose}
-                onClick={handleClose}
-            >
-                {user?.authType !== "oauth" ? (
-                    <MenuItem>
-                        <SignIn />
-                    </MenuItem>
-                ) : (
-                    <MenuItem>
-                        <Link
-                            href="/new-game"
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                textDecoration: "none",
-                                color: "inherit",
-                            }}
-                        >
-                            <AddCircle />
-                            <Typography variant="body1" sx={{ ml: 1 }}>
-                                ゲームを投稿
-                            </Typography>
-                        </Link>
-                    </MenuItem>
-                )}
-            </Menu>
+            {user?.authType !== "oauth" ? (
+                <AnonymousMenu handleClose={handleClose} anchorEl={anchorEl} />
+            ) : (
+                <AuthorizedMenu
+                    user={user}
+                    handleClose={handleClose}
+                    anchorEl={anchorEl}
+                />
+            )}
         </Stack>
     );
 }
