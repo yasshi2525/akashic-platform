@@ -96,7 +96,7 @@ interface GameContentParameterObject extends ContentParameterObject {
 }
 
 interface SkippingListener {
-    onSkip: (t: unknown) => void;
+    onSkip: (t: boolean) => void;
 }
 
 /**

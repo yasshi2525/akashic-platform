@@ -38,7 +38,18 @@ export const supportedAkashicModes: NicoliveSupportedModes[] = [
     "multi_admission",
 ];
 
+const playErrReasons = [
+    "InvalidParams",
+    "ClosedPlay",
+    "InternalError",
+] as const;
+export type PlayErrorType = (typeof playErrReasons)[number];
+export type PlayResponse =
+    | { ok: true; playToken: string; contentId: number }
+    | { ok: false; reason: PlayErrorType };
+
 export const messageKey = "message";
 export const messages = {
-    content: { registerSuccessful: "registerSuccessful" },
+    content: { registerSuccessful: "registerContentSuccessful" },
+    play: { registerSuccessful: "registerPlaySuccessful" },
 };

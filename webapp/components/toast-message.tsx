@@ -15,6 +15,8 @@ function toMessage(message?: string | null): {
     switch (message) {
         case messages.content.registerSuccessful:
             return { severity: "success", message: "ゲームが投稿されました" };
+        case messages.play.registerSuccessful:
+            return { severity: "success", message: "部屋が作成されました" };
         default:
             return { severity: "error", message: "不明なエラーが発生しました" };
     }
@@ -31,7 +33,18 @@ export function ToastMessage() {
         return null;
     }
     return (
-        <Snackbar open={open} autoHideDuration={5000} onClose={handleClose}>
+        <Snackbar
+            open={open}
+            slotProps={{
+                clickAwayListener: {
+                    onClickAway: (event) => {
+                        (event as any).defaultMuiPrevented = true;
+                    },
+                },
+            }}
+            autoHideDuration={5000}
+            onClose={handleClose}
+        >
             <Alert severity={severity}>{message}</Alert>
         </Snackbar>
     );

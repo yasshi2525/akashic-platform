@@ -1,8 +1,10 @@
 "use client";
 
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useOptimistic, useState } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
+    Alert,
     Box,
     Button,
     Card,
@@ -14,18 +16,62 @@ import {
     Typography,
 } from "@mui/material";
 import { ArrowBack, Search, SportsEsports } from "@mui/icons-material";
+import { messageKey, messages } from "@/lib/types";
+import { registerPlay } from "@/lib/server/play-register";
+import { useAuth } from "@/lib/client/useAuth";
 import { GameList } from "./game-list";
 
 export function PlayForm() {
+    const [user] = useAuth();
     const [selectedContent, setSelectedContent] = useState<number>();
     const [keyword, setKeyword] = useState("");
+    const [sending, setIsSending] = useOptimistic(false, () => true);
+    const [error, setError] = useState<string>();
 
     function handleSearch(event: ChangeEvent<HTMLInputElement>) {
         setKeyword(event.target.value);
     }
 
+    async function handleSubmit() {
+        if (!selectedContent) {
+            setError("ゲームを選択してください。");
+        }
+        if (!user) {
+            setError("サインインしてください。");
+        }
+        if (selectedContent && user) {
+            setIsSending(true);
+            const res = await registerPlay({
+                contentId: selectedContent,
+                gameMasterId: user.id,
+            });
+            if (res.ok) {
+                redirect(
+                    `/play/${res.playId}?${messageKey}=${messages.play.registerSuccessful}`,
+                );
+            } else {
+                switch (res.reason) {
+                    case "InvalidParams":
+                        setError(
+                            "内部エラーが発生しました。入力内容を確認してもう一度投稿してください。",
+                        );
+                        break;
+                    case "InternalError":
+                    default:
+                        setError(
+                            "予期しないエラーが発生しました。時間をおいてリトライしてください。",
+                        );
+                        break;
+                }
+            }
+            setIsSending(false);
+        }
+    }
+
     return (
         <Container
+            component="form"
+            action={handleSubmit}
             maxWidth="md"
             sx={{
                 mt: 4,
@@ -91,6 +137,22 @@ export function PlayForm() {
                     </Stack>
                 </CardContent>
             </Card>
+            <Button
+                type="submit"
+                variant="contained"
+                size="large"
+                fullWidth
+                color={!selectedContent ? "inherit" : "primary"}
+                loading={sending}
+                disabled={sending}
+            >
+                部屋を作成する
+            </Button>
+            {error ? (
+                <Alert variant="outlined" severity="error" sx={{ mt: 1 }}>
+                    {error}
+                </Alert>
+            ) : null}
         </Container>
     );
 }

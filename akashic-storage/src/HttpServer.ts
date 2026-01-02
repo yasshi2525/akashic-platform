@@ -50,16 +50,19 @@ export class HttpServer {
         const http = createServer(app);
 
         app.get("/start", async (req, res) => {
-            res.header;
-            const playId = this._playManager.generateId();
-            try {
-                const server = this._playManager.start(playId);
-                const playToken = await server.generateToken(true);
-                res.json({ playId, playToken });
-            } catch (err) {
-                res.status(422).send(
-                    `failed to start. (playId = "${playId}, reason = "${(err as Error).message}")`,
-                );
+            const playId = req.query.playId;
+            if (!playId?.toString()) {
+                res.status(400).send("no playId was specified.");
+            } else {
+                try {
+                    const server = this._playManager.start(playId.toString());
+                    const playToken = await server.generateToken(true);
+                    res.json({ playToken });
+                } catch (err) {
+                    res.status(422).send(
+                        `failed to start. (playId = "${playId.toString()}, reason = "${(err as Error).message}")`,
+                    );
+                }
             }
         });
 

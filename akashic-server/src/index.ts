@@ -9,9 +9,16 @@ const storageUrl = process.env.STORAGE_URL ?? "http://localhost:3031";
 const runnerManager = new RunnerManager({ storageUrl });
 
 app.post("/start", async (req, res) => {
-    const { contentUrl, assetBaseUrl, configurationUrl, playerId, playerName } =
-        req.body;
+    const {
+        playId,
+        contentUrl,
+        assetBaseUrl,
+        configurationUrl,
+        playerId,
+        playerName,
+    } = req.body;
     if (
+        !playId?.toString() ||
         !contentUrl?.toString() ||
         !assetBaseUrl?.toString() ||
         !configurationUrl?.toString() ||
@@ -22,7 +29,9 @@ app.post("/start", async (req, res) => {
         res.send("unsufficient parameter was specified.");
         return;
     }
-    const playRes = await fetch(`${storageUrl}/start`).catch((err) => {
+    const playRes = await fetch(
+        `${storageUrl}/start?playId=${playId.toString()}`,
+    ).catch((err) => {
         res.status(500);
         res.send(`failed to start. cause = "${err.message}"`);
     });
@@ -33,11 +42,10 @@ app.post("/start", async (req, res) => {
         );
     } else {
         if (playRes.status === 200) {
-            const { playId, playToken } = (await playRes.json()) as {
-                playId: string;
+            const { playToken } = (await playRes.json()) as {
                 playToken: string;
             };
-            if (!playId || !playToken) {
+            if (!playToken) {
                 res.status(500);
                 res.send(
                     `failed to start. cause = "invalid data was responded from storage server"`,
@@ -48,12 +56,12 @@ app.post("/start", async (req, res) => {
                         contentUrl: contentUrl.toString(),
                         assetBaseUrl: assetBaseUrl.toString(),
                         configurationUrl: configurationUrl.toString(),
-                        playId,
+                        playId: playId.toString(),
                         playToken,
                         playerId,
                         playerName,
                     });
-                    res.json({ playId });
+                    res.json({ ok: true });
                 } catch (err) {
                     res.status(500);
                     res.send(

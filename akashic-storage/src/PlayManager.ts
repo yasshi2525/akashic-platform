@@ -6,17 +6,9 @@ interface PlayManagerParameterObject {
 
 export class PlayManager {
     _amfManager: AMFlowServerManager;
-    _nextId: number;
 
     constructor(param: PlayManagerParameterObject) {
         this._amfManager = param.amfManager;
-        this._nextId = 1;
-    }
-
-    generateId() {
-        const playId = `play${this._nextId}`;
-        this._nextId++;
-        return playId;
     }
 
     start(playId: string) {

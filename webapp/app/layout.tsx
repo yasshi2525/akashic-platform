@@ -4,7 +4,9 @@ import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Box, CssBaseline, ThemeProvider } from "@mui/material";
 import { getAuth } from "@/lib/server/auth";
+import { akashicServerUrl, playlogServerUrl } from "@/lib/server/akashic";
 import { theme } from "@/lib/client/theme";
+import { AkashicProvider } from "@/components/akashic-provider";
 import { AuthProvider } from "@/components/auth-provider";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -35,25 +37,30 @@ export default async function RootLayout({
         >
             <body>
                 <AppRouterCacheProvider>
-                    <AuthProvider user={user}>
-                        <ThemeProvider theme={theme}>
-                            <CssBaseline />
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    minHeight: "100vh",
-                                }}
-                            >
-                                <SiteHeader />
-                                <Box component="main" sx={{ flexGrow: 1 }}>
-                                    {children}
+                    <AkashicProvider
+                        akashicServerUrl={akashicServerUrl}
+                        playlogServerUrl={playlogServerUrl}
+                    >
+                        <AuthProvider user={user}>
+                            <ThemeProvider theme={theme}>
+                                <CssBaseline />
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        minHeight: "100vh",
+                                    }}
+                                >
+                                    <SiteHeader />
+                                    <Box component="main" sx={{ flexGrow: 1 }}>
+                                        {children}
+                                    </Box>
+                                    <SiteFooter />
+                                    <ToastMessage />
                                 </Box>
-                                <SiteFooter />
-                                <ToastMessage />
-                            </Box>
-                        </ThemeProvider>
-                    </AuthProvider>
+                            </ThemeProvider>
+                        </AuthProvider>
+                    </AkashicProvider>
                 </AppRouterCacheProvider>
             </body>
         </html>
