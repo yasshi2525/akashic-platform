@@ -1,6 +1,7 @@
 "use client";
 
 import { ChangeEvent, useState, useOptimistic } from "react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
     Alert,
@@ -15,7 +16,12 @@ import {
     Typography,
     useTheme,
 } from "@mui/material";
-import { FileUpload, Image as ImageIcon } from "@mui/icons-material";
+import {
+    AddCircle,
+    ArrowBack,
+    FileUpload,
+    Image as ImageIcon,
+} from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import {
     messageKey,
@@ -174,9 +180,21 @@ export function GameForm({
                 gap: 4,
             }}
         >
-            <Typography variant="h4" component="h1">
-                ゲームを投稿する
-            </Typography>
+            <Stack width="100%" direction="row" spacing={2} alignItems="center">
+                <Button
+                    component={Link}
+                    href="/"
+                    variant="text"
+                    size="large"
+                    startIcon={<ArrowBack fontSize="large" />}
+                    sx={{ flex: 1, justifyContent: "start" }}
+                />
+                <AddCircle fontSize="large" />
+                <Typography variant="h4" component="h1">
+                    ゲームを投稿する
+                </Typography>
+                <Box sx={{ flex: 1 }} />
+            </Stack>
             <Card sx={{ width: "100%" }}>
                 <CardContent sx={{ p: 2 }}>
                     <Box component="form" action={handleSubmit}>

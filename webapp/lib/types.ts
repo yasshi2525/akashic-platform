@@ -6,7 +6,7 @@ type AuthType = (typeof authTypes)[number];
 export interface User {
     id: string;
     name: string;
-    image: string | null | undefined;
+    image?: string;
     authType: AuthType;
 }
 

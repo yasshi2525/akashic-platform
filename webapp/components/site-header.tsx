@@ -3,16 +3,14 @@
 import Link from "next/link";
 import {
     AppBar,
-    Avatar,
     Box,
-    colors,
     Container,
     Toolbar,
     Typography,
     useTheme,
 } from "@mui/material";
 import { useAuth } from "@/lib/client/useAuth";
-import { SignIn } from "./sign-in";
+import { UserMenu } from "./user-menu";
 
 export function SiteHeader() {
     const theme = useTheme();
@@ -54,34 +52,7 @@ export function SiteHeader() {
                             </Typography>
                         </Box>
                     </Link>
-                    <Box
-                        sx={{
-                            display: {
-                                alignItems: "center",
-                                gap: 2,
-                                xs: "none",
-                                sm: "flex",
-                            },
-                        }}
-                    >
-                        <Avatar
-                            sx={{
-                                bgcolor: colors.deepOrange[500],
-                            }}
-                        >
-                            Y
-                        </Avatar>
-                        <Typography
-                            variant="body1"
-                            sx={{
-                                color: theme.palette.text.secondary,
-                                mr: 2,
-                            }}
-                        >
-                            {user?.name}
-                        </Typography>
-                        {user?.authType !== "oauth" ? <SignIn /> : undefined}
-                    </Box>
+                    <UserMenu />
                 </Toolbar>
             </Container>
         </AppBar>

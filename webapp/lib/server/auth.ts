@@ -8,7 +8,7 @@ export async function getAuth() {
         return {
             id: session.user.id,
             name: session.user.name,
-            image: session.user.image,
+            image: session.user.image ?? undefined,
             authType: "oauth",
         } satisfies OAuthUser;
     }
