@@ -6,6 +6,7 @@ import { akashicServerUrl, publicBaseUrl } from "./akashic";
 
 interface PlayForm {
     gameMasterId: string;
+    gmUserId: string | undefined;
     contentId: number;
 }
 
@@ -17,6 +18,7 @@ type RegisterPlayResponse =
 
 export async function registerPlay({
     gameMasterId,
+    gmUserId,
     contentId,
 }: PlayForm): Promise<RegisterPlayResponse> {
     if (!gameMasterId || contentId == null) {
@@ -31,17 +33,20 @@ export async function registerPlay({
                 data: {
                     contentId,
                     gameMasterId,
+                    gmUserId,
                 },
             })
         ).id;
         const playerName =
-            (
-                await prisma.user.findUnique({
-                    where: {
-                        id: gameMasterId,
-                    },
-                })
-            )?.name ?? GUEST_NAME;
+            (gmUserId
+                ? (
+                      await prisma.user.findUnique({
+                          where: {
+                              id: gmUserId,
+                          },
+                      })
+                  )?.name
+                : undefined) ?? GUEST_NAME;
         const res = await fetch(`${akashicServerUrl}/start`, {
             method: "POST",
             headers: {

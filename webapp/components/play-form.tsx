@@ -44,6 +44,7 @@ export function PlayForm() {
             const res = await registerPlay({
                 contentId: selectedContent,
                 gameMasterId: user.id,
+                gmUserId: user.authType !== "guest" ? user.id : undefined,
             });
             if (res.ok) {
                 redirect(
