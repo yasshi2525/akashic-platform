@@ -32,6 +32,15 @@ export interface GameInfo {
     contentId: number;
 }
 
+export const PLAYLIST_LIMITS = 12;
+
+export interface PlayInfo {
+    id: number;
+    game: { title: string; iconURL: string };
+    gameMaster: { name: string; iconURL?: string };
+    createdAt: Date;
+}
+
 export const supportedAkashicVersions = ["3"];
 export const supportedAkashicModes: NicoliveSupportedModes[] = [
     "multi",

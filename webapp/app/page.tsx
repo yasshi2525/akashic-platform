@@ -1,7 +1,7 @@
 "use client";
 
-import { RoomList } from "@/components/room-list";
+import { PlayList } from "@/components/play-list";
 
 export default function Home() {
-    return <RoomList />;
+    return <PlayList />;
 }
