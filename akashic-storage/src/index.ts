@@ -25,6 +25,15 @@ import { AMFlowServerManager } from "./AMFlowServerManager";
         allowOrigins,
     });
 
+    const exit = async () => {
+        console.log("destroy server forcibly");
+        http.close();
+        await amfManager.destroy();
+        process.exit(0);
+    };
+    process.on("SIGINT", exit);
+    process.on("SIGTERM", exit);
+
     const port = parseInt(process.env.PORT ?? "3031");
     http.listen(port);
 })();

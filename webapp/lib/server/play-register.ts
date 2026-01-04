@@ -28,15 +28,6 @@ export async function registerPlay({
         };
     }
     try {
-        const playId = (
-            await prisma.play.create({
-                data: {
-                    contentId,
-                    gameMasterId,
-                    gmUserId,
-                },
-            })
-        ).id;
         const playerName =
             (gmUserId
                 ? (
@@ -53,17 +44,18 @@ export async function registerPlay({
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                playId,
+                contentId,
                 contentUrl: `${publicBaseUrl}/api/content/${contentId}`,
                 assetBaseUrl: `${publicBaseUrl}/content/${contentId}`,
                 configurationUrl: `${publicBaseUrl}/content/${contentId}/game.json`,
                 playerId: gameMasterId,
+                playerUserId: gmUserId,
                 playerName: playerName,
             }),
         });
         if (res.status !== 200) {
             console.warn(
-                `failed to start play "${playId}". (contentId = "${contentId}", cause = ${await res.text()})`,
+                `failed to start play. (contentId = "${contentId}", cause = ${await res.text()})`,
             );
             return {
                 ok: false,
@@ -72,7 +64,7 @@ export async function registerPlay({
         } else {
             return {
                 ok: true,
-                playId,
+                playId: (await res.json()).playId,
             };
         }
     } catch (err) {

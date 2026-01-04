@@ -33,6 +33,10 @@ export class HttpServer {
         });
     }
 
+    close() {
+        this._http.close();
+    }
+
     getHttp() {
         return this._http;
     }

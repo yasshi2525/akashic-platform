@@ -49,16 +49,19 @@ export class AMFlowServerManager {
     }
 
     async destroy() {
-        await Promise.all(
-            [...this._servers.values()].map(
-                async (server) => await server.destroy(),
-            ),
-        );
-        this._servers.clear();
         for (const client of this._clients) {
             client.disconnect(true);
         }
         this._clients.clear();
+        await Promise.all(
+            [...this._servers.values()].map(async (server) => {
+                console.log(
+                    `server (playId = ${server._playId}) is destroying forcibly.`,
+                );
+                await server.destroy();
+            }),
+        );
+        this._servers.clear();
     }
 
     onConnect(socket: Socket) {

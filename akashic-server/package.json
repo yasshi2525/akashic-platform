@@ -9,7 +9,7 @@
     "dist/**/*.d.ts"
   ],
   "scripts": {
-    "prepare": "npm run build -w @yasshi2525/playlog-client-like",
+    "prepare": "npm run build -w @yasshi2525/persist-schema && npm run build -w @yasshi2525/playlog-client-like",
     "build": "tsc",
     "run": "node --env-file-if-exists=.env dist/index.js"
   },
@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@akashic/headless-driver": "^2.17.10",
+    "@yasshi2525/persist-schema": "^0.1.0",
     "@yasshi2525/playlog-client-like": "^0.1.0",
     "express": "^5.2.1"
   }
