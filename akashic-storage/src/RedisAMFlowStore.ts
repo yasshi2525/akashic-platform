@@ -197,10 +197,10 @@ export class RedisAMFlowStore extends AMFlowStoreBase {
             genKey(RedisKey.Token, this.playId, "*"),
         );
         const ufEvents = await this._redis.keys(
-            genKey(RedisZSetKey.UnfilteredEvent, this.playId, "*"),
+            genKey(RedisZSetKey.UnfilteredEvent, this.playId),
         );
         const fEvents = await this._redis.keys(
-            genKey(RedisZSetKey.FilteredEvent, this.playId, "*"),
+            genKey(RedisZSetKey.FilteredEvent, this.playId),
         );
         const events = await this._redis.keys(
             genKey(RedisKey.Event, this.playId, "*"),
@@ -209,10 +209,10 @@ export class RedisAMFlowStore extends AMFlowStoreBase {
             genKey(RedisKey.StartPoint, this.playId, "*"),
         );
         const startpointsByFrame = await this._redis.keys(
-            genKey(RedisZSetKey.StartPointByFrame, this.playId, "*"),
+            genKey(RedisZSetKey.StartPointByFrame, this.playId),
         );
         const startpointsByTimestamp = await this._redis.keys(
-            genKey(RedisZSetKey.StartPointByTimestamp, this.playId, "*"),
+            genKey(RedisZSetKey.StartPointByTimestamp, this.playId),
         );
         await Promise.all(
             [

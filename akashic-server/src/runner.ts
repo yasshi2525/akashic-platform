@@ -56,7 +56,11 @@ export class Runner {
         if (this._runner) {
             const playId = parseInt(this._runner.playId);
             this._runner.stop();
-            await this._endPlay(playId);
+            try {
+                await this._endPlay(playId);
+            } catch (err) {
+                console.warn(`failed to end play (playId = "${playId}")`, err);
+            }
             await this._deletePlayId(playId);
         }
         if (this._session) {
