@@ -95,7 +95,7 @@ export class HttpServer {
             } else {
                 try {
                     await this._playManager.end(playId.toString());
-                    res.status(200);
+                    res.json({ ok: true });
                 } catch (err) {
                     res.status(422).send(
                         `failed to end. (playId = "${playId}, reason = "${(err as Error).message}")`,

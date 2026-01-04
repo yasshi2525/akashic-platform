@@ -12,8 +12,8 @@ const exit = async () => {
     await manager.destroy();
     process.exit(0);
 };
-process.on("SIGINT", exit);
-process.on("SIGTERM", exit);
+process.on("SIGINT", async () => await exit());
+process.on("SIGTERM", async () => await exit());
 
 const port = parseInt(process.env.PORT ?? "3032");
 http.listen(port);

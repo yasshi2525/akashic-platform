@@ -31,8 +31,8 @@ import { AMFlowServerManager } from "./AMFlowServerManager";
         await amfManager.destroy();
         process.exit(0);
     };
-    process.on("SIGINT", exit);
-    process.on("SIGTERM", exit);
+    process.on("SIGINT", async () => await exit());
+    process.on("SIGTERM", async () => await exit());
 
     const port = parseInt(process.env.PORT ?? "3031");
     http.listen(port);

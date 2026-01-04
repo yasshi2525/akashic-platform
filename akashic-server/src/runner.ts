@@ -56,8 +56,8 @@ export class Runner {
         if (this._runner) {
             const playId = parseInt(this._runner.playId);
             this._runner.stop();
-            this._endPlay(playId);
-            this._deletePlayId(playId);
+            await this._endPlay(playId);
+            await this._deletePlayId(playId);
         }
         if (this._session) {
             this._closeSession(this._session);
@@ -217,5 +217,6 @@ export class Runner {
                 `failed to end because of storage-server error. (cause = "${await res.text()}")`,
             );
         }
+        console.log(`${playId} received ${await res.json()}`);
     }
 }
