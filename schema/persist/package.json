@@ -1,0 +1,26 @@
+{
+  "name": "@yasshi2525/persist-schema",
+  "version": "0.1.0",
+  "description": "Game and play data schema",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts"
+  ],
+  "scripts": {
+    "setup": "prisma generate",
+    "reset": "prisma db push --force-reset && npm run setup"
+  },
+  "author": "yasshi2525",
+  "license": "MIT",
+  "devDependencies": {
+    "prettier": "^3.7.4",
+    "prisma": "^7.2.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.2.0",
+    "@prisma/client": "^7.2.0"
+  }
+}

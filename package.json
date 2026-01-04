@@ -8,6 +8,7 @@
     "schema/amflow/common",
     "schema/amflow/client",
     "schema/amflow/server",
+    "schema/persist",
     "playlogClient-like",
     "agvw-like",
     "akashic-server",
