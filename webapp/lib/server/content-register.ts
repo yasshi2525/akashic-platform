@@ -5,8 +5,8 @@ import * as path from "node:path";
 import fs from "node:fs";
 import Jszip from "jszip";
 import type { GameConfiguration } from "@akashic/game-configuration";
+import { prisma } from "@yasshi2525/persist-schema";
 import { supportedAkashicModes, supportedAkashicVersions } from "../types";
-import { prisma } from "./prisma";
 
 interface GameForm {
     publisherId: string;

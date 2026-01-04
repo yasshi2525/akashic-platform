@@ -9,8 +9,10 @@
     "dist/**/*.d.ts"
   ],
   "scripts": {
+    "prepare": "npm run setup",
     "setup": "prisma generate",
-    "reset": "prisma db push --force-reset && npm run setup"
+    "reset": "prisma db push --force-reset && npm run setup",
+    "build": "tsc"
   },
   "author": "yasshi2525",
   "license": "MIT",

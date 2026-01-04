@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@yasshi2525/persist-schema";
 import { GUEST_NAME, PlayInfo, PLAYLIST_LIMITS } from "@/lib/types";
-import { prisma } from "@/lib/server/prisma";
 
 export async function GET(req: NextRequest) {
     const keyword = req.nextUrl.searchParams.get("keyword") ?? undefined;

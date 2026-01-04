@@ -84,7 +84,7 @@ npm install
 > - セットアップスクリプトの定義
 > - 一括起動スクリプトの定義
 
-#### akashic-storage, akashic-server
+#### schema/persist, akashic-storage, akashic-server
 
 `.env.example` の記述を参考に `.env` を配置してください。
 
@@ -110,7 +110,7 @@ npm run run -w ./akashic-server
 npm run dev -w ./webapp
 ```
 
-設定変更は `./akashic-storage`, `./akashic-server`, `./webapp` 配下に `.env` を置くことでできます。 `.env.example` を参考にしてください。
+設定変更は `./schema/persist`, `./akashic-storage`, `./akashic-server`, `./webapp` 配下に `.env` を置くことでできます。 `.env.example` を参考にしてください。
 
 `./webapp/public/content/[id]` にゲームデータ（`game.zip`を解凍したもの）を配置すると当該ゲームで遊ぶことができます。
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@yasshi2525/persist-schema";
 import { PlayResponse } from "@/lib/types";
-import { prisma } from "@/lib/server/prisma";
 import { playlogServerUrl } from "@/lib/server/akashic";
 
 export async function GET(

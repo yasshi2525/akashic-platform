@@ -1,7 +1,7 @@
 "use server";
 
+import { prisma } from "@yasshi2525/persist-schema";
 import { GUEST_NAME } from "../types";
-import { prisma } from "./prisma";
 import { akashicServerUrl, publicBaseUrl } from "./akashic";
 
 interface PlayForm {
