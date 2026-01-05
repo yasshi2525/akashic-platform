@@ -17,6 +17,8 @@ function toMessage(message?: string | null): {
             return { severity: "success", message: "ゲームが投稿されました" };
         case messages.play.registerSuccessful:
             return { severity: "success", message: "部屋が作成されました" };
+        case messages.play.endSuccessful:
+            return { severity: "success", message: "部屋を終了しました" };
         default:
             return { severity: "error", message: "不明なエラーが発生しました" };
     }

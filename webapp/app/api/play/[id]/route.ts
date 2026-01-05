@@ -22,6 +22,7 @@ export async function GET(
             select: {
                 id: true,
                 contentId: true,
+                gameMasterId: true,
             },
         });
         if (!play) {
@@ -57,6 +58,7 @@ export async function GET(
             ok: true,
             playToken: json.playToken,
             contentId: play.contentId,
+            gameMasterId: play.gameMasterId,
         });
     } catch (err) {
         console.warn(

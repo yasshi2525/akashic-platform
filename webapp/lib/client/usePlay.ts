@@ -1,5 +1,6 @@
 import useSWR from "swr";
 import { PlayResponse } from "../types";
+import { useAuth } from "./useAuth";
 
 const fetcher = async (url: string) => {
     const res = (await (await fetch(url)).json()) as PlayResponse;
@@ -23,15 +24,18 @@ const fetcher = async (url: string) => {
     return {
         playToken: res.playToken,
         contentId: res.contentId,
+        gameMasterId: res.gameMasterId,
     };
 };
 
 export function usePlay(playId: string) {
+    const [user] = useAuth();
     const { isLoading, data, error } = useSWR(`/api/play/${playId}`, fetcher);
     return {
         isLoading,
         playToken: data?.playToken,
         contentId: data?.contentId,
+        isGameMaster: !!user && user.id === data?.gameMasterId,
         error: error ? error.message : undefined,
     };
 }

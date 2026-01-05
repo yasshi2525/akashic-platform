@@ -9,6 +9,7 @@ import {
 } from "@yasshi2525/agvw-like";
 import { User } from "@/lib/types";
 import { useAkashic } from "@/lib/client/useAkashic";
+import { PlayCloseDialog } from "./play-close-dialog";
 
 const warnings = ["EVENT_ON_SKIPPING"] as const;
 type WarningType = (typeof warnings)[number];
@@ -29,12 +30,14 @@ export function PlayView({
     playId,
     playToken,
     contentId,
+    isGameMaster,
     user,
     ref,
 }: {
     playId: string;
     playToken: string;
     contentId: number;
+    isGameMaster: boolean;
     user: User;
     ref: RefObject<HTMLDivElement | null>;
 }) {
@@ -123,6 +126,7 @@ export function PlayView({
                 onTouchEnd={handleTouchEvent}
                 onClick={handleMouseEvent}
             />
+            {isGameMaster ? <PlayCloseDialog playId={playId} /> : null}
             {error ? (
                 <Container maxWidth="md" sx={{ mt: 2 }}>
                     <Alert variant="filled" severity="error">

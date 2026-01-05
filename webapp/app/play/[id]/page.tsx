@@ -9,7 +9,8 @@ import { PlayView } from "@/components/play-view";
 
 export default function Play() {
     const { id } = useParams<{ id: string }>();
-    const { playToken, contentId, isLoading, error } = usePlay(id);
+    const { playToken, contentId, isGameMaster, isLoading, error } =
+        usePlay(id);
     const [user] = useAuth();
     const container = useRef<HTMLDivElement>(null);
 
@@ -36,6 +37,7 @@ export default function Play() {
             playId={id}
             playToken={playToken}
             contentId={contentId}
+            isGameMaster={isGameMaster}
             user={user}
             ref={container}
         />
