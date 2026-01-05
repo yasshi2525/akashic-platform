@@ -110,7 +110,7 @@ function PlayGrid({ list }: { list: PlayInfo[] }) {
                                         variant="body2"
                                         sx={{ ml: 1, mr: 2 }}
                                     >
-                                        ？人
+                                        {info.participants} 人
                                     </Typography>
                                     <AccessTime />
                                     <Typography

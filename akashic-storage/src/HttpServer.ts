@@ -88,6 +88,24 @@ export class HttpServer {
             }
         });
 
+        app.get("/participants", (req, res) => {
+            const playId = req.query.playId;
+            if (!playId?.toString()) {
+                res.status(400).send("no playId was specified.");
+            } else {
+                try {
+                    const participants = this._amfManager
+                        .getServer(playId.toString())
+                        .getParticipants();
+                    res.json({ participants });
+                } catch (err) {
+                    res.status(422).send(
+                        `failed to get participants. (playId = "${playId}, reason = "${(err as Error).message}")`,
+                    );
+                }
+            }
+        });
+
         app.get("/end", async (req, res) => {
             const playId = req.query.playId;
             if (!playId?.toString()) {

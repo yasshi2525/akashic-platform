@@ -99,6 +99,11 @@ export class AMFlowServer {
         await this._store.putStartPoint(startPoint);
     }
 
+    getParticipants() {
+        // アクティブインスタンスの接続数を除いている
+        return Math.max(this._clients.size - 1, 0);
+    }
+
     async destroy() {
         this._store.offTick(this._broadcastTickBound);
         this._store.offEvent(this._broadcastEventBound);

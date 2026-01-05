@@ -38,6 +38,7 @@ export interface PlayInfo {
     id: number;
     game: { title: string; iconURL: string };
     gameMaster: { name: string; iconURL?: string };
+    participants: number;
     createdAt: Date;
 }
 
