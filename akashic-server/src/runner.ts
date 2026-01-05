@@ -221,6 +221,5 @@ export class Runner {
                 `failed to end because of storage-server error. (cause = "${await res.text()}")`,
             );
         }
-        console.log(`${playId} received ${await res.json()}`);
     }
 }
