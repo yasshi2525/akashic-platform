@@ -165,4 +165,5 @@ export const initializeSocket = (
             handleError(err, cb);
         }
     });
+    amfManager.onConnect(socket);
 };
