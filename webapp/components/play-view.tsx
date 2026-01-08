@@ -74,6 +74,7 @@ export function PlayView({
             container: ref.current,
             width: ref.current.clientWidth,
             height: ref.current.clientHeight,
+            // NOTE: untrusted のときこの値が使用される。 akashic-cli-serve の値としている。
             trustedChildOrigin: /.*/,
         });
         const content = new GameContent({
