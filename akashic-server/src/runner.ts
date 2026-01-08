@@ -140,7 +140,7 @@ export class Runner {
                     session.createClient(
                         {
                             usePrimaryChannel: true,
-                            maxPreservingTickSize: 5,
+                            maxPreservingTickSize: 2,
                         },
                         (err, client) => {
                             if (err) {

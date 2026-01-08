@@ -6,7 +6,11 @@
 
 イベント名は [`@akashic/agvw`](https://github.com/akashic-games/agvw) で使用されている値に合わせています。
 
-ただし、 `sendTick` については通信回数を減らすためにまとめて送信できるようにしています。 ([`TickPack`](./common/src/tick.ts) 参照)
+### `sendTick` の省リソース化
+
+毎 tick 実行される `sendTick` について、通信回数を減らせるようまとめて送信する機能を提供しています。 ([`TickPack`](./common/src/tick.ts) 参照)
+
+ただし、数フレームの遅れでもクライアントの操作性に大きな影響がでたため、実行環境によってはまとめて送信しない方がよい可能性があります。
 
 > [!IMPORTANT]
 >
