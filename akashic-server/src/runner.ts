@@ -44,7 +44,7 @@ export class Runner {
             this._session = this._openSession(playId, playToken);
             const amflow = await this._createAMFlow(this._session);
             this._runner = await this._createRunner(playId, playToken, amflow);
-            this._initGame(amflow, playId);
+            this._initGame(amflow);
             return playId;
         } catch (err) {
             this._deletePlayId(playId);
@@ -208,8 +208,13 @@ export class Runner {
         return runner;
     }
 
-    _initGame(amflow: AMFlow, playId: number) {
-        amflow.sendEvent([0x0, 0, playId.toString(), this._param.playerName]);
+    _initGame(amflow: AMFlow) {
+        amflow.sendEvent([
+            0x0,
+            0,
+            this._param.playerId,
+            this._param.playerName,
+        ]);
     }
 
     async _endPlay(playId: number) {
