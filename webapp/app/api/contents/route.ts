@@ -4,6 +4,7 @@ import { GameInfo, GAMELIST_LIMITS } from "@/lib/types";
 
 export async function GET(req: NextRequest) {
     const keyword = req.nextUrl.searchParams.get("keyword") ?? undefined;
+    const userId = req.nextUrl.searchParams.get("userId") ?? undefined;
     const limits = parseInt(
         req.nextUrl.searchParams.get("limits") ?? GAMELIST_LIMITS.toString(),
     );
@@ -28,10 +29,31 @@ export async function GET(req: NextRequest) {
           }
         : undefined;
 
+    const filtersUserId: Awaited<
+        NonNullable<Parameters<typeof prisma.game.findMany>[0]>["where"]
+    > = userId
+        ? {
+              publisherId: userId,
+          }
+        : undefined;
+
+    const where: Awaited<
+        NonNullable<Parameters<typeof prisma.game.findMany>[0]>["where"]
+    > =
+        containsKeyword && filtersUserId
+            ? {
+                  AND: [containsKeyword, filtersUserId],
+              }
+            : containsKeyword
+              ? containsKeyword
+              : filtersUserId
+                ? filtersUserId
+                : undefined;
+
     const result = await prisma.game.findMany({
         take: limits,
         skip: page * limits,
-        where: containsKeyword,
+        where,
         orderBy: {
             id: "desc",
         },
@@ -50,25 +72,31 @@ export async function GET(req: NextRequest) {
                 select: {
                     id: true,
                     icon: true,
+                    updatedAt: true,
                 },
                 orderBy: {
                     id: "desc",
                 },
             },
+            createdAt: true,
         },
     });
     return NextResponse.json({
         ok: true,
-        data: result.map(({ id, title, description, publisher, versions }) => ({
-            id,
-            title,
-            iconURL: `/content/${versions[0].id}/${versions[0].icon}`,
-            publisher: {
-                id: publisher.id,
-                name: publisher.name!,
-            },
-            description,
-            contentId: versions[0].id,
-        })) satisfies GameInfo[],
+        data: result.map(
+            ({ id, title, description, publisher, versions, createdAt }) => ({
+                id,
+                title,
+                iconURL: `/content/${versions[0].id}/${versions[0].icon}`,
+                publisher: {
+                    id: publisher.id,
+                    name: publisher.name!,
+                },
+                description,
+                contentId: versions[0].id,
+                createdAt,
+                updatedAt: versions[0].updatedAt,
+            }),
+        ) satisfies GameInfo[],
     });
 }

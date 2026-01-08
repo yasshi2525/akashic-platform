@@ -30,6 +30,8 @@ export interface GameInfo {
     description: string;
     publisher: { id: string; name: string };
     contentId: number;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export const PLAYLIST_LIMITS = 12;
@@ -48,6 +50,29 @@ export const supportedAkashicModes: NicoliveSupportedModes[] = [
     "multi_admission",
 ];
 
+const contentErrReasons = [
+    "InvalidParams",
+    "NoGameJson",
+    "InvalidGameJson",
+    "UnsupportedVersion",
+    "UnsupportedMode",
+    "InternalError",
+] as const;
+export type ContentErrorType = (typeof contentErrReasons)[number];
+export type ContentErrorResponse = {
+    ok: false;
+    reason: ContentErrorType;
+};
+export type ContentResponse =
+    | { ok: true; contentId: number }
+    | ContentErrorResponse;
+
+const gameErrReasons = ["InvalidParams", "NotFound", "InternalError"] as const;
+export type GameErrorType = (typeof gameErrReasons)[number];
+export type GameResponse =
+    | { ok: true; data: GameInfo }
+    | { ok: false; reason: GameErrorType };
+
 const playErrReasons = [
     "InvalidParams",
     "ClosedPlay",
@@ -60,9 +85,12 @@ export type PlayResponse =
 
 export const messageKey = "message";
 export const messages = {
-    content: { registerSuccessful: "registerContentSuccessful" },
+    content: {
+        registerSuccessful: "registerContentSuccessful",
+        editSuccessful: "editContentSuccessful",
+    },
     play: {
         registerSuccessful: "registerPlaySuccessful",
         endSuccessful: "endPlaySuccessful",
     },
-};
+} as const;

@@ -4,7 +4,7 @@ import { GameInfo, GAMELIST_LIMITS } from "../types";
 const fetcher = async (url: string) =>
     (await (await fetch(url)).json()).data as GameInfo[];
 
-export function useGameList(keyword?: string) {
+export function useGameList(keyword: string | undefined, userId?: string) {
     function getKey(page: number, previousData: GameInfo[]) {
         if (previousData && !previousData.length) {
             return null;
@@ -12,6 +12,9 @@ export function useGameList(keyword?: string) {
         const query = new URLSearchParams({ page: page.toString() });
         if (keyword) {
             query.set("keyword", keyword);
+        }
+        if (userId) {
+            query.set("userId", userId);
         }
         return `/api/contents?${query.toString()}`;
     }

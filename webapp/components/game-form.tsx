@@ -1,7 +1,6 @@
 "use client";
 
 import { ChangeEvent, useState, useOptimistic } from "react";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
     Alert,
@@ -18,18 +17,20 @@ import {
 } from "@mui/material";
 import {
     AddCircle,
-    ArrowBack,
+    EditNote,
     FileUpload,
     Image as ImageIcon,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import {
+    ContentErrorResponse,
     messageKey,
     messages,
     supportedAkashicModes,
     supportedAkashicVersions,
 } from "@/lib/types";
 import { registerContent } from "@/lib/server/content-register";
+import { editContent } from "@/lib/server/content-edit";
 import { useAuth } from "@/lib/client/useAuth";
 import { SignInAlert } from "./sign-in-alert";
 
@@ -37,6 +38,7 @@ const VisuallyHiddenInput = styled("input")();
 
 type GameFormProps = Partial<{
     gameId: number;
+    contentId: number;
     title: string;
     iconUrl: string;
     description: string;
@@ -44,6 +46,7 @@ type GameFormProps = Partial<{
 
 export function GameForm({
     gameId,
+    contentId,
     title: initialTitle,
     iconUrl,
     description: initialDescription,
@@ -91,73 +94,99 @@ export function GameForm({
         setDescription(event.target.value);
     }
 
+    function handleServerErr(res: ContentErrorResponse) {
+        switch (res.reason) {
+            case "InvalidParams":
+                setServerError(
+                    "内部エラーが発生しました。入力内容を確認してもう一度投稿してください。",
+                );
+                break;
+            case "NoGameJson":
+                setServerError(
+                    "不正なゲームデータファイルです。game.json が含まれていません。",
+                );
+                break;
+            case "InvalidGameJson":
+                setServerError(
+                    "不正なゲームデータファイルです。game.json がJSON形式ではありません",
+                );
+                break;
+            case "UnsupportedVersion":
+                setServerError(
+                    "非サポートのバージョンが指定されています。" +
+                        "game.json の environment.sandbox-runtime の値を確認してください。" +
+                        `(サポート: ${supportedAkashicVersions.map((v) => `"${v}"`).join()})`,
+                );
+                break;
+            case "UnsupportedMode":
+                setServerError(
+                    "非サポートのモードが指定されています。" +
+                        "game.json の environment.nicolive.supportedModes の値を確認してください。" +
+                        `(サポート: ${supportedAkashicModes.map((m) => `"${m}"`).join()})`,
+                );
+                break;
+            case "InternalError":
+            default:
+                setServerError(
+                    "予期しないエラーが発生しました。時間をおいてリトライしてください。",
+                );
+                break;
+        }
+    }
+
     async function handleSubmit() {
-        if (!title) {
-            setTitleError("ゲームタイトルを入力してください。");
-        }
-        if (!gameFile) {
-            setGameFileError("ゲームファイルをアップロードしてください。");
-        }
-        if (!iconFile) {
-            setIconFileError("ゲームアイコンをアップロードしてください。");
-        }
-        if (!description) {
-            setDescriptionError("ゲーム説明を入力してください。");
+        if (gameId == null || contentId == null) {
+            if (!title) {
+                setTitleError("ゲームタイトルを入力してください。");
+            }
+            if (!gameFile) {
+                setGameFileError("ゲームファイルをアップロードしてください。");
+            }
+            if (!iconFile) {
+                setIconFileError("ゲームアイコンをアップロードしてください。");
+            }
+            if (!description) {
+                setDescriptionError("ゲーム説明を入力してください。");
+            }
         }
         if (!user) {
             setServerError("サインインしてください。");
         }
-        if (user && title && gameFile && iconFile && description) {
+        if (user) {
             setIsSending(true);
-            const res = await registerContent({
-                publisherId: user.id,
-                gameId,
-                title,
-                gameFile,
-                iconFile,
-                description,
-            });
-            if (res.ok) {
-                redirect(
-                    `/?${messageKey}=${messages.content.registerSuccessful}`,
-                );
+            if (gameId == null || contentId == null) {
+                if (title && gameFile && iconFile && description) {
+                    const res = await registerContent({
+                        publisherId: user.id,
+                        title,
+                        gameFile,
+                        iconFile,
+                        description,
+                    });
+                    if (res.ok) {
+                        redirect(
+                            `/?${messageKey}=${messages.content.registerSuccessful}`,
+                        );
+                    } else {
+                        handleServerErr(res);
+                    }
+                }
             } else {
-                switch (res.reason) {
-                    case "InvalidParams":
-                        setServerError(
-                            "内部エラーが発生しました。入力内容を確認してもう一度投稿してください。",
-                        );
-                        break;
-                    case "NoGameJson":
-                        setServerError(
-                            "不正なゲームデータファイルです。game.json が含まれていません。",
-                        );
-                        break;
-                    case "InvalidGameJson":
-                        setServerError(
-                            "不正なゲームデータファイルです。game.json がJSON形式ではありません",
-                        );
-                        break;
-                    case "UnsupportedVersion":
-                        setServerError(
-                            "非サポートのバージョンが指定されています。" +
-                                "game.json の environment.sandbox-runtime の値を確認してください。" +
-                                `(サポート: ${supportedAkashicVersions.map((v) => `"${v}"`).join()})`,
-                        );
-                        break;
-                    case "UnsupportedMode":
-                        setServerError(
-                            "非サポートのモードが指定されています。" +
-                                "game.json の environment.nicolive.supportedModes の値を確認してください。" +
-                                `(サポート: ${supportedAkashicModes.map((m) => `"${m}"`).join()})`,
-                        );
-                        break;
-                    case "InternalError":
-                    default:
-                        setServerError(
-                            "予期しないエラーが発生しました。時間をおいてリトライしてください。",
-                        );
-                        break;
+                const res = await editContent({
+                    gameId,
+                    contentId,
+                    publisherId: user.id,
+                    title,
+                    gameFile,
+                    iconFile,
+                    description,
+                });
+                if (res.ok) {
+                    redirect(
+                        `/?${messageKey}=${messages.content.editSuccessful}`,
+                    );
+                } else {
+                    handleServerErr(res);
                 }
             }
             setIsSending(false);
@@ -181,17 +210,14 @@ export function GameForm({
             }}
         >
             <Stack width="100%" direction="row" spacing={2} alignItems="center">
-                <Button
-                    component={Link}
-                    href="/"
-                    variant="text"
-                    size="large"
-                    startIcon={<ArrowBack fontSize="large" />}
-                    sx={{ flex: 1, justifyContent: "start" }}
-                />
-                <AddCircle fontSize="large" />
+                <Box sx={{ flex: 1 }} />
+                {gameId == null ? (
+                    <AddCircle fontSize="large" />
+                ) : (
+                    <EditNote fontSize="large" />
+                )}
                 <Typography variant="h4" component="h1">
-                    ゲームを投稿する
+                    ゲームを{gameId == null ? "投稿" : "更新"}する
                 </Typography>
                 <Box sx={{ flex: 1 }} />
             </Stack>
@@ -393,17 +419,18 @@ export function GameForm({
                                     size="large"
                                     fullWidth
                                     color={
-                                        !title ||
-                                        !gameFile ||
-                                        !iconFile ||
-                                        !description
+                                        gameId == null &&
+                                        (!title ||
+                                            !gameFile ||
+                                            !iconFile ||
+                                            !description)
                                             ? "inherit"
                                             : "primary"
                                     }
                                     loading={sending}
                                     disabled={sending}
                                 >
-                                    ゲームを投稿
+                                    ゲームを{gameId == null ? "投稿" : "更新"}
                                 </Button>
                             </Box>
                             {serverError ? (

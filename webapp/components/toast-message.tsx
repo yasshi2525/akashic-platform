@@ -15,6 +15,8 @@ function toMessage(message?: string | null): {
     switch (message) {
         case messages.content.registerSuccessful:
             return { severity: "success", message: "ゲームが投稿されました" };
+        case messages.content.editSuccessful:
+            return { severity: "success", message: "ゲームが更新されました" };
         case messages.play.registerSuccessful:
             return { severity: "success", message: "部屋が作成されました" };
         case messages.play.endSuccessful:

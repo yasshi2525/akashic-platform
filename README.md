@@ -33,6 +33,14 @@
 
 ![アーキテクチャ図](./architecture.png)
 
+> [!NOTE]
+>
+> クラウドにデプロイする際、必要な作業
+>
+> - public 配下 (akashic, content) を外部ストレージ
+> - redis
+> - postgreSQL
+
 ## リポジトリ構成
 
 ### webapp

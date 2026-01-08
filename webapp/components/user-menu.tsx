@@ -11,7 +11,12 @@ import {
     Typography,
     useTheme,
 } from "@mui/material";
-import { AddCircle, Logout, Settings } from "@mui/icons-material";
+import {
+    AddCircle,
+    FormatListBulleted,
+    Logout,
+    Settings,
+} from "@mui/icons-material";
 import { User } from "@/lib/types";
 import { useAuth } from "@/lib/client/useAuth";
 import { UserLabel } from "./user-label";
@@ -60,7 +65,7 @@ function AuthorizedMenu({ user, anchorEl, handleClose }: AuthorizedMenuProps) {
             onClose={handleClose}
             onClick={handleClose}
         >
-            <MenuItem divider={true} sx={{ pb: 1 }}>
+            <MenuItem>
                 <Button
                     href="/new-game"
                     style={{
@@ -70,6 +75,19 @@ function AuthorizedMenu({ user, anchorEl, handleClose }: AuthorizedMenuProps) {
                     <AddCircle />
                     <Typography variant="body1" sx={{ ml: 1 }}>
                         ゲームを投稿
+                    </Typography>
+                </Button>
+            </MenuItem>
+            <MenuItem divider={true} sx={{ pb: 1 }}>
+                <Button
+                    href="/edit-game"
+                    style={{
+                        color: "inherit",
+                    }}
+                >
+                    <FormatListBulleted />
+                    <Typography variant="body1" sx={{ ml: 1 }}>
+                        投稿ゲーム一覧
                     </Typography>
                 </Button>
             </MenuItem>
