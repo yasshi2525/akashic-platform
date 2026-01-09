@@ -1,6 +1,11 @@
 import type { AMFlow } from "@akashic/amflow";
 import type { Event } from "@akashic/playlog";
-import type { GameDriverInitializeParameterObject } from "@akashic/game-driver";
+import type * as g from "@akashic/akashic-engine";
+import type {
+    Game,
+    GameDriver,
+    GameDriverInitializeParameterObject,
+} from "@akashic/game-driver";
 import type { ProxyAudioHandlerSet } from "@akashic/pdi-browser/lib/full/plugin/ProxyAudioPlugin/ProxyAudioHandlerSet";
 import { Trigger } from "@akashic/trigger";
 import { ExecutionMode, ProtocolType } from "./akashic-gameview";
@@ -15,11 +20,7 @@ import { setupAMFlowProxy } from "./bridge/setupAMFlowPloxy";
 import { setupAudioPdiProxy } from "./bridge/setupAudioPdiProxy";
 import { EngineConfig, GameLoaderCustomizer } from "./GameContent";
 import { GameViewSharedObject } from "./SharedObject";
-import {
-    GameLoader,
-    GameLoaderStartParameterObject,
-    MinimalGame,
-} from "./GameLoader";
+import { GameLoader, GameLoaderStartParameterObject } from "./GameLoader";
 import {
     ExternalPluginSignatureCaller,
     TrustedFunctionArguments,
@@ -37,17 +38,15 @@ interface GameProxyParameterObject {
     fps: number;
 }
 
-class GameProxy implements MinimalGame {
+class GameProxy implements Partial<Game> {
     playId: string;
     width: number;
     height: number;
     fps: number;
-    external: {
-        send?: (value: unknown) => void;
-    };
+    external: any;
     skippingChangedTrigger: Trigger<boolean>;
     _started: Trigger<void>;
-    _loaded: Trigger<void>;
+    _loaded: Trigger<g.Game>;
 
     constructor(param: GameProxyParameterObject) {
         this.playId = param.playId;
@@ -58,12 +57,6 @@ class GameProxy implements MinimalGame {
         this.skippingChangedTrigger = new Trigger();
         this._started = new Trigger();
         this._loaded = new Trigger();
-    }
-
-    _setMuted(isMuted: boolean) {
-        // no-op
-        // NOTE:  GameLoader のインタフェース定義に合わせてダミー実装。
-        // これが呼ばれることはない
     }
 }
 
@@ -105,8 +98,8 @@ export class UntrustedGameLoader implements GameLoader {
     _amflowClient: AMFlow | null;
     _externalPluginCaller: ExternalPluginSignatureCaller | undefined;
     _isPaused: boolean;
-    game: GameProxy | null;
-    driver: GameDriverProxy | null;
+    game: Game | null;
+    driver: GameDriver | null;
     fps: number;
     resizablePrimarySurface: boolean;
     _teardownAudioPdiProxy: (() => void) | null;
@@ -479,7 +472,7 @@ export class UntrustedGameLoader implements GameLoader {
         this.game = new GameProxy({
             ...data!,
             playId: this._param!.playConfig.playId,
-        } as GameProxyParameterObject);
+        } as GameProxyParameterObject) as Game;
         // NOTE: _param は start() で代入済み
         if (this._param!.externalPluginSignature) {
             this._externalPluginCaller = new ExternalPluginSignatureCaller(
@@ -576,7 +569,8 @@ export class UntrustedGameLoader implements GameLoader {
     }
 
     _handleGameLoaded() {
-        this.game?._loaded.fire();
+        // NOTE: 元のコードでは引数なしで呼び出しているが、型仕様にあわせた。
+        this.game?._loaded.fire(this.game);
     }
 
     _handleGameStarted() {

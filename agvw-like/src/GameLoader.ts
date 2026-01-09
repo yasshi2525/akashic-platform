@@ -1,10 +1,6 @@
-import type {
-    GameMainParameterObject,
-    Player,
-    Trigger,
-} from "@akashic/akashic-engine";
+import type { GameMainParameterObject, Player } from "@akashic/akashic-engine";
 import type { StartPoint } from "@akashic/amflow";
-import type { Game } from "@akashic/game-driver";
+import type { Game, GameDriver } from "@akashic/game-driver";
 import type { TickList, Event } from "@akashic/playlog";
 import type { ExecutionMode } from "./akashic-gameview";
 import { FunctionTableObjectMetadata } from "./ExternalPluginSignatureCaller";
@@ -37,15 +33,6 @@ export interface PlayConfig {
     replayOriginDate?: number;
 }
 
-export interface MinimalGame {
-    width: number;
-    height: number;
-    abortTrigger?: Trigger<void>;
-    _setMuted(isMuted: boolean): void;
-}
-
-export interface MinimalGameDriver {}
-
 export interface GameLoaderStartParameterObject {
     pause: boolean;
     player: Player;
@@ -62,8 +49,8 @@ export interface GameLoaderStartParameterObject {
 }
 
 export interface GameLoader {
-    game: MinimalGame | null;
-    driver: MinimalGameDriver | null;
+    game: Game | null;
+    driver: GameDriver | null;
     fps: number;
     resizablePrimarySurface: boolean;
     start(param: GameLoaderStartParameterObject): void;
