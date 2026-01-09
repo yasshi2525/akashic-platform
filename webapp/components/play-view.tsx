@@ -31,6 +31,8 @@ export function PlayView({
     playToken,
     contentId,
     isGameMaster,
+    contentWidth,
+    contentHeight,
     user,
     ref,
 }: {
@@ -38,6 +40,8 @@ export function PlayView({
     playToken: string;
     contentId: number;
     isGameMaster: boolean;
+    contentWidth: number;
+    contentHeight: number;
     user: User;
     ref: RefObject<HTMLDivElement | null>;
 }) {
@@ -129,7 +133,7 @@ export function PlayView({
                 component="div"
                 ref={ref}
                 sx={{
-                    aspectRatio: 16 / 9,
+                    aspectRatio: contentWidth / contentHeight,
                 }}
                 onMouseDown={handleMouseEvent}
                 onMouseMove={handleMouseEvent}

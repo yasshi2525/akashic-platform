@@ -80,7 +80,16 @@ const playErrReasons = [
 ] as const;
 export type PlayErrorType = (typeof playErrReasons)[number];
 export type PlayResponse =
-    | { ok: true; playToken: string; contentId: number; gameMasterId: string }
+    | {
+          ok: true;
+          data: {
+              playToken: string;
+              contentId: number;
+              gameMasterId: string;
+              width: number;
+              height: number;
+          };
+      }
     | { ok: false; reason: PlayErrorType };
 
 export const messageKey = "message";

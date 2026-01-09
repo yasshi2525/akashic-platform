@@ -21,11 +21,7 @@ const fetcher = async (url: string) => {
                 );
         }
     }
-    return {
-        playToken: res.playToken,
-        contentId: res.contentId,
-        gameMasterId: res.gameMasterId,
-    };
+    return res.data;
 };
 
 export function usePlay(playId: string) {
@@ -33,9 +29,15 @@ export function usePlay(playId: string) {
     const { isLoading, data, error } = useSWR(`/api/play/${playId}`, fetcher);
     return {
         isLoading,
-        playToken: data?.playToken,
-        contentId: data?.contentId,
-        isGameMaster: !!user && user.id === data?.gameMasterId,
+        data: data
+            ? {
+                  playToken: data.playToken,
+                  contentId: data.contentId,
+                  isGameMaster: !!user && user.id === data.gameMasterId,
+                  contentWidth: data.width,
+                  contentHeight: data.height,
+              }
+            : undefined,
         error: error ? error.message : undefined,
     };
 }

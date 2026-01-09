@@ -9,8 +9,7 @@ import { PlayView } from "@/components/play-view";
 
 export default function Play() {
     const { id } = useParams<{ id: string }>();
-    const { playToken, contentId, isGameMaster, isLoading, error } =
-        usePlay(id);
+    const { isLoading, data, error } = usePlay(id);
     const [user] = useAuth();
     const container = useRef<HTMLDivElement>(null);
 
@@ -21,7 +20,7 @@ export default function Play() {
             </Container>
         );
     }
-    if (error || !playToken || !contentId || !user) {
+    if (error || !data || !user) {
         return (
             <Container maxWidth="md" sx={{ mt: 2 }}>
                 <Alert variant="outlined" severity="error">
@@ -35,9 +34,11 @@ export default function Play() {
     return (
         <PlayView
             playId={id}
-            playToken={playToken}
-            contentId={contentId}
-            isGameMaster={isGameMaster}
+            playToken={data.playToken}
+            contentId={data.contentId}
+            isGameMaster={data.isGameMaster}
+            contentWidth={data.contentWidth}
+            contentHeight={data.contentHeight}
             user={user}
             ref={container}
         />

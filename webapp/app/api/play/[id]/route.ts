@@ -1,7 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@yasshi2525/persist-schema";
+import { GameConfiguration } from "@akashic/game-configuration";
+import { Play, prisma } from "@yasshi2525/persist-schema";
 import { PlayResponse } from "@/lib/types";
-import { playlogServerUrl } from "@/lib/server/akashic";
+import { playlogServerUrl, publicBaseUrl } from "@/lib/server/akashic";
+
+async function fetchViewSize(contentId: number) {
+    const res = (await (
+        await fetch(`${publicBaseUrl}/content/${contentId}/game.json`)
+    ).json()) as GameConfiguration;
+    return {
+        width: res.width ?? 1280,
+        height: res.height ?? 720,
+    };
+}
+
+async function fetchPlayToken(play: Pick<Play, "id" | "contentId">) {
+    const res = await fetch(`${playlogServerUrl}/join?playId=${play.id}`);
+    if (res.status !== 200) {
+        throw new Error(
+            `playlog server responded error message. (contentId = "${play.contentId}", detail = "${await res.text()}")`,
+        );
+    }
+    const json = (await res.json()) as { playToken: string };
+    if (!json.playToken) {
+        throw new Error(
+            `playlog server responded invalid message. (contentId = "${play.contentId}", detail = "${json}")`,
+        );
+    }
+    return json.playToken;
+}
 
 export async function GET(
     req: NextRequest,
@@ -31,40 +58,17 @@ export async function GET(
                 reason: "ClosedPlay",
             });
         }
-
-        const res = await fetch(`${playlogServerUrl}/join?playId=${playId}`);
-        if (res.status !== 200) {
-            console.warn(
-                `failed to join (playId = "${playId}", reason = "server error", detail = "${await res.text()}")`,
-            );
-            return NextResponse.json({
-                ok: false,
-                reason: "InternalError",
-            });
-        }
-        const json = (await res.json()) as { playToken: string };
-        if (!json.playToken) {
-            console.warn(
-                `failed to join (playId = "${playId}", reason = "server error")`,
-                json,
-            );
-            return NextResponse.json({
-                ok: false,
-                reason: "InternalError",
-            });
-        }
-
         return NextResponse.json({
             ok: true,
-            playToken: json.playToken,
-            contentId: play.contentId,
-            gameMasterId: play.gameMasterId,
+            data: {
+                playToken: await fetchPlayToken(play),
+                contentId: play.contentId,
+                gameMasterId: play.gameMasterId,
+                ...(await fetchViewSize(play.contentId)),
+            },
         });
     } catch (err) {
-        console.warn(
-            `failed to join (playId = "${playId}", reason = "database error")`,
-            err,
-        );
+        console.warn(`failed to join (playId = "${playId}")`, err);
         return NextResponse.json({
             ok: false,
             reason: "InternalError",
