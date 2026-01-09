@@ -504,7 +504,7 @@ export class GameContent extends Content {
     }
 
     override destroy() {
-        if (this._destroyed) {
+        if (!this._destroyed) {
             if (this._loader) {
                 this._loader.stopGame();
                 // NOTE: 元の実装に合わせて undefined に設定. destroy() 後の操作はないと仮定し、型は | null に絞ってる
