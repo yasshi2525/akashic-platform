@@ -2,13 +2,9 @@
 
 import { MouseEvent, RefObject, TouchEvent, useEffect, useState } from "react";
 import { Alert, Container, Snackbar } from "@mui/material";
-import {
-    AkashicGameView,
-    ExecutionMode,
-    GameContent,
-} from "@yasshi2525/agvw-like";
 import { User } from "@/lib/types";
 import { useAkashic } from "@/lib/client/useAkashic";
+import { AkashicContainer } from "@/lib/client/akashic-container";
 import { PlayCloseDialog } from "./play-close-dialog";
 
 const warnings = ["EVENT_ON_SKIPPING"] as const;
@@ -74,57 +70,19 @@ export function PlayView({
         if (!ref.current) {
             return;
         }
-        const view = new AkashicGameView({
-            container: ref.current,
-            width: ref.current.clientWidth,
-            height: ref.current.clientHeight,
-            // NOTE: untrusted のときこの値が使用される。 akashic-cli-serve の値としている。
-            trustedChildOrigin: /.*/,
+        const container = new AkashicContainer({
+            parent: ref.current,
+            user,
+            contentId,
+            playId,
+            playToken,
+            playlogServerUrl,
+            onSkip: setSkipping,
+            onError: setError,
         });
-        const content = new GameContent({
-            player: {
-                id: user.id,
-                name: user.name,
-            },
-            playConfig: {
-                playId,
-                playToken,
-                executionMode: ExecutionMode.Passive,
-                playlogServerUrl,
-            },
-            contentUrl: `/api/content/${contentId}`,
-        });
-        const observer = new ResizeObserver((entries) => {
-            for (const e of entries.filter((e) => e.target === ref.current)) {
-                content.setContentArea({
-                    x: 0,
-                    y: 0,
-                    width: e.contentRect.width,
-                    height: e.contentRect.height,
-                });
-            }
-        });
-        observer.observe(ref.current);
-        content.addSkippingListener({
-            onSkip: (isSkipping) => {
-                setSkipping(isSkipping);
-            },
-        });
-        content.addErrorListener({
-            onError: (err) => {
-                setError(
-                    "予期しないエラーが発生しました。画面を更新してください。",
-                );
-                console.error(err);
-                content.pause();
-            },
-        });
-        view.addContent(content);
         return () => {
-            observer.disconnect();
-            // NOTE: agvw 実装は作成した div 要素を削除しないので手動で削除している
-            view._gameContentShared.gameViewElement.destroy();
-            view.destroy();
+            // Promiseだが、遅延終了しても影響なし
+            container.destroy();
         };
     }, []);
     return (
