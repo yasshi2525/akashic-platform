@@ -90,6 +90,17 @@ export function PlayView({
             },
             contentUrl: `/api/content/${contentId}`,
         });
+        const observer = new ResizeObserver((entries) => {
+            for (const e of entries.filter((e) => e.target === ref.current)) {
+                content.setContentArea({
+                    x: 0,
+                    y: 0,
+                    width: e.contentRect.width,
+                    height: e.contentRect.height,
+                });
+            }
+        });
+        observer.observe(ref.current);
         content.addSkippingListener({
             onSkip: (isSkipping) => {
                 setSkipping(isSkipping);
@@ -106,6 +117,7 @@ export function PlayView({
         });
         view.addContent(content);
         return () => {
+            observer.disconnect();
             // NOTE: agvw 実装は作成した div 要素を削除しないので手動で削除している
             view._gameContentShared.gameViewElement.destroy();
             view.destroy();
