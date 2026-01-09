@@ -4,7 +4,6 @@
 # generating by scripts
 /public/akashic
 /config
-/lib/generated
 
 # user data
 /public/content
