@@ -1,7 +1,12 @@
 import type { AMFlow } from "@akashic/amflow";
 import { RunnerV3 } from "@akashic/headless-driver";
+import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
 import { prisma } from "@yasshi2525/persist-schema";
-import { Session, SessionLike } from "@yasshi2525/playlog-client-like";
+import {
+    AMFlowClient,
+    Session,
+    SessionLike,
+} from "@yasshi2525/playlog-client-like";
 
 /**
  * `akashic-gameview` の ProtocolType と同じ。
@@ -21,15 +26,18 @@ export interface RunnerParameterObject {
     playerId: string;
     playerUserId?: string;
     playerName: string;
+    onDestroy: (playId: number) => void;
 }
 
 export class Runner {
     _param: RunnerParameterObject;
     _runner?: RunnerV3;
     _session?: SessionLike;
+    _onPlayEndBound: (reason: PlayEndReason) => void;
 
     constructor(param: RunnerParameterObject) {
         this._param = param;
+        this._onPlayEndBound = this._onPlayEnd.bind(this);
     }
 
     async start() {
@@ -43,6 +51,7 @@ export class Runner {
             const playToken = await this._fetchPlayToken(playId);
             this._session = this._openSession(playId, playToken);
             const amflow = await this._createAMFlow(this._session);
+            this._subscribePlayEnd(amflow);
             this._runner = await this._createRunner(playId, playToken, amflow);
             this._initGame(amflow);
             return playId;
@@ -52,16 +61,25 @@ export class Runner {
         }
     }
 
-    async end() {
+    async end(reason: PlayEndReason, notifyPlaylogServer = true) {
         if (this._runner) {
             const playId = parseInt(this._runner.playId);
+            // playlogServer に終了要求を出すと PlayEnd が飛んでくる。
+            // onPlayEnd が反応して二重削除してしまわないようリスナを解除
+            this._unsubscribePlayEnd(this._runner);
             this._runner.stop();
-            try {
-                await this._endPlay(playId);
-            } catch (err) {
-                console.warn(`failed to end play (playId = "${playId}")`, err);
+            if (notifyPlaylogServer) {
+                try {
+                    await this._endPlay(playId, reason);
+                } catch (err) {
+                    console.warn(
+                        `failed to end play (playId = "${playId}")`,
+                        err,
+                    );
+                }
             }
             await this._deletePlayId(playId);
+            this._param.onDestroy(playId);
         }
         if (this._session) {
             this._closeSession(this._session);
@@ -132,7 +150,7 @@ export class Runner {
     }
 
     async _createAMFlow(session: SessionLike) {
-        return await new Promise<AMFlow>((resolve, reject) => {
+        return await new Promise<AMFlowClient>((resolve, reject) => {
             session.open((err) => {
                 if (err) {
                     reject(err);
@@ -153,6 +171,20 @@ export class Runner {
                 }
             });
         });
+    }
+
+    _subscribePlayEnd(amflow: AMFlowClient) {
+        amflow.onPlayEnd(this._onPlayEndBound);
+    }
+
+    _unsubscribePlayEnd(runner: RunnerV3) {
+        (runner.amflow as AMFlowClient).offPlayEnd(this._onPlayEndBound);
+    }
+
+    _onPlayEnd(reason: PlayEndReason) {
+        // playlogServer から終了要求がくるのは playlogServer のシャットダウン時
+        // playlogServer 側で終了処理は実行済みなため、通知はしない
+        this.end(reason, false);
     }
 
     async _createRunner(playId: number, playToken: string, amflow: AMFlow) {
@@ -192,12 +224,12 @@ export class Runner {
                     });
             },
         }));
-        runner.errorTrigger.add((err) => {
+        runner.errorTrigger.add(async (err) => {
             console.error(
                 `error on runner "${runner.runnerId}", playId = "${playId}")`,
                 err,
             );
-            runner.stop();
+            await this.end("INTERNAL_ERROR");
         });
         const game = await runner.start({ paused: false });
         if (!game) {
@@ -217,9 +249,9 @@ export class Runner {
         ]);
     }
 
-    async _endPlay(playId: number) {
+    async _endPlay(playId: number, reason: PlayEndReason) {
         const res = await fetch(
-            `${this._param.storageUrl}/end?playId=${playId}`,
+            `${this._param.storageUrl}/end?playId=${playId}&reason=${reason}`,
         );
         if (res.status !== 200) {
             console.warn(

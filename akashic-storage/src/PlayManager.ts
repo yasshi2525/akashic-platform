@@ -1,3 +1,4 @@
+import type { PlayEndReason } from "@yasshi2525/amflow-server-event-schema";
 import { AMFlowServerManager } from "./AMFlowServerManager";
 
 interface PlayManagerParameterObject {
@@ -15,7 +16,7 @@ export class PlayManager {
         return this._amfManager.start(playId);
     }
 
-    async end(playId: string) {
-        await this._amfManager.end(playId);
+    async end(playId: string, reason: PlayEndReason) {
+        await this._amfManager.end(playId, reason);
     }
 }

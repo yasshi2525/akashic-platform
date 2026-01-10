@@ -5,6 +5,7 @@ export {
     ServerEventName as ListenEventName,
     srvEvMap as ListenEvent,
     ServerEventSchema as ListenSchema,
+    PlayEndReason,
 } from "./common";
 export * from "./tick";
 export * from "./error";

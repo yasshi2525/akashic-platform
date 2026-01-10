@@ -96,7 +96,6 @@ async function waitUntilPrepare(driver: GameDriver) {
             waitUntilSceneLoad(driver._game).then(() => resolve());
         } else {
             driver.gameCreatedTrigger.addOnce((game) => {
-                console.log("game created");
                 waitUntilSceneLoad(game).then(() => resolve());
             });
         }

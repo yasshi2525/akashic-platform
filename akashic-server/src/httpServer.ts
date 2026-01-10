@@ -1,6 +1,7 @@
 import { Server } from "node:http";
 import * as express from "express";
 import { Express } from "express";
+import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
 import { RunnerManager } from "./runnerManager";
 
 interface HttpServerParameterObject {
@@ -68,6 +69,7 @@ export class HttpServer {
                     playerId: playerId.toString(),
                     playerUserId: playerUserId?.toString(),
                     playerName: playerName.toString(),
+                    onDestroy: (playId) => this._manager.unregister(playId),
                 });
                 res.json({ playId });
             } catch (err) {
@@ -78,11 +80,16 @@ export class HttpServer {
 
         app.get("/end", async (req, res) => {
             const playId = req.query.playId;
+            const reason = req.query.reason;
             if (!playId?.toString()) {
                 res.status(400).send("no playId was specified.");
             } else {
                 try {
-                    await this._manager.end(parseInt(playId.toString()));
+                    await this._manager.end(
+                        parseInt(playId.toString()),
+                        (reason?.toString() ??
+                            "INTERNAL_ERROR") as PlayEndReason,
+                    );
                     res.json({ ok: true });
                 } catch (err) {
                     res.status(500);

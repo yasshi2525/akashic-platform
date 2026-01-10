@@ -1,3 +1,5 @@
+import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
+import type { AMFlowClient } from "@yasshi2525/playlog-client-like";
 import {
     AkashicGameView,
     ExecutionMode,
@@ -15,6 +17,7 @@ interface AkashicContainerCreateParameterObject {
     playlogServerUrl: string;
     onSkip: (skip: boolean) => void;
     onError: (errMsg: string) => void;
+    onPlayEnd: (reason: PlayEndReason) => void;
 }
 
 export class AkashicContainer {
@@ -26,7 +29,6 @@ export class AkashicContainer {
 
     constructor() {
         this._creationQueue = [];
-        console.log("new AkashicContainer");
     }
 
     create(param: AkashicContainerCreateParameterObject) {
@@ -93,6 +95,13 @@ export class AkashicContainer {
                 );
                 console.error(err);
                 content.pause();
+            },
+        });
+        content.addContentLoadListener({
+            onLoad: () => {
+                const amflowcontent = content.getGameDriver()!._platform
+                    .amflow as AMFlowClient;
+                amflowcontent.onPlayEnd((reason) => param.onPlayEnd(reason));
             },
         });
         return content;

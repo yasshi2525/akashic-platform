@@ -1,5 +1,4 @@
 import { io, Socket, SocketOptions } from "socket.io-client";
-import type { AMFlow } from "@akashic/amflow";
 import { ProtocolType } from "./akashic-gameview";
 import { AMFlowClient } from "./AMFlowClient";
 
@@ -84,7 +83,7 @@ export class SessionLike {
 
     createClient(
         opts: CreateClientParameterObject,
-        cb: (err: Error | null, client: AMFlow | null) => void,
+        cb: (err: Error | null, client: AMFlowClient | null) => void,
     ) {
         if (!this._socket) {
             cb(new Error("socket was already disconnected."), null);

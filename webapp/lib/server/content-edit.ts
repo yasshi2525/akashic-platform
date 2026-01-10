@@ -17,6 +17,7 @@ import {
     deleteContentDir,
     throwIfInvalidContentDir,
 } from "./content-utils";
+import { endPlay } from "./play-end";
 
 interface EditGameForm extends Partial<GameForm> {
     gameId: number;
@@ -137,6 +138,28 @@ async function copyIconFile(
     );
 }
 
+async function endCurrentPlay(contentId: number) {
+    const playIds = (
+        await prisma.content.findUniqueOrThrow({
+            select: {
+                plays: {
+                    select: {
+                        id: true,
+                    },
+                },
+            },
+            where: {
+                id: contentId,
+            },
+        })
+    ).plays.map(({ id }) => id.toString());
+    await Promise.all(
+        playIds.map(async (playId) => {
+            await endPlay({ playId, reason: "DEL_CONTNET" });
+        }),
+    );
+}
+
 export async function editContent(
     param: EditGameForm,
 ): Promise<ContentResponse> {
@@ -176,6 +199,7 @@ export async function editContent(
                         iconPath,
                     );
                 }
+                await endCurrentPlay(param.contentId);
                 await deleteContentRecord(param.contentId);
                 deleteContentDir(toContentDir(param.contentId));
                 return {

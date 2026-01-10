@@ -5,6 +5,7 @@ import {
     TickPack,
     ListenSchema,
     ListenEvent,
+    PlayEndReason,
 } from "@yasshi2525/amflow-server-event-schema";
 import { RedisAMFlowStore } from "./RedisAMFlowStore";
 import {
@@ -99,12 +100,19 @@ export class AMFlowServer {
         await this._store.putStartPoint(startPoint);
     }
 
+    broadcastPlayEnd(reason: PlayEndReason) {
+        for (const client of this._clients) {
+            client.emit(EmitEvent.PlayEnd, reason);
+        }
+    }
+
     getParticipants() {
         // アクティブインスタンスの接続数を除いている
         return Math.max(this._clients.size - 1, 0);
     }
 
-    async destroy() {
+    async destroy(reason: PlayEndReason) {
+        this.broadcastPlayEnd(reason);
         this._store.offTick(this._broadcastTickBound);
         this._store.offEvent(this._broadcastEventBound);
         this._tickSubscribers.clear();

@@ -1,6 +1,7 @@
 import { Server, createServer } from "node:http";
 import * as express from "express";
 import * as cors from "cors";
+import type { PlayEndReason } from "@yasshi2525/amflow-server-event-schema";
 import { AMFlowServerManager } from "./AMFlowServerManager";
 import { PlayManager } from "./PlayManager";
 
@@ -108,11 +109,16 @@ export class HttpServer {
 
         app.get("/end", async (req, res) => {
             const playId = req.query.playId;
+            const reason = req.query.reason;
             if (!playId?.toString()) {
                 res.status(400).send("no playId was specified.");
             } else {
                 try {
-                    await this._playManager.end(playId.toString());
+                    await this._playManager.end(
+                        playId.toString(),
+                        (reason?.toString() ??
+                            "INTERNAL_ERROR") as PlayEndReason,
+                    );
                     res.json({ ok: true });
                 } catch (err) {
                     res.status(422).send(

@@ -3,6 +3,7 @@
 import { startTransition, useOptimistic, useState } from "react";
 import { redirect } from "next/navigation";
 import {
+    Alert,
     Button,
     Dialog,
     DialogActions,
@@ -22,7 +23,7 @@ export function PlayCloseDialog({ playId }: { playId: string }) {
         startTransition(() => {
             setIsSending(true);
         });
-        const res = await endPlay({ playId });
+        const res = await endPlay({ playId, reason: "GAMEMASTER" });
         if (res.ok) {
             redirect(`/?${messageKey}=${messages.play.endSuccessful}`);
         } else {
@@ -39,8 +40,8 @@ export function PlayCloseDialog({ playId }: { playId: string }) {
                     );
                     break;
             }
+            setIsSending(false);
         }
-        setIsSending(false);
     }
 
     function handleClick() {
@@ -71,8 +72,16 @@ export function PlayCloseDialog({ playId }: { playId: string }) {
                 <DialogContent>
                     <DialogContentText id="dialog-description">
                         現在遊んでいるゲームを終了します。この部屋に参加しているプレイヤーはこれ以上遊べなくなります。
-                        TODO: error
                     </DialogContentText>
+                    {error ? (
+                        <Alert
+                            variant="outlined"
+                            severity="error"
+                            sx={{ mt: 1 }}
+                        >
+                            {error}
+                        </Alert>
+                    ) : null}
                     <DialogActions>
                         <Button
                             variant="contained"

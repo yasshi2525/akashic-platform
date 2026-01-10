@@ -1,3 +1,4 @@
+import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
 import { Runner, RunnerParameterObject } from "./runner";
 
 interface RunnerManagerParameterObject {
@@ -28,11 +29,15 @@ export class RunnerManager {
         return playId;
     }
 
-    async end(playId: number) {
+    async end(playId: number, reason: PlayEndReason) {
         const runner = this._runners.get(playId);
         if (runner) {
-            await runner.end();
+            await runner.end(reason);
         }
+    }
+
+    unregister(playId: number) {
+        this._runners.delete(playId);
     }
 
     async destroy() {
@@ -41,7 +46,7 @@ export class RunnerManager {
                 console.log(
                     `runner (playId = "${playId}") is destroying forcibly.`,
                 );
-                await runner.end();
+                await runner.end("INTERNAL_ERROR");
             }),
         );
     }

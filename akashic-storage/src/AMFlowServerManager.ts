@@ -1,5 +1,8 @@
 import type { Socket } from "socket.io";
-import { InvalidStatusError } from "@yasshi2525/amflow-server-event-schema";
+import {
+    InvalidStatusError,
+    PlayEndReason,
+} from "@yasshi2525/amflow-server-event-schema";
 import { RedisConnection } from "./createRedisConnection";
 import { RedisAMFlowStore } from "./RedisAMFlowStore";
 import { AMFlowServer } from "./AMFlowServer";
@@ -34,8 +37,8 @@ export class AMFlowServerManager {
         return server;
     }
 
-    async end(playId: string) {
-        await this._servers.get(playId)?.destroy();
+    async end(playId: string, reason: PlayEndReason) {
+        await this._servers.get(playId)?.destroy(reason);
         this._servers.delete(playId);
     }
 
@@ -49,18 +52,18 @@ export class AMFlowServerManager {
     }
 
     async destroy() {
-        for (const client of this._clients) {
-            client.disconnect(true);
-        }
-        this._clients.clear();
         await Promise.all(
             [...this._servers.values()].map(async (server) => {
                 console.log(
                     `server (playId = ${server._playId}) is destroying forcibly.`,
                 );
-                await server.destroy();
+                await server.destroy("INTERNAL_ERROR");
             }),
         );
+        for (const client of this._clients) {
+            client.disconnect(true);
+        }
+        this._clients.clear();
         this._servers.clear();
     }
 
