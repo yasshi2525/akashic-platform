@@ -6,7 +6,7 @@ import {
 import { User } from "../types";
 import { destroyAkashicGameView } from "./akashic-gameview-destroyer";
 
-interface AkashicContainerParameterObject {
+interface AkashicContainerCreateParameterObject {
     parent: HTMLDivElement;
     user: User;
     contentId: number;
@@ -18,40 +18,56 @@ interface AkashicContainerParameterObject {
 }
 
 export class AkashicContainer {
-    _view: AkashicGameView;
-    _resizeObserver: ResizeObserver;
-    _isDestroyed: boolean;
+    _current?: {
+        view: AkashicGameView;
+        resizeObserver: ResizeObserver;
+    };
+    _creationQueue: AkashicContainerCreateParameterObject[];
 
-    constructor(param: AkashicContainerParameterObject) {
-        this._view = new AkashicGameView({
-            container: param.parent,
-            width: param.parent.clientWidth,
-            height: param.parent.clientHeight,
-            // NOTE: untrusted のときこの値が使用される。 akashic-cli-serve の値としている。
-            trustedChildOrigin: /.*/,
-        });
-        const content = this._createContent(param);
-        this._resizeObserver = this._createResizeObserver(
-            param.parent,
-            content,
-        );
-        this._view.addContent(content);
-        this._isDestroyed = false;
+    constructor() {
+        this._creationQueue = [];
+        console.log("new AkashicContainer");
+    }
+
+    create(param: AkashicContainerCreateParameterObject) {
+        // 2つの view が存在すると、挙動として古いほうが止まる
+        // 過去を破棄してから新規作成する
+        if (this._current) {
+            this._creationQueue.push(param);
+        } else {
+            const view = new AkashicGameView({
+                container: param.parent,
+                width: param.parent.clientWidth,
+                height: param.parent.clientHeight,
+                // NOTE: untrusted のときこの値が使用される。 akashic-cli-serve の値としている。
+                trustedChildOrigin: /.*/,
+            });
+            const content = this._createContent(param);
+            const resizeObserver = this._createResizeObserver(
+                param.parent,
+                content,
+            );
+            view.addContent(content);
+            this._current = {
+                view,
+                resizeObserver,
+            };
+        }
     }
 
     async destroy() {
-        if (!this._isDestroyed) {
-            this._resizeObserver.disconnect();
-            // NOTE: agvw 実装は作成した div 要素を削除しないので手動で削除している
-            this._view._gameContentShared.gameViewElement.destroy();
-            await destroyAkashicGameView(this._view);
-            this._resizeObserver = null!;
-            this._view = null!;
+        if (this._current) {
+            this._current.resizeObserver.disconnect();
+            await destroyAkashicGameView(this._current.view);
+            this._current = undefined;
+            const next = this._creationQueue.shift();
+            if (next) {
+                this.create(next);
+            }
         }
-        this._isDestroyed = true;
     }
 
-    _createContent(param: AkashicContainerParameterObject) {
+    _createContent(param: AkashicContainerCreateParameterObject) {
         const content = new GameContent({
             player: {
                 id: param.user.id,

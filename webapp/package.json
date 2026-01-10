@@ -19,7 +19,9 @@
   "author": "yasshi2525",
   "license": "MIT",
   "devDependencies": {
+    "@akashic/akashic-engine": "^3.21.2",
     "@akashic/game-configuration": "^2.5.0",
+    "@akashic/game-driver": "^2.26.0",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",

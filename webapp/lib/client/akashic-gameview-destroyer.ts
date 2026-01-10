@@ -1,3 +1,5 @@
+import type { GameDriver } from "@akashic/game-driver";
+import type { Game, Scene } from "@akashic/akashic-engine";
 import { AkashicGameView, GameContent } from "@yasshi2525/agvw-like";
 
 /**
@@ -10,8 +12,7 @@ export async function destroyAkashicGameView(view: AkashicGameView) {
     }
     // GameDriver はスクリプトロードが終わらないと作成されない
     // GameDriver#destroy() を hook するために作成されるまで待機する。
-    // NOTE: initialScene で destroy() するとエラーが発生したため、ゲームロードまで待機させている
-    await waitUntilStarted(view);
+    await waitUntilGameDriverReady(view);
     await waitUntilDestroyed(view);
     if (view._hasOwnGameViewShared) {
         if (!view._gameViewShared.destroyed()) {
@@ -20,48 +21,22 @@ export async function destroyAkashicGameView(view: AkashicGameView) {
         view._hasOwnGameViewShared = false;
     }
     view._gameViewShared = null!;
+    // NOTE: agvw 実装は作成した div 要素を削除しないので手動で削除している
+    view._gameContentShared.gameViewElement.destroy();
     view._gameContentShared = null!;
 }
 
-async function waitUntilStarted(view: AkashicGameView) {
+async function waitUntilGameDriverReady(view: AkashicGameView) {
     await Promise.all(
         getGameContents(view).map(
             async (content) =>
                 await new Promise<void>((resolve) => {
-                    const waitUntilPrepare = (
-                        game: NonNullable<
-                            NonNullable<
-                                ReturnType<GameContent["getGameDriver"]>
-                            >["_game"]
-                        >,
-                    ) => {
-                        if (game.isLoaded) {
-                            resolve();
-                        } else {
-                            game._onLoad.addOnce(() => {
-                                resolve();
-                            });
-                        }
-                    };
-                    const waitUntilCreated = (
-                        driver: NonNullable<
-                            ReturnType<GameContent["getGameDriver"]>
-                        >,
-                    ) => {
-                        if (driver._game) {
-                            waitUntilPrepare(driver._game);
-                        } else {
-                            driver.gameCreatedTrigger.addOnce((game) => {
-                                waitUntilPrepare(game);
-                            });
-                        }
-                    };
                     if (content._loader) {
-                        waitUntilCreated(content.getGameDriver()!);
+                        resolve();
                     } else {
                         content.addContentLoadListener({
                             onLoad: () => {
-                                waitUntilCreated(content.getGameDriver()!);
+                                resolve();
                             },
                         });
                     }
@@ -70,16 +45,78 @@ async function waitUntilStarted(view: AkashicGameView) {
     );
 }
 
+function isLoadingScene(scene: Scene | undefined) {
+    return (
+        !!scene &&
+        (scene === scene.game._defaultLoadingScene ||
+            scene === scene.game.loadingScene)
+    );
+}
+
+function isMainScene(scene: Scene | undefined) {
+    return (
+        !!scene &&
+        scene !== scene.game._initialScene &&
+        scene !== scene.game._defaultLoadingScene &&
+        scene !== scene.game.loadingScene
+    );
+}
+
+/**
+ * スクリプトロード中にdestroyするとエラーが発生する。
+ * そのため、エラーが発生しなくなるタイミングまで待つ。
+ * ただし、デバッグモードの画面ロードのように短時間で2回ロードすると loadingScene から進まない。
+ * そのため、エラーは発生するが、そのときは強制終了させる措置をとっている。
+ */
+function isPrepared(scene: Scene | undefined) {
+    return isLoadingScene(scene) || isMainScene(scene);
+}
+
+async function waitUntilSceneLoad(game: Game) {
+    await new Promise<void>((resolve) => {
+        if (isPrepared(game.scene())) {
+            resolve();
+        } else {
+            game._onSceneChange.add((scene) => {
+                if (isPrepared(scene)) {
+                    resolve();
+                    return true;
+                }
+            });
+        }
+    });
+}
+
+/**
+ * GameDriver は initialScene のセットアップが終わる前に destroy するとエラーが起きるので、待機
+ */
+async function waitUntilPrepare(driver: GameDriver) {
+    await new Promise<void>((resolve) => {
+        if (driver._game) {
+            waitUntilSceneLoad(driver._game).then(() => resolve());
+        } else {
+            driver.gameCreatedTrigger.addOnce((game) => {
+                console.log("game created");
+                waitUntilSceneLoad(game).then(() => resolve());
+            });
+        }
+    });
+}
+
 async function waitUntilDestroyed(view: AkashicGameView) {
     await new Promise<void>((resolve) => {
         const contents = getGameContents(view);
         const alives = new Set<GameContent>(contents);
-        hooksDestroy(contents, (content) => {
-            alives.delete(content);
-            if (alives.size === 0) {
-                resolve();
-            }
-        });
+        hooksDestroy(
+            contents,
+            (driver) => waitUntilPrepare(driver),
+            (content) => {
+                alives.delete(content);
+                if (alives.size === 0) {
+                    resolve();
+                }
+            },
+        );
         view.removeAllContents();
     });
 }
@@ -92,6 +129,7 @@ function getGameContents(view: AkashicGameView) {
 
 function hooksDestroy(
     contents: GameContent[],
+    prepare: (driver: GameDriver) => Promise<void>,
     done: (content: GameContent) => void,
 ) {
     for (const content of contents) {
@@ -99,7 +137,13 @@ function hooksDestroy(
             content.getGameDriver()!.destroy,
             {
                 apply: async (target, thisArg) => {
-                    await target.call(thisArg);
+                    await prepare(thisArg);
+                    try {
+                        await target.call(thisArg);
+                    } catch (err) {
+                        // デバッグモードの画面ロードのように短時間で2回ロードすると発生
+                        console.debug(err);
+                    }
                     done(content);
                 },
             },

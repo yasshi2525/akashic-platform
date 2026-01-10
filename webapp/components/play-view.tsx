@@ -22,6 +22,11 @@ const toMessage = (typ?: WarningType) => {
     }
 };
 
+// 次の理由によりシングルトンにしている
+// 破棄に Promise が必要 → useEffect 内で破棄が完了しない
+// 同時に2インスタンス存在するとロードがとまり、破棄に必要なステップを踏めない
+const container = new AkashicContainer();
+
 export function PlayView({
     playId,
     playToken,
@@ -70,7 +75,7 @@ export function PlayView({
         if (!ref.current) {
             return;
         }
-        const container = new AkashicContainer({
+        container.create({
             parent: ref.current,
             user,
             contentId,
