@@ -1,6 +1,6 @@
 "use client";
 
-import { useOptimistic, useState } from "react";
+import { startTransition, useOptimistic, useState } from "react";
 import { redirect } from "next/navigation";
 import {
     Button,
@@ -19,7 +19,9 @@ export function PlayCloseDialog({ playId }: { playId: string }) {
     const [error, setError] = useState<string>();
 
     async function handleSubmit() {
-        setIsSending(true);
+        startTransition(() => {
+            setIsSending(true);
+        });
         const res = await endPlay({ playId });
         if (res.ok) {
             redirect(`/?${messageKey}=${messages.play.endSuccessful}`);
@@ -69,6 +71,7 @@ export function PlayCloseDialog({ playId }: { playId: string }) {
                 <DialogContent>
                     <DialogContentText id="dialog-description">
                         現在遊んでいるゲームを終了します。この部屋に参加しているプレイヤーはこれ以上遊べなくなります。
+                        TODO: error
                     </DialogContentText>
                     <DialogActions>
                         <Button
