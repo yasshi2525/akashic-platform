@@ -7,3 +7,4 @@ export * from "./WebContent";
 export * from "./GameContent";
 export * from "./utils";
 export * from "./ExternalPluginSignatureCaller";
+export { ExternalPlugin } from "./ExternalPluginManager";

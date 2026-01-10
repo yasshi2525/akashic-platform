@@ -6,11 +6,11 @@ import { GameContent } from "./GameContent";
 
 export interface ExternalPlugin {
     name: string;
-    implicit: boolean;
-    untrustedSignature: FunctionTableMetadata;
-    requires: string[] | null;
-    scriptUrls: string[] | null;
-    onregister: ((manager: ExternalPluginManager) => void) | null;
+    implicit?: boolean;
+    untrustedSignature?: FunctionTableMetadata;
+    requires?: string[];
+    scriptUrls?: string[];
+    onregister?: (manager: ExternalPluginManager) => void;
     onload: (
         game: Game,
         databus: MemoryQueueDataBus,
