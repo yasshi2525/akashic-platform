@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
     Button,
@@ -12,6 +13,8 @@ import {
 import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
 
 export function PlayEndNotification({ reason }: { reason: PlayEndReason }) {
+    const [open, setOpen] = useState(true);
+
     function toMessage(reason: PlayEndReason) {
         switch (reason) {
             case "GAMEMASTER":
@@ -26,14 +29,15 @@ export function PlayEndNotification({ reason }: { reason: PlayEndReason }) {
         }
     }
 
-    function handleClose() {
-        // do-nothing
-        // これが存在しないとモーダル外クリックでウィンドウが更新されてしまう
+    function handleClose(ev: Event, reason?: string) {
+        if (!reason) {
+            setOpen(false);
+        }
     }
 
     return (
         <Dialog
-            open={true}
+            open={open}
             onClose={handleClose}
             aria-labelledby="dialog-title"
             aria-describedby="dialog-description"
