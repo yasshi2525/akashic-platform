@@ -26,9 +26,15 @@ export function PlayEndNotification({ reason }: { reason: PlayEndReason }) {
         }
     }
 
+    function handleClose() {
+        // do-nothing
+        // これが存在しないとモーダル外クリックでウィンドウが更新されてしまう
+    }
+
     return (
         <Dialog
             open={true}
+            onClose={handleClose}
             aria-labelledby="dialog-title"
             aria-describedby="dialog-description"
         >
