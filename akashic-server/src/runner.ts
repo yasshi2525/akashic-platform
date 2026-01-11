@@ -1,4 +1,5 @@
 import type { AMFlow } from "@akashic/amflow";
+import { EventCode, JoinEvent, MessageEvent } from "@akashic/playlog";
 import { RunnerV3 } from "@akashic/headless-driver";
 import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
 import { prisma } from "@yasshi2525/persist-schema";
@@ -242,11 +243,23 @@ export class Runner {
 
     _initGame(amflow: AMFlow) {
         amflow.sendEvent([
-            0x0,
+            EventCode.Join,
             0,
             this._param.playerId,
             this._param.playerName,
-        ]);
+        ] as JoinEvent);
+        amflow.sendEvent([
+            EventCode.Message,
+            0,
+            ":akashic",
+            {
+                type: "start",
+                parameters: {
+                    mode: "multi",
+                    service: "nicolive",
+                },
+            },
+        ] as MessageEvent);
     }
 
     async _endPlay(playId: number, reason: PlayEndReason) {
