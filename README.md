@@ -20,6 +20,11 @@
   - プレイ一覧
   - ユーザー名取得プラグインの代替実装
 
+- 実行可能なゲーム
+  - `environment.sandbox-runtime`: `"3"`
+  - `environment.nicolive.supportedModes`: `"multi_admission"` または `"multi"`
+  - `environment.external`: `"coeLimited"` のみ対応。 `@akashic-extension/instance-storage` は機能しない点に注意
+
 ## 構成図
 
 本プラットフォームは以下の3つのプロセスから構成されます。
