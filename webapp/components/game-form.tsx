@@ -33,6 +33,7 @@ import { registerContent } from "@/lib/server/content-register";
 import { editContent } from "@/lib/server/content-edit";
 import { useAuth } from "@/lib/client/useAuth";
 import { SignInAlert } from "./sign-in-alert";
+import { GameTermsAndConditions } from "./game-tac";
 
 const VisuallyHiddenInput = styled("input")();
 
@@ -398,7 +399,7 @@ export function GameForm({
                                     fullWidth
                                     multiline
                                     rows={6}
-                                    placeholder="ゲームの内容、遊び方などの説明を記入してください"
+                                    placeholder="ゲームの内容、遊び方などの説明と、使用素材のクレジットを記入してください"
                                     value={description}
                                     onChange={handleInputDescription}
                                 />
@@ -412,7 +413,8 @@ export function GameForm({
                                     </Alert>
                                 ) : null}
                             </Box>
-                            <Box sx={{ pt: 2 }}>
+                            <GameTermsAndConditions />
+                            <Box>
                                 <Button
                                     type="submit"
                                     variant="contained"
