@@ -7,6 +7,10 @@ import {
 } from "@yasshi2525/agvw-like";
 import { User } from "../types";
 import { destroyAkashicGameView } from "./akashic-gameview-destroyer";
+import {
+    CoeLimitedPlugin,
+    ResolvingPlayerInfoRequest,
+} from "./akashic-plugins/coe-limited-plugin";
 
 interface AkashicContainerCreateParameterObject {
     parent: HTMLDivElement;
@@ -18,6 +22,9 @@ interface AkashicContainerCreateParameterObject {
     onSkip: (skip: boolean) => void;
     onError: (errMsg: string) => void;
     onPlayEnd: (reason: PlayEndReason) => void;
+    onRequestPlayerInfo: (
+        param: ResolvingPlayerInfoRequest | undefined,
+    ) => void;
 }
 
 export class AkashicContainer {
@@ -44,6 +51,11 @@ export class AkashicContainer {
                 // NOTE: untrusted のときこの値が使用される。 akashic-cli-serve の値としている。
                 trustedChildOrigin: /.*/,
             });
+            view.registerExternalPlugin(
+                new CoeLimitedPlugin({
+                    onRequest: param.onRequestPlayerInfo,
+                }),
+            );
             const content = this._createContent(param);
             const resizeObserver = this._createResizeObserver(
                 param.parent,

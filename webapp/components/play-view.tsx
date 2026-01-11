@@ -5,9 +5,11 @@ import { Alert, Container, Snackbar } from "@mui/material";
 import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
 import { User } from "@/lib/types";
 import { useAkashic } from "@/lib/client/useAkashic";
+import { ResolvingPlayerInfoRequest } from "@/lib/client/akashic-plugins/coe-limited-plugin";
 import { AkashicContainer } from "@/lib/client/akashic-container";
 import { PlayCloseDialog } from "./play-close-dialog";
 import { PlayEndNotification } from "./play-end-notification";
+import { PlayPlayerInfoResolver } from "./play-player-info-resolver";
 
 const warnings = ["EVENT_ON_SKIPPING"] as const;
 type WarningType = (typeof warnings)[number];
@@ -53,6 +55,8 @@ export function PlayView({
     const [warning, setWarning] = useState<WarningType>();
     const [error, setError] = useState<string>();
     const [playEndReason, setPlayEndReason] = useState<PlayEndReason>();
+    const [requestPlayerInfo, setRequestPlayerInfo] =
+        useState<ResolvingPlayerInfoRequest>();
 
     function handleMouseEvent(ev: MouseEvent<HTMLDivElement>) {
         if (skipping) {
@@ -88,6 +92,7 @@ export function PlayView({
             onSkip: setSkipping,
             onError: setError,
             onPlayEnd: setPlayEndReason,
+            onRequestPlayerInfo: setRequestPlayerInfo,
         });
         return () => {
             // Promiseだが、遅延終了しても影響なし
@@ -110,6 +115,9 @@ export function PlayView({
                 onTouchEnd={handleTouchEvent}
                 onClick={handleMouseEvent}
             />
+            {requestPlayerInfo ? (
+                <PlayPlayerInfoResolver request={requestPlayerInfo} />
+            ) : null}
             {isGameMaster ? <PlayCloseDialog playId={playId} /> : null}
             {playEndReason ? (
                 <PlayEndNotification reason={playEndReason} />

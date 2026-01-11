@@ -371,7 +371,7 @@ export class GameContent extends Content {
                         this._update();
                         const pluginNames: string[] = [];
                         const registerPlugin = (pluginName: string) => {
-                            if (pluginNames.indexOf(pluginName) !== -1) {
+                            if (pluginNames.indexOf(pluginName) === -1) {
                                 const plugin =
                                     this._gameViewShared!.pluginManager.find(
                                         pluginName,
