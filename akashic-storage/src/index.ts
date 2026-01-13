@@ -9,6 +9,7 @@ import { AMFlowServerManager } from "./AMFlowServerManager";
     const valkey = await createValkeyConnection(
         process.env.VALKEY_HOST ?? "localhost",
         parseInt(process.env.VALKEY_PORT ?? "6379"),
+        process.env.VALKEY_NO_TLS?.toLowerCase() === "true"
     );
 
     const amfManager = new AMFlowServerManager({ valkey });
