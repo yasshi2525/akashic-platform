@@ -9,7 +9,7 @@
     "dist/**/*.d.ts"
   ],
   "scripts": {
-    "prepare": "npm run setup",
+    "prepare": "npm run setup && npm run build",
     "setup": "prisma generate",
     "reset": "prisma db push --force-reset && npm run setup",
     "build": "tsc"
