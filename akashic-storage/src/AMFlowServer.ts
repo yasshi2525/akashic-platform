@@ -1,4 +1,9 @@
 import type { Socket } from "socket.io";
+import type {
+    GetStartPointOptions,
+    GetTickListOptions,
+    StartPoint,
+} from "@akashic/amflow";
 import type { Event } from "@akashic/playlog";
 import {
     EmitEvent,
@@ -7,21 +12,16 @@ import {
     ListenEvent,
     PlayEndReason,
 } from "@yasshi2525/amflow-server-event-schema";
-import { RedisAMFlowStore } from "./RedisAMFlowStore";
-import {
-    GetStartPointOptions,
-    GetTickListOptions,
-    StartPoint,
-} from "@akashic/amflow";
+import { ValkeyAMFlowStore } from "./ValkeyAMFlowStore";
 
 interface AMFlowServerParameterObject {
     playId: string;
-    store: RedisAMFlowStore;
+    store: ValkeyAMFlowStore;
 }
 
 export class AMFlowServer {
     _playId: string;
-    _store: RedisAMFlowStore;
+    _store: ValkeyAMFlowStore;
     _clients: Set<Socket>;
     _tickSubscribers: Set<Socket>;
     _eventSubscribers: Set<Socket>;

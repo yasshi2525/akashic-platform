@@ -1,10 +1,12 @@
-import { createClient } from "redis";
+import { GlideClient } from "@valkey/valkey-glide";
 
-export type RedisConnection = Awaited<ReturnType<typeof createRedisConnection>>;
-
-export const createRedisConnection = async (url?: string) =>
-    createClient({
-        url,
-    })
-        .on("error", (err) => console.warn("redis error:", err))
-        .connect();
+export const createValkeyConnection = async (host: string, port: number) =>
+    GlideClient.createClient({
+        addresses: [
+            {
+                host,
+                port,
+            },
+        ],
+        useTLS: true,
+    });

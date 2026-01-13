@@ -4,7 +4,7 @@ Akashic Engine の実行時情報を保管するサーバー実装です。
 
 ## Requirement
 
-- Redis データベース
+- Valkey データベース
 
 ## NOTE
 

@@ -1,3 +1,4 @@
+import type { GlideClient, GlideString } from "@valkey/valkey-glide";
 import type {
     GetStartPointOptions,
     GetTickListOptions,
@@ -17,31 +18,30 @@ import {
     TickPack,
     toTickList,
 } from "@yasshi2525/amflow-server-event-schema";
-import { RedisConnection } from "./createRedisConnection";
 import {
     genKey,
     PermissionType,
-    RedisKey,
-    RedisZSetKey,
+    ValkeyKey,
+    ValkeyZSetKey,
     toPermission,
-} from "./redisSchema";
+} from "./valkeySchema";
 import { AMFlowStoreBase } from "./AMFlowStoreBase";
 
-interface RedisAMFlowStoreParameterObject {
-    redis: RedisConnection;
+interface ValkeyAMFlowStoreParameterObject {
+    valkey: GlideClient;
     playId: string;
 }
 
-export class RedisAMFlowStore extends AMFlowStoreBase {
-    _redis: RedisConnection;
+export class ValkeyAMFlowStore extends AMFlowStoreBase {
+    _valkey: GlideClient;
     _latestTickFrame: number;
     _nextUnfilteredEventId: number;
     _nextSnapshotId: number;
     _isDestroyed: boolean;
 
-    constructor(param: RedisAMFlowStoreParameterObject) {
+    constructor(param: ValkeyAMFlowStoreParameterObject) {
         super(param.playId);
-        this._redis = param.redis;
+        this._valkey = param.valkey;
         this._latestTickFrame = -1;
         this._nextUnfilteredEventId = 1;
         this._nextSnapshotId = 1;
@@ -49,8 +49,8 @@ export class RedisAMFlowStore extends AMFlowStoreBase {
     }
 
     async authenticate(token: string) {
-        const permissionType = await this._redis.get(
-            genKey(RedisKey.Token, this.playId, token),
+        const permissionType = await this._valkey.get(
+            genKey(ValkeyKey.Token, this.playId, token),
         );
         if (!permissionType) {
             throw new BadRequestError("invalid token");
@@ -72,30 +72,36 @@ export class RedisAMFlowStore extends AMFlowStoreBase {
             return null;
         }
         const scores = opts.excludeEventFlags?.ignorable
-            ? await this._redis.zRangeByScoreWithScores(
-                  genKey(RedisZSetKey.FilteredEvent, this.playId),
-                  from,
-                  to,
+            ? await this._valkey.zrangeWithScores(
+                  genKey(ValkeyZSetKey.FilteredEvent, this.playId),
+                  {
+                      type: "byScore",
+                      start: from,
+                      end: to,
+                  },
               )
-            : await this._redis.zRangeByScoreWithScores(
-                  genKey(RedisZSetKey.UnfilteredEvent, this.playId),
-                  from,
-                  to,
+            : await this._valkey.zrangeWithScores(
+                  genKey(ValkeyZSetKey.UnfilteredEvent, this.playId),
+                  {
+                      type: "byScore",
+                      start: from,
+                      end: to,
+                  },
               );
         if (scores.length === 0) {
             return [from, to];
         }
         const rawEvList = await Promise.all(
             scores
-                .map(({ score, value }) => ({
+                .map(({ score, element }) => ({
                     tick: score,
-                    eventId: parseInt(value),
+                    eventId: parseInt(element.toString()),
                 }))
                 .map(async ({ tick, eventId }) => ({
                     tick,
                     eventId: eventId,
-                    event: await this._redis.get(
-                        genKey(RedisKey.Event, this.playId, eventId),
+                    event: await this._valkey.get(
+                        genKey(ValkeyKey.Event, this.playId, eventId),
                     ),
                 })),
         );
@@ -106,7 +112,7 @@ export class RedisAMFlowStore extends AMFlowStoreBase {
                 try {
                     return {
                         tick,
-                        event: JSON.parse(event!) as Event,
+                        event: JSON.parse(event!.toString()) as Event,
                     };
                 } catch (err) {
                     console.warn(
@@ -123,22 +129,26 @@ export class RedisAMFlowStore extends AMFlowStoreBase {
     }
 
     async putStartPoint(startPoint: StartPoint) {
-        await this._redis.zAdd(
-            genKey(RedisZSetKey.StartPointByFrame, this.playId),
-            {
-                score: startPoint.frame,
-                value: this._nextSnapshotId.toString(),
-            },
+        await this._valkey.zadd(
+            genKey(ValkeyZSetKey.StartPointByFrame, this.playId),
+            [
+                {
+                    score: startPoint.frame,
+                    element: this._nextSnapshotId.toString(),
+                },
+            ],
         );
-        await this._redis.zAdd(
-            genKey(RedisZSetKey.StartPointByTimestamp, this.playId),
-            {
-                score: startPoint.timestamp,
-                value: this._nextSnapshotId.toString(),
-            },
+        await this._valkey.zadd(
+            genKey(ValkeyZSetKey.StartPointByTimestamp, this.playId),
+            [
+                {
+                    score: startPoint.timestamp,
+                    element: this._nextSnapshotId.toString(),
+                },
+            ],
         );
-        await this._redis.set(
-            genKey(RedisKey.StartPoint, this.playId, this._nextSnapshotId),
+        await this._valkey.set(
+            genKey(ValkeyKey.StartPoint, this.playId, this._nextSnapshotId),
             JSON.stringify(startPoint),
         );
         this._nextSnapshotId++;
@@ -149,39 +159,50 @@ export class RedisAMFlowStore extends AMFlowStoreBase {
             opts.frame === 0 || (opts.frame == null && opts.timestamp == null);
 
         if (isFirst) {
-            const ids = await this._redis.zRange(
-                genKey(RedisZSetKey.StartPointByFrame, this.playId),
-                0,
-                0,
+            const ids = await this._valkey.zrange(
+                genKey(ValkeyZSetKey.StartPointByFrame, this.playId),
+                {
+                    start: 0,
+                    end: 0,
+                },
             );
             return this._restoreStartPointFromIds(ids);
         } else if (opts.timestamp != null) {
-            const ids = await this._redis.zRange(
-                genKey(RedisZSetKey.StartPointByTimestamp, this.playId),
-                "(" + opts.timestamp,
-                0,
+            const ids = await this._valkey.zrange(
+                genKey(ValkeyZSetKey.StartPointByTimestamp, this.playId),
                 {
-                    BY: "SCORE",
-                    REV: true,
-                    LIMIT: {
+                    start: {
+                        value: opts.timestamp,
+                        isInclusive: false,
+                    },
+                    end: {
+                        value: 0,
+                    },
+                    type: "byScore",
+                    limit: {
                         offset: 0,
                         count: 1,
                     },
                 },
+                {
+                    reverse: true,
+                },
             );
             return this._restoreStartPointFromIds(ids);
         } else if (opts.frame != null) {
-            const ids = await this._redis.zRange(
-                genKey(RedisZSetKey.StartPointByFrame, this.playId),
-                opts.frame - 1,
-                0,
+            const ids = await this._valkey.zrange(
+                genKey(ValkeyZSetKey.StartPointByFrame, this.playId),
                 {
-                    BY: "SCORE",
-                    REV: true,
-                    LIMIT: {
+                    start: opts.frame - 1,
+                    end: 0,
+                    type: "byScore",
+                    limit: {
                         offset: 0,
                         count: 1,
                     },
+                },
+                {
+                    reverse: true,
                 },
             );
             return this._restoreStartPointFromIds(ids);
@@ -193,26 +214,26 @@ export class RedisAMFlowStore extends AMFlowStoreBase {
         if (this._isDestroyed) {
             return;
         }
-        const tokens = await this._redis.keys(
-            genKey(RedisKey.Token, this.playId, "*"),
+        const tokens = await this._valkey.hkeys(
+            genKey(ValkeyKey.Token, this.playId, "*"),
         );
-        const ufEvents = await this._redis.keys(
-            genKey(RedisZSetKey.UnfilteredEvent, this.playId),
+        const ufEvents = await this._valkey.hkeys(
+            genKey(ValkeyZSetKey.UnfilteredEvent, this.playId),
         );
-        const fEvents = await this._redis.keys(
-            genKey(RedisZSetKey.FilteredEvent, this.playId),
+        const fEvents = await this._valkey.hkeys(
+            genKey(ValkeyZSetKey.FilteredEvent, this.playId),
         );
-        const events = await this._redis.keys(
-            genKey(RedisKey.Event, this.playId, "*"),
+        const events = await this._valkey.hkeys(
+            genKey(ValkeyKey.Event, this.playId, "*"),
         );
-        const startpoints = await this._redis.keys(
-            genKey(RedisKey.StartPoint, this.playId, "*"),
+        const startpoints = await this._valkey.hkeys(
+            genKey(ValkeyKey.StartPoint, this.playId, "*"),
         );
-        const startpointsByFrame = await this._redis.keys(
-            genKey(RedisZSetKey.StartPointByFrame, this.playId),
+        const startpointsByFrame = await this._valkey.hkeys(
+            genKey(ValkeyZSetKey.StartPointByFrame, this.playId),
         );
-        const startpointsByTimestamp = await this._redis.keys(
-            genKey(RedisZSetKey.StartPointByTimestamp, this.playId),
+        const startpointsByTimestamp = await this._valkey.hkeys(
+            genKey(ValkeyZSetKey.StartPointByTimestamp, this.playId),
         );
         await Promise.all(
             [
@@ -223,9 +244,7 @@ export class RedisAMFlowStore extends AMFlowStoreBase {
                 startpoints,
                 startpointsByFrame,
                 startpointsByTimestamp,
-            ]
-                .flat()
-                .map(async (key) => await this._redis.del(key)),
+            ].map(async (list) => await this._valkey.del(list)),
         );
         this._isDestroyed = true;
     }
@@ -239,8 +258,8 @@ export class RedisAMFlowStore extends AMFlowStoreBase {
      */
     async createPlayToken(permissionType: PermissionType) {
         const token = this._createPlayToken();
-        await this._redis.set(
-            genKey(RedisKey.Token, this.playId, token),
+        await this._valkey.set(
+            genKey(ValkeyKey.Token, this.playId, token),
             permissionType,
         );
         return token;
@@ -274,15 +293,19 @@ export class RedisAMFlowStore extends AMFlowStoreBase {
      */
     _warnIfNotFoundEventRecord(
         opts: GetTickListOptions,
-        eventList: { tick: number; eventId: number; event: string | null }[],
+        eventList: {
+            tick: number;
+            eventId: number;
+            event: GlideString | null;
+        }[],
     ) {
         const notFoundEvents = eventList.filter(({ event }) => event == null);
         if (notFoundEvents.length > 0) {
             const sourceZsetKey = opts.excludeEventFlags?.ignorable
-                ? RedisZSetKey.FilteredEvent
-                : RedisZSetKey.UnfilteredEvent;
+                ? ValkeyZSetKey.FilteredEvent
+                : ValkeyZSetKey.UnfilteredEvent;
             console.warn(
-                `following id does not exist in ${RedisKey.Event} even though ${sourceZsetKey} refer`,
+                `following id does not exist in ${ValkeyKey.Event} even though ${sourceZsetKey} refer`,
                 notFoundEvents.map(
                     ({ tick, eventId }) =>
                         `:${eventId} (playId = ${this.playId}, tick = ${tick})`,
@@ -361,12 +384,14 @@ export class RedisAMFlowStore extends AMFlowStoreBase {
     ) {
         await Promise.all(
             events.map(async ({ id }) => {
-                await this._redis.zAdd(
-                    genKey(RedisZSetKey.UnfilteredEvent, this.playId),
-                    {
-                        score: tick,
-                        value: id,
-                    },
+                await this._valkey.zadd(
+                    genKey(ValkeyZSetKey.UnfilteredEvent, this.playId),
+                    [
+                        {
+                            score: tick,
+                            element: id,
+                        },
+                    ],
                 );
             }),
         );
@@ -378,12 +403,14 @@ export class RedisAMFlowStore extends AMFlowStoreBase {
     ) {
         await Promise.all(
             events.map(async ({ id }) => {
-                await this._redis.zAdd(
-                    genKey(RedisZSetKey.FilteredEvent, this.playId),
-                    {
-                        score: tick,
-                        value: id,
-                    },
+                await this._valkey.zadd(
+                    genKey(ValkeyZSetKey.FilteredEvent, this.playId),
+                    [
+                        {
+                            score: tick,
+                            element: id,
+                        },
+                    ],
                 );
             }),
         );
@@ -393,8 +420,8 @@ export class RedisAMFlowStore extends AMFlowStoreBase {
         await Promise.all(
             events.map(
                 async ({ event, id }) =>
-                    await this._redis.set(
-                        genKey(RedisKey.Event, this.playId, parseInt(id)),
+                    await this._valkey.set(
+                        genKey(ValkeyKey.Event, this.playId, parseInt(id)),
                         JSON.stringify(event),
                     ),
             ),
@@ -411,28 +438,28 @@ export class RedisAMFlowStore extends AMFlowStoreBase {
         }
     }
 
-    async _restoreStartPointFromIds(ids: string[]) {
+    async _restoreStartPointFromIds(ids: GlideString[]) {
         if (ids.length === 0) {
             return null;
         } else {
-            return await this._restoreStartPoint(parseInt(ids[0]));
+            return await this._restoreStartPoint(parseInt(ids[0].toString()));
         }
     }
 
     async _restoreStartPoint(id: number) {
-        const startpoint = await this._redis.get(
-            genKey(RedisKey.StartPoint, this.playId, id),
+        const startpoint = await this._valkey.get(
+            genKey(ValkeyKey.StartPoint, this.playId, id),
         );
         if (startpoint == null) {
             console.warn(
-                `${id} does not exist in ${RedisKey.StartPoint} even though zset refer`,
+                `${id} does not exist in ${ValkeyKey.StartPoint} even though zset refer`,
             );
             return null;
         }
         try {
             // 解析に失敗した場合、その前のStartPointを取得しリトライする戦法も考えられるが、
             // 異常系のため StartPoint なし として結果を返す
-            return JSON.parse(startpoint) as StartPoint;
+            return JSON.parse(startpoint.toString()) as StartPoint;
         } catch (err) {
             console.warn(
                 `failed to parse startpoint "${startpoint}" (playId = ${this.playId}, startpointId = ${id})`,

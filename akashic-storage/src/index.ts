@@ -2,13 +2,16 @@ import * as process from "node:process";
 import { PlayManager } from "./PlayManager";
 import { HttpServer } from "./HttpServer";
 import { SocketServer } from "./SocketServer";
-import { createRedisConnection } from "./createRedisConnection";
+import { createValkeyConnection } from "./createValkeyConnection";
 import { AMFlowServerManager } from "./AMFlowServerManager";
 
 (async () => {
-    const redis = await createRedisConnection(process.env.REDIS_URL);
+    const valkey = await createValkeyConnection(
+        process.env.VALKEY_HOST ?? "localhost",
+        parseInt(process.env.VALKEY_PORT ?? "6379"),
+    );
 
-    const amfManager = new AMFlowServerManager({ redis });
+    const amfManager = new AMFlowServerManager({ valkey });
     const playManager = new PlayManager({ amfManager });
 
     const allowOrigins = [process.env.CLIENT_ORIGIN].filter(
@@ -29,6 +32,11 @@ import { AMFlowServerManager } from "./AMFlowServerManager";
         console.log("destroy server forcibly");
         http.close();
         await amfManager.destroy();
+        try {
+            valkey.close();
+        } catch (err) {
+            console.error(err);
+        }
         process.exit(0);
     };
     process.on("SIGINT", async () => await exit());

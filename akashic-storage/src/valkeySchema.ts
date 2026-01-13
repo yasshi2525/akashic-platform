@@ -7,7 +7,7 @@ type KeyType = (typeof keys)[number];
 const keyNames = ["Token", "Event", "StartPoint"] as const;
 type KeyNameType = (typeof keyNames)[number];
 
-export const RedisKey = {
+export const ValkeyKey = {
     Token: "amf:token",
     Event: "amf:event",
     StartPoint: "amf:startpoint",
@@ -46,7 +46,7 @@ type ZSetKeyNameType = (typeof zsetKeyNames)[number];
  * * UnfilteredEvent: 非transient で 非 ignorable なもの。 transient なものは無視するが、現状存在しない
  * * FilteredEvent: 非transient なもの。 transient と ignorable なものは無視する（PointEventが該当）
  */
-export const RedisZSetKey = {
+export const ValkeyZSetKey = {
     UnfilteredEvent: "amf:events:unfiltered",
     FilteredEvent: "amf:events:filtered",
     StartPointByFrame: "amf:startpoints:frame",

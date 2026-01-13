@@ -25,11 +25,11 @@
     "@akashic/headless-driver": "^2.17.10",
     "@akashic/playlog": "^3.3.0",
     "@akashic/trigger": "^2.1.3",
+    "@valkey/valkey-glide": "^2.2.5",
     "@yasshi2525/amflow-server-event-schema": "^0.1.0",
     "cors": "^2.8.5",
     "express": "^5.2.1",
     "js-sha256": "^0.11.1",
-    "redis": "^5.10.0",
     "socket.io": "^4.8.1"
   }
 }

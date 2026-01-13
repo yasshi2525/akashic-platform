@@ -1,23 +1,23 @@
 import type { Socket } from "socket.io";
+import type { GlideClient } from "@valkey/valkey-glide";
 import {
     InvalidStatusError,
     PlayEndReason,
 } from "@yasshi2525/amflow-server-event-schema";
-import { RedisConnection } from "./createRedisConnection";
-import { RedisAMFlowStore } from "./RedisAMFlowStore";
+import { ValkeyAMFlowStore } from "./ValkeyAMFlowStore";
 import { AMFlowServer } from "./AMFlowServer";
 
 interface AMFlowServerManagerParameterObject {
-    redis: RedisConnection;
+    valkey: GlideClient;
 }
 
 export class AMFlowServerManager {
-    _redis: RedisConnection;
+    _valkey: GlideClient;
     _servers: Map<string, AMFlowServer>;
     _clients: Set<Socket>;
 
     constructor(param: AMFlowServerManagerParameterObject) {
-        this._redis = param.redis;
+        this._valkey = param.valkey;
         this._servers = new Map();
         this._clients = new Set();
     }
@@ -28,9 +28,9 @@ export class AMFlowServerManager {
         }
         const server = new AMFlowServer({
             playId,
-            store: new RedisAMFlowStore({
+            store: new ValkeyAMFlowStore({
                 playId,
-                redis: this._redis,
+                valkey: this._valkey,
             }),
         });
         this._servers.set(playId, server);
