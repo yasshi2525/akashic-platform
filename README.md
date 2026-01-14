@@ -131,12 +131,13 @@ npm run dev -w ./webapp
 
 ## LICENSE
 
-- [MIT License](./LICENSE)
+- Source code
+  - [MIT License](./LICENSE)
 
-- [`./webapp/public/image/icon.png`](./webapp/public/image/icon.png)
-- [`./webapp/public/favicon.ico`](./webapp/public/favicon.ico)
-  - Copyright (c) 2015-present Ionic (http://ionic.io/)
-  - Licensed under [The MIT License](./LICENSE_icon)
+- Rendered Image
+  - [`./webapp/public/image/icon.png`](./webapp/public/image/icon.png), [`./webapp/public/favicon.ico`](./webapp/public/favicon.ico)
+    - Copyright (c) 2015-present Ionic (http://ionic.io/)
+    - Licensed under [The MIT License](./LICENSE_icon)
 
 > [!IMPORTANT]
 >
