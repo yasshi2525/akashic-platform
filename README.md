@@ -133,6 +133,11 @@ npm run dev -w ./webapp
 
 - [MIT License](./LICENSE)
 
+- [`./webapp/public/image/icon.png`](./webapp/public/image/icon.png)
+- [`./webapp/public/favicon.ico`](./webapp/public/favicon.ico)
+  - Copyright (c) 2015-present Ionic (http://ionic.io/)
+  - Licensed under [The MIT License](./LICENSE_icon)
+
 > [!IMPORTANT]
 >
 > [`./agvw-like`](./agvw-like/) は DWANGO Co., Ltd. が [MIT License](https://github.com/akashic-games/agvw/blob/main/LICENSE) で公開している [`@akashic/agvw`](https://github.com/akashic-games/agvw) をリバースエンジニアリングにして作成したものです。
