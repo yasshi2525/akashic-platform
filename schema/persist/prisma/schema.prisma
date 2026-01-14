@@ -15,8 +15,11 @@ model User {
   image         String?
   accounts      Account[]
   sessions      Session[]
+  notices       Notification[]
   games         Game[]
   plays         Play[]
+  fbPosts       FeedbackPost[]
+  fbReplies     FeedbackReply[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -67,6 +70,7 @@ model Game {
   title       String
   description String
   versions    Content[]
+  feedbacks   FeedbackPost[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -97,4 +101,52 @@ model Play {
 
   content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
   gmUser  User?   @relation(fields: [gmUserId], references: [id], onDelete: Cascade)
+}
+
+model FeedbackPost {
+  id         Int     @id @default(autoincrement())
+  gameId     Int
+  authorId   String?
+  authorName String
+  body       String  
+  reply      FeedbackReply?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  game   Game  @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  author User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+}
+
+model FeedbackReply {
+  id        Int    @id @default(autoincrement())
+  postId    Int    @unique
+  authorId  String
+  body      String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post   FeedbackPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id      Int              @id @default(autoincrement())
+  userId  String
+  unread  Boolean
+  type    NotificationType
+  iconURL String?
+  body    String
+  link    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum NotificationType {
+  FEEDBACKED
+  FEEDBACK_REPLIED
 }
