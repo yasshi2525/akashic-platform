@@ -1,0 +1,83 @@
+services:
+  valkey:
+    image: valkey/valkey:8
+    ports:
+      - 6379:6379
+    user: 1000:1000
+
+  postgres:
+    image: postgres
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_DB: akashic
+      POSTGRES_USER: ap-user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ap-user -d akashic"]
+      interval: 5s
+      timeout: 4s
+      retries: 10
+
+  db-migrate:
+    build:
+      context: .
+      dockerfile: schema/persist/Dockerfile
+    user: 1000:1000
+    environment:
+      DATABASE_URL: postgres://ap-user:${POSTGRES_PASSWORD:-postgres}@postgres:5432/akashic
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  akashic-storage:
+    build:
+      context: .
+      dockerfile: akashic-storage/Dockerfile
+    ports:
+      - 3031:3031
+    user: 1000:1000
+    environment:
+      PORT: 3031
+      CLIENT_ORIGIN: http://localhost:3000
+      VALKEY_HOST: valkey
+      VALKEY_PORT: 6379
+      VALKEY_NO_TLS: true
+    depends_on:
+      - valkey
+
+  akashic-server:
+    build:
+      context: .
+      dockerfile: akashic-server/Dockerfile
+    ports:
+      - 3032:3032
+    user: 1000:1000
+    environment:
+      PORT: 3032
+      STORAGE_URL: http://akashic-storage:3031
+      DATABASE_URL: postgres://ap-user:${POSTGRES_PASSWORD:-postgres}@postgres:5432/akashic
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+
+  webapp:
+    build:
+      context: .
+      dockerfile: webapp/Dockerfile
+    ports:
+      - 3000:3000
+    user: 1000:1000
+    environment:
+      PORT: 3000
+      PUBLIC_BASE_URL: http://localhost:3000
+      STORAGE_URL: http://akashic-storage:3031
+      SERVER_URL: http://akashic-server:3032
+      DATABASE_URL: postgres://ap-user:${POSTGRES_PASSWORD:-postgres}@postgres:5432/akashic
+      NEXTAUTH_URL: http://localhost:3000
+      AUTH_TRUST_HOST: true
+    env_file:
+      - .env
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully

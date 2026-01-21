@@ -11,12 +11,14 @@
   "scripts": {
     "prepare": "npm run setup",
     "setup": "prisma generate && npm run build",
+    "init": "prisma db push",
     "reset": "prisma db push --force-reset && npm run setup",
     "build": "tsc"
   },
   "author": "yasshi2525",
   "license": "MIT",
   "devDependencies": {
+    "@types/node": "^25.0.3",
     "prettier": "^3.7.4",
     "prisma": "^7.2.0",
     "typescript": "^5.9.3"

@@ -43,8 +43,6 @@
 > クラウドにデプロイする際、必要な作業
 >
 > - public 配下 (akashic, content) を外部ストレージ
-> - redis
-> - postgreSQL
 
 ## リポジトリ構成
 
@@ -76,32 +74,61 @@
 
 ## インストール方法・使い方
 
-### 前提ソフトウェア
+### Docker Compose (推奨)
 
+#### 前提ソフトウェア
+
+- Docker
+
+#### セットアップ
+
+`.env.example` の記述を参考に `.env` を配置してください。
+
+`AUTH_SECRET` には下記を参考に 32byte の base64 文字列を指定してください。
+
+##### 設定例：
+
+```sh
+openssl rand -base64 33
+<abcd...>
+```
+
+`.env`
+```sh
+AUTH_SECRET="<abcd...>"
+```
+
+#### 実行方法
+
+```sh
+docker compose up
+```
+
+`http://localhost:3000` にアクセスするとゲームで遊ぶことができます。
+
+### スタンドアロンサーバー
+
+#### 前提ソフトウェア
+
+- Node.js
 - PostgreSQL: ユーザー・ゲーム情報・プレイ情報の保管
 - Valkey: ゲーム実行時情報の保管
 
-### インストール
+Valkey の JavaScript Client の制約により、Windows OS上では動作しません。(WSL上ならOK)
+
+#### インストール
 
 ```sh
 npm install
 ```
 
-### セットアップ
+#### セットアップ
 
-> [!NOTE]
->
-> TODO
->
-> - 環境設定定義を一箇所にまとめる
-> - セットアップスクリプトの定義
-> - 一括起動スクリプトの定義
-
-#### schema/persist, akashic-storage, akashic-server
+##### schema/persist, akashic-storage, akashic-server
 
 `.env.example` の記述を参考に `.env` を配置してください。
 
-#### webapp
+##### webapp
 
 `.env.example` の記述を参考に `.env` を配置してください。
 
@@ -111,7 +138,7 @@ npx -w ./webapp auth secret
 
 `.env.local` が作成されます。
 
-### 実行方法
+#### 実行方法
 
 > [!NOTE]
 >
@@ -125,9 +152,8 @@ npm run dev -w ./webapp
 
 設定変更は `./schema/persist`, `./akashic-storage`, `./akashic-server`, `./webapp` 配下に `.env` を置くことでできます。 `.env.example` を参考にしてください。
 
-`./webapp/public/content/[id]` にゲームデータ（`game.zip`を解凍したもの）を配置すると当該ゲームで遊ぶことができます。
-
 `http://localhost:3000` にアクセスするとゲームで遊ぶことができます。
+投稿されたゲームデータは `./webapp/public/content` 以下に保存されます。
 
 ## LICENSE
 
