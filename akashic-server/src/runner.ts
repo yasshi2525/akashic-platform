@@ -102,11 +102,15 @@ export class Runner {
     }
 
     async _deletePlayId(playId: number) {
-        await prisma.play.delete({
-            where: {
-                id: playId,
-            },
-        });
+        try {
+            await prisma.play.delete({
+                where: {
+                    id: playId,
+                },
+            });
+        } catch (err) {
+            console.warn(`failed to delete playId "${playId}"`)
+        }
     }
 
     async _fetchPlayToken(playId: number) {
@@ -229,6 +233,7 @@ export class Runner {
             console.error(
                 `error on runner "${runner.runnerId}", playId = "${playId}")`,
                 err,
+                (err as any).errors
             );
             await this.end("INTERNAL_ERROR");
         });
