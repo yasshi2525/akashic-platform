@@ -109,7 +109,7 @@ export class Runner {
                 },
             });
         } catch (err) {
-            console.warn(`failed to delete playId "${playId}"`)
+            console.warn(`failed to delete playId "${playId}"`, err)
         }
     }
 
@@ -233,7 +233,7 @@ export class Runner {
             console.error(
                 `error on runner "${runner.runnerId}", playId = "${playId}")`,
                 err,
-                (err as any).errors
+                (err as any).cause
             );
             await this.end("INTERNAL_ERROR");
         });
