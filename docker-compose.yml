@@ -3,7 +3,6 @@ services:
     image: valkey/valkey:8
     ports:
       - 6379:6379
-    user: 1000:1000
 
   postgres:
     image: postgres
