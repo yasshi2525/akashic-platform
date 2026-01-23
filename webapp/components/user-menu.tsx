@@ -21,6 +21,7 @@ import { User } from "@/lib/types";
 import { useAuth } from "@/lib/client/useAuth";
 import { UserLabel } from "./user-label";
 import { SignIn } from "./sign-in";
+import { NotificationBell } from "./notification-bell";
 
 interface MenuProps {
     anchorEl?: HTMLElement;
@@ -124,6 +125,7 @@ export function UserMenu() {
     return (
         <Stack direction="row" gap={1} alignItems="center">
             <UserLabel user={user} />
+            <NotificationBell />
             <IconButton aria-label="settings" onClick={handleClick}>
                 <Settings fontSize="large" />
             </IconButton>

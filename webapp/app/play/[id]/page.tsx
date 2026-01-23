@@ -36,6 +36,7 @@ export default function Play() {
             playId={id}
             playToken={data.playToken}
             contentId={data.contentId}
+            gameId={data.gameId}
             isGameMaster={data.isGameMaster}
             contentWidth={data.contentWidth}
             contentHeight={data.contentHeight}

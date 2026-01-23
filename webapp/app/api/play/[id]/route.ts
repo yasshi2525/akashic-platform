@@ -55,6 +55,11 @@ export async function GET(
                 id: true,
                 contentId: true,
                 gameMasterId: true,
+                content: {
+                    select: {
+                        gameId: true,
+                    },
+                },
             },
         });
         if (!play) {
@@ -69,6 +74,7 @@ export async function GET(
                 playToken: await fetchPlayToken(play),
                 contentId: play.contentId,
                 gameMasterId: play.gameMasterId,
+                gameId: play.content.gameId,
                 ...(await fetchViewSize(play.contentId)),
             },
         });

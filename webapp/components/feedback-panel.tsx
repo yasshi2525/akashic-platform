@@ -1,0 +1,242 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useFormState, useFormStatus } from "react-dom";
+import { formatDistance } from "date-fns";
+import { ja } from "date-fns/locale";
+import {
+    Alert,
+    Avatar,
+    Button,
+    Card,
+    CardContent,
+    Divider,
+    Stack,
+    TextField,
+    Typography,
+} from "@mui/material";
+import { FeedbackPost, GUEST_NAME, User } from "@/lib/types";
+import {
+    FeedbackFormState,
+    postFeedbackAction,
+    postFeedbackReplyAction,
+} from "@/lib/server/feedback";
+
+const initialState: FeedbackFormState = {
+    ok: true,
+    submitted: false,
+};
+
+function SubmitButton({ label }: { label: string }) {
+    const { pending } = useFormStatus();
+    return (
+        <Button variant="contained" type="submit" disabled={pending}>
+            {label}
+        </Button>
+    );
+}
+
+function PostForm({ gameId, user }: { gameId: number; user: User | null }) {
+    const router = useRouter();
+    const [state, action] = useFormState(postFeedbackAction, initialState);
+    const [authorName, setAuthorName] = useState(GUEST_NAME);
+    const [body, setBody] = useState("");
+
+    useEffect(() => {
+        if (state.submitted && state.ok) {
+            setBody("");
+            router.refresh();
+        }
+    }, [state.submitted, state.ok, router]);
+
+    return (
+        <Card sx={{ mb: 2 }}>
+            <CardContent>
+                <form action={action}>
+                    <Stack spacing={2}>
+                        <Typography variant="h6">フィードバックする</Typography>
+                        <input type="hidden" name="gameId" value={gameId} />
+                        {user?.authType !== "oauth" ? (
+                            <TextField
+                                label="名前"
+                                name="authorName"
+                                value={authorName}
+                                onChange={(event) =>
+                                    setAuthorName(event.target.value)
+                                }
+                                fullWidth
+                            />
+                        ) : null}
+                        <TextField
+                            label="フィードバック"
+                            name="body"
+                            value={body}
+                            onChange={(event) => setBody(event.target.value)}
+                            fullWidth
+                            multiline
+                            minRows={3}
+                        />
+                        {!state.ok && state.submitted ? (
+                            <Alert severity="error" variant="outlined">
+                                {state.message}
+                            </Alert>
+                        ) : null}
+                        <SubmitButton label="送信する" />
+                    </Stack>
+                </form>
+            </CardContent>
+        </Card>
+    );
+}
+
+function ReplyForm({ postId }: { postId: number }) {
+    const router = useRouter();
+    const [state, action] = useFormState(postFeedbackReplyAction, initialState);
+    const [body, setBody] = useState("");
+
+    useEffect(() => {
+        if (state.submitted && state.ok) {
+            setBody("");
+            router.refresh();
+        }
+    }, [state.submitted, state.ok, router]);
+
+    return (
+        <form action={action}>
+            <Stack spacing={2}>
+                <Typography variant="subtitle2">返信する</Typography>
+                <input type="hidden" name="postId" value={postId} />
+                <TextField
+                    label="返信"
+                    name="body"
+                    value={body}
+                    onChange={(event) => setBody(event.target.value)}
+                    fullWidth
+                    multiline
+                    minRows={2}
+                />
+                {!state.ok && state.submitted ? (
+                    <Alert severity="error" variant="outlined">
+                        {state.message}
+                    </Alert>
+                ) : null}
+                <SubmitButton label="返信する" />
+            </Stack>
+        </form>
+    );
+}
+
+export function FeedbackPanel({
+    gameId,
+    user,
+    isPublisher,
+    feedbackList,
+}: {
+    gameId: number;
+    user: User | null;
+    isPublisher: boolean;
+    feedbackList: FeedbackPost[];
+}) {
+    return (
+        <>
+            {!isPublisher ? <PostForm gameId={gameId} user={user} /> : null}
+            {feedbackList.length ? (
+                <Stack spacing={2}>
+                    {feedbackList.map((post) => (
+                        <Card key={post.id} id={`post-${post.id}`}>
+                            <CardContent>
+                                <Stack spacing={2}>
+                                    <Stack direction="row" spacing={2}>
+                                        <Avatar
+                                            src={post.author.iconURL}
+                                            sx={{ width: 40, height: 40 }}
+                                        />
+                                        <Stack spacing={0.5}>
+                                            <Typography variant="subtitle1">
+                                                {post.author.name}
+                                            </Typography>
+                                            <Typography
+                                                variant="caption"
+                                                color="text.secondary"
+                                            >
+                                                {formatDistance(
+                                                    new Date(post.createdAt),
+                                                    new Date(),
+                                                    {
+                                                        addSuffix: true,
+                                                        locale: ja,
+                                                    },
+                                                )}
+                                            </Typography>
+                                        </Stack>
+                                    </Stack>
+                                    <Typography
+                                        variant="body1"
+                                        sx={{ whiteSpace: "pre-wrap" }}
+                                    >
+                                        {post.body}
+                                    </Typography>
+
+                                    {post.reply ? (
+                                        <>
+                                            <Divider />
+                                            <Stack direction="row" spacing={2}>
+                                                <Avatar
+                                                    src={
+                                                        post.reply.author
+                                                            .iconURL
+                                                    }
+                                                    sx={{
+                                                        width: 36,
+                                                        height: 36,
+                                                    }}
+                                                />
+                                                <Stack spacing={0.5}>
+                                                    <Typography variant="subtitle2">
+                                                        {post.reply.author.name}
+                                                    </Typography>
+                                                    <Typography
+                                                        variant="caption"
+                                                        color="text.secondary"
+                                                    >
+                                                        {formatDistance(
+                                                            new Date(
+                                                                post.reply
+                                                                    .createdAt,
+                                                            ),
+                                                            new Date(),
+                                                            {
+                                                                addSuffix: true,
+                                                                locale: ja,
+                                                            },
+                                                        )}
+                                                    </Typography>
+                                                </Stack>
+                                            </Stack>
+                                            <Typography
+                                                variant="body2"
+                                                sx={{ whiteSpace: "pre-wrap" }}
+                                            >
+                                                {post.reply.body}
+                                            </Typography>
+                                        </>
+                                    ) : isPublisher ? (
+                                        <>
+                                            <Divider />
+                                            <ReplyForm postId={post.id} />
+                                        </>
+                                    ) : null}
+                                </Stack>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </Stack>
+            ) : (
+                <Alert severity="info" variant="outlined">
+                    まだフィードバックがありません。
+                </Alert>
+            )}
+        </>
+    );
+}

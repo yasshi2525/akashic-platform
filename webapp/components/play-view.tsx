@@ -1,7 +1,8 @@
 "use client";
 
 import { MouseEvent, RefObject, TouchEvent, useEffect, useState } from "react";
-import { Alert, Container, Snackbar } from "@mui/material";
+import Link from "next/link";
+import { Alert, Button, Container, Snackbar, Stack } from "@mui/material";
 import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
 import { User } from "@/lib/types";
 import { useAkashic } from "@/lib/client/useAkashic";
@@ -35,6 +36,7 @@ export function PlayView({
     playId,
     playToken,
     contentId,
+    gameId,
     isGameMaster,
     contentWidth,
     contentHeight,
@@ -44,6 +46,7 @@ export function PlayView({
     playId: string;
     playToken: string;
     contentId: number;
+    gameId: number;
     isGameMaster: boolean;
     contentWidth: number;
     contentHeight: number;
@@ -147,6 +150,17 @@ export function PlayView({
                     <Alert severity="warning">{toMessage(warning)}</Alert>
                 </Snackbar>
             ) : null}
+            <Container maxWidth="md" sx={{ mt: 2 }}>
+                <Stack direction="row" justifyContent="flex-end">
+                    <Button
+                        component={Link}
+                        href={`/game/${gameId}#feedback`}
+                        variant="outlined"
+                    >
+                        このゲームの投稿者にフィードバックを送る
+                    </Button>
+                </Stack>
+            </Container>
         </>
     );
 }

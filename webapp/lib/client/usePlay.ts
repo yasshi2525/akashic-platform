@@ -34,6 +34,7 @@ export function usePlay(playId: string) {
                   playToken: data.playToken,
                   contentId: data.contentId,
                   isGameMaster: !!user && user.id === data.gameMasterId,
+                  gameId: data.gameId,
                   contentWidth: data.width,
                   contentHeight: data.height,
               }

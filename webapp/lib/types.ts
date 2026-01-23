@@ -1,4 +1,5 @@
 import type { NicoliveSupportedModes } from "@akashic/game-configuration";
+import type { NotificationType } from "@yasshi2525/persist-schema";
 
 const authTypes = ["guest", "oauth"] as const;
 type AuthType = (typeof authTypes)[number];
@@ -44,6 +45,41 @@ export interface PlayInfo {
     createdAt: Date;
 }
 
+export const FEEDBACK_LIMITS = 10;
+
+interface FeedbackAuthor {
+    id?: string;
+    name: string;
+    iconURL?: string;
+}
+
+interface FeedbackReply {
+    id: number;
+    author: FeedbackAuthor;
+    body: string;
+    createdAt: Date;
+}
+
+export interface FeedbackPost {
+    id: number;
+    author: FeedbackAuthor;
+    body: string;
+    createdAt: Date;
+    reply?: FeedbackReply;
+}
+
+export const NOTIFICATION_LIMITS = 10;
+
+export interface NotificationInfo {
+    id: number;
+    unread: boolean;
+    type: NotificationType;
+    iconURL?: string;
+    body: string;
+    link?: string;
+    createdAt: Date;
+}
+
 export const supportedAkashicVersions = ["3"];
 export const supportedAkashicModes: NicoliveSupportedModes[] = [
     "multi",
@@ -86,11 +122,28 @@ export type PlayResponse =
               playToken: string;
               contentId: number;
               gameMasterId: string;
+              gameId: number;
               width: number;
               height: number;
           };
       }
     | { ok: false; reason: PlayErrorType };
+
+const feedbackErrReasons = [
+    "InvalidParams",
+    "NotFound",
+    "InternalError",
+] as const;
+export type FeedbackErrorType = (typeof feedbackErrReasons)[number];
+export type FeedbackResponse =
+    | { ok: true; data: FeedbackPost[] }
+    | { ok: false; reason: FeedbackErrorType };
+
+const notificationErrReasons = ["NotAuthorized", "InternalError"] as const;
+export type NotificationErrorType = (typeof notificationErrReasons)[number];
+export type NotificationResponse =
+    | { ok: true; data: NotificationInfo[] }
+    | { ok: false; reason: NotificationErrorType };
 
 export const messageKey = "message";
 export const messages = {
