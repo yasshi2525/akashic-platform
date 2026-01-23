@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { GameConfiguration } from "@akashic/game-configuration";
 import { Play, prisma } from "@yasshi2525/persist-schema";
 import { PlayResponse } from "@/lib/types";
-import { internalContentBaseUrl, playlogServerUrl } from "@/lib/server/akashic";
+import {
+    internalContentBaseUrl,
+    internalPlaylogServerUrl,
+} from "@/lib/server/akashic";
 
 async function fetchViewSize(contentId: number) {
     const res = (await (
@@ -15,7 +18,9 @@ async function fetchViewSize(contentId: number) {
 }
 
 async function fetchPlayToken(play: Pick<Play, "id" | "contentId">) {
-    const res = await fetch(`${playlogServerUrl}/join?playId=${play.id}`);
+    const res = await fetch(
+        `${internalPlaylogServerUrl}/join?playId=${play.id}`,
+    );
     if (res.status !== 200) {
         throw new Error(
             `playlog server responded error message. (contentId = "${play.contentId}", detail = "${await res.text()}")`,

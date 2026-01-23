@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@yasshi2525/persist-schema";
-import { playlogServerUrl, publicContentBaseUrl } from "@/lib/server/akashic";
+import {
+    internalPlaylogServerUrl,
+    publicContentBaseUrl,
+} from "@/lib/server/akashic";
 import { GUEST_NAME, PlayInfo, PLAYLIST_LIMITS } from "@/lib/types";
 
 export async function GET(req: NextRequest) {
@@ -56,7 +59,7 @@ export async function GET(req: NextRequest) {
     const participants = await Promise.all(
         result.map(async ({ id }) => {
             const res = await fetch(
-                `${playlogServerUrl}/participants?playId=${id}`,
+                `${internalPlaylogServerUrl}/participants?playId=${id}`,
             );
             if (res.status !== 200) {
                 console.warn(
