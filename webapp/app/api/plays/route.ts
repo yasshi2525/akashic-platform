@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@yasshi2525/persist-schema";
-import { contentBaseUrl, playlogServerUrl } from "@/lib/server/akashic";
+import { playlogServerUrl, publicContentBaseUrl } from "@/lib/server/akashic";
 import { GUEST_NAME, PlayInfo, PLAYLIST_LIMITS } from "@/lib/types";
 
 export async function GET(req: NextRequest) {
@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
             id,
             game: {
                 title: content.game.title,
-                iconURL: `${contentBaseUrl}/${content.id}/${content.icon}`,
+                iconURL: `${publicContentBaseUrl}/${content.id}/${content.icon}`,
             },
             gameMaster: {
                 name: gmUser?.name ?? GUEST_NAME,

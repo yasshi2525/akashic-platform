@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { GameConfiguration } from "@akashic/game-configuration";
 import { Play, prisma } from "@yasshi2525/persist-schema";
 import { PlayResponse } from "@/lib/types";
-import { contentBaseUrl, playlogServerUrl } from "@/lib/server/akashic";
+import { internalContentBaseUrl, playlogServerUrl } from "@/lib/server/akashic";
 
 async function fetchViewSize(contentId: number) {
     const res = (await (
-        await fetch(`${contentBaseUrl}/${contentId}/game.json`)
+        await fetch(`${internalContentBaseUrl}/${contentId}/game.json`)
     ).json()) as GameConfiguration;
     return {
         width: res.width ?? 1280,

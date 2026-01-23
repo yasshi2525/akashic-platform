@@ -7,8 +7,12 @@ export const publicBaseUrl =
 
 export const internalBaseUrl = process.env.INTERNAL_BASE_URL ?? publicBaseUrl;
 
-export const contentBaseUrl =
-    process.env.CONTENT_BASE_URL ?? `http://localhost:9000/akashic-content`;
+export const publicContentBaseUrl =
+    process.env.PUBLIC_CONTENT_BASE_URL ??
+    `http://localhost:9000/akashic-content`;
+
+export const internalContentBaseUrl =
+    process.env.INTERNAL_CONTENT_BASE_URL ?? publicContentBaseUrl;
 
 export const playlogServerUrl =
     process.env.STORAGE_URL ?? "http://localhost:3031";
