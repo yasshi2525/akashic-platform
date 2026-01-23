@@ -1,6 +1,6 @@
 "use server";
 
-import fs from "node:fs";
+import { CopyObjectCommand } from "@aws-sdk/client-s3";
 import { prisma } from "@yasshi2525/persist-schema";
 import { ContentErrorResponse, ContentResponse } from "../types";
 import {
@@ -9,13 +9,13 @@ import {
     extractGameFile,
     deployGameZip,
     GameForm,
-    toContentDir,
     toIconPath,
     validateGameZip,
     deployIconFile,
-    toIconAbsPath,
     deleteContentDir,
     throwIfInvalidContentDir,
+    getBucket,
+    getS3Client,
 } from "./content-utils";
 import { endPlay } from "./play-end";
 
@@ -124,17 +124,18 @@ async function getIconPath(contentId: number) {
     ).icon;
 }
 
-async function copyIconFile(
-    oldContentId: number,
-    newContentDir: string,
+export async function copyIconFile(
+    fromContentId: number,
+    toContentId: number,
     iconPath: string,
 ) {
-    fs.cpSync(
-        toIconAbsPath(
-            toContentDir(oldContentId),
-            await getIconPath(oldContentId),
-        ),
-        toIconAbsPath(newContentDir, iconPath),
+    const bucket = getBucket();
+    await getS3Client().send(
+        new CopyObjectCommand({
+            Bucket: bucket,
+            Key: `${toContentId}/${iconPath}`,
+            CopySource: `${bucket}/${fromContentId}/${iconPath}`,
+        }),
     );
 }
 
@@ -182,44 +183,35 @@ export async function editContent(
                 param.gameId,
                 iconPath,
             );
-            const newContentDir = toContentDir(newContentId);
             try {
-                throwIfInvalidContentDir(newContentDir, newContentId);
-                await deployGameZip(newContentDir, gameZip);
+                await throwIfInvalidContentDir(newContentId);
+                await deployGameZip(newContentId, gameZip);
                 if (param.iconFile) {
                     await deployIconFile(
-                        newContentDir,
+                        newContentId,
                         iconPath,
                         param.iconFile,
                     );
                 } else {
-                    await copyIconFile(
-                        param.contentId,
-                        newContentDir,
-                        iconPath,
-                    );
+                    await copyIconFile(param.contentId, newContentId, iconPath);
                 }
                 await endCurrentPlay(param.contentId);
                 await deleteContentRecord(param.contentId);
-                deleteContentDir(toContentDir(param.contentId));
+                await deleteContentDir(param.contentId);
                 return {
                     ok: true,
                     contentId: newContentId,
                 };
             } catch (err) {
                 await deleteContentRecord(newContentId);
-                deleteContentDir(newContentDir);
+                await deleteContentDir(newContentId);
                 throw err;
             }
         } else {
             if (param.iconFile) {
                 const iconPath = toIconPath(param.iconFile);
                 await updateContentRecord(param.contentId, iconPath);
-                await deployIconFile(
-                    toContentDir(param.contentId),
-                    iconPath,
-                    param.iconFile,
-                );
+                await deployIconFile(param.contentId, iconPath, param.iconFile);
             }
             return {
                 ok: true,

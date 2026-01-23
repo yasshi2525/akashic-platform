@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@yasshi2525/persist-schema";
+import { contentBaseUrl } from "@/lib/server/akashic";
 import { GameInfo, GAMELIST_LIMITS } from "@/lib/types";
 
 export async function GET(req: NextRequest) {
@@ -87,7 +88,7 @@ export async function GET(req: NextRequest) {
             ({ id, title, description, publisher, versions, createdAt }) => ({
                 id,
                 title,
-                iconURL: `/content/${versions[0].id}/${versions[0].icon}`,
+                iconURL: `${contentBaseUrl}/${versions[0].id}/${versions[0].icon}`,
                 publisher: {
                     id: publisher.id,
                     name: publisher.name!,

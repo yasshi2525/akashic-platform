@@ -5,9 +5,6 @@
 /public/akashic
 /config
 
-# user data
-/public/content
-
 # next.js
 /.next/
 next-env.d.ts

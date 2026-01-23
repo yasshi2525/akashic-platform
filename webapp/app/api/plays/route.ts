@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@yasshi2525/persist-schema";
+import { contentBaseUrl, playlogServerUrl } from "@/lib/server/akashic";
 import { GUEST_NAME, PlayInfo, PLAYLIST_LIMITS } from "@/lib/types";
-import { playlogServerUrl } from "@/lib/server/akashic";
 
 export async function GET(req: NextRequest) {
     const keyword = req.nextUrl.searchParams.get("keyword") ?? undefined;
@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
             id,
             game: {
                 title: content.game.title,
-                iconURL: `/content/${content.id}/${content.icon}`,
+                iconURL: `${contentBaseUrl}/${content.id}/${content.icon}`,
             },
             gameMaster: {
                 name: gmUser?.name ?? GUEST_NAME,

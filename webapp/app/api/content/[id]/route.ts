@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GameConfiguration } from "@akashic/game-configuration";
-import { engineUrls, publicBaseUrl } from "@/lib/server/akashic";
+import {
+    contentBaseUrl,
+    engineUrls,
+    publicBaseUrl,
+} from "@/lib/server/akashic";
 
 async function getExternal(contentId: string) {
     try {
         const gameJson = (await (
-            await fetch(`${publicBaseUrl}/content/${contentId}/game.json`)
+            await fetch(`${contentBaseUrl}/${contentId}/game.json`)
         ).json()) as GameConfiguration;
         return Object.keys(gameJson.environment?.external ?? {});
     } catch (err) {
@@ -24,8 +28,8 @@ export async function GET(
     const { id: contentId } = await ctx.params;
     return NextResponse.json({
         engine_urls: engineUrls.map((path) => publicBaseUrl + path),
-        content_url: `${publicBaseUrl}/content/${contentId}/game.json`,
-        asset_base_url: `${publicBaseUrl}/content/${contentId}`,
+        content_url: `${contentBaseUrl}/${contentId}/game.json`,
+        asset_base_url: `${contentBaseUrl}/${contentId}`,
         untrusted: false,
         content_id: contentId,
         external: await getExternal(contentId),

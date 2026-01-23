@@ -18,6 +18,27 @@ services:
       timeout: 4s
       retries: 10
 
+  minio:
+    image: minio/minio
+    ports:
+      - 9000:9000
+      - 9001:9001
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+
+  minio-setup:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c
+      "mc alias set local http://minio:9000 minioadmin minioadmin
+      && mc mb -p local/akashic-content || true"
+
   db-migrate:
     build:
       context: .
@@ -70,13 +91,23 @@ services:
     environment:
       PORT: 3000
       PUBLIC_BASE_URL: http://localhost:3000
+      CONTENT_BASE_URL: http://localhost:9000/akashic-content
       STORAGE_URL: http://akashic-storage:3031
       SERVER_URL: http://akashic-server:3032
       DATABASE_URL: postgres://ap-user:${POSTGRES_PASSWORD:-postgres}@postgres:5432/akashic
       NEXTAUTH_URL: http://localhost:3000
       AUTH_TRUST_HOST: true
+      S3_ENDPOINT: http://minio:9000
+      S3_BUCKET: akashic-content
+      S3_REGION: us-east-1
+      S3_FORCE_PATH_STYLE: true
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
     env_file:
       - .env
     depends_on:
       db-migrate:
         condition: service_completed_successfully
+
+volumes:
+  minio-data:

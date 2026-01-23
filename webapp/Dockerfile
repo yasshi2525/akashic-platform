@@ -16,13 +16,10 @@ FROM node:${NODE_VERSION}-alpine
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
-# COPY --from=build /app/webapp/.next/standalone .
-# COPY --from=build /app/webapp/public webapp/public
-# COPY --from=build /app/webapp/.next/static webapp/.next/static
-COPY --from=build --parents /app /
-COPY --from=build --parents /app/package.json /app/node_modules /
+COPY --from=build /app/webapp/.next/standalone .
+COPY --from=build /app/webapp/public webapp/public
+COPY --from=build /app/webapp/.next/static webapp/.next/static
 RUN chown -R node:node .
 EXPOSE ${PORT}
 USER node
-# CMD ["node", "webapp/server.js"]
-CMD ["npm", "run", "dev", "-w", "@yasshi2525/webapp"]
+CMD ["node", "webapp/server.js"]

@@ -1,5 +1,11 @@
-import fs from "node:fs";
 import * as path from "node:path";
+import * as process from "node:process";
+import {
+    DeleteObjectsCommand,
+    ListObjectsV2Command,
+    PutObjectCommand,
+    S3Client,
+} from "@aws-sdk/client-s3";
 import JSZip, { JSZipObject } from "jszip";
 import { GameConfiguration } from "@akashic/game-configuration";
 import { prisma } from "@yasshi2525/persist-schema";
@@ -14,6 +20,33 @@ export interface GameForm {
     gameFile: File;
     iconFile: File;
     description: string;
+}
+
+let s3Client: S3Client | undefined;
+
+export function getS3Client() {
+    if (!s3Client) {
+        s3Client = new S3Client({
+            region: process.env.S3_REGION ?? "us-east-1",
+            endpoint: process.env.S3_ENDPOINT,
+            forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true",
+            credentials:
+                process.env.S3_ACCESS_KEY && process.env.S3_SECRET_KEY
+                    ? {
+                          accessKeyId: process.env.S3_ACCESS_KEY,
+                          secretAccessKey: process.env.S3_SECRET_KEY,
+                      }
+                    : undefined,
+        });
+    }
+    return s3Client;
+}
+
+export function getBucket() {
+    if (!process.env.S3_BUCKET) {
+        throw new Error("S3_BUCKET is required.");
+    }
+    return process.env.S3_BUCKET;
 }
 
 export async function extractGameFile(gameFile: File) {
@@ -67,17 +100,17 @@ export function toIconPath(iconFile: File) {
     return "icon" + path.extname(iconFile.name);
 }
 
-export function toContentDir(contentId: number) {
-    return path.join(process.cwd(), "public", "content", contentId.toString());
-}
-
-export function throwIfInvalidContentDir(
-    contentDir: string,
-    contentId: number,
-) {
-    if (fs.existsSync(contentDir)) {
+export async function throwIfInvalidContentDir(contentId: number) {
+    const res = await getS3Client().send(
+        new ListObjectsV2Command({
+            Bucket: getBucket(),
+            Prefix: `${contentId}/`,
+            MaxKeys: 1,
+        }),
+    );
+    if (res.Contents && res.Contents.length > 0) {
         throw new Error(
-            `failed to create content directory (contentId = "${contentId}", reason = "already exists ${contentDir}")`,
+            `failed to create content directory (contentId = "${contentId}", reason = "already exists ${getBucket()}/${contentId}")`,
         );
     }
 }
@@ -101,45 +134,66 @@ export async function deleteContentRecord(contentId: number) {
     });
 }
 
-async function extractFile(baseDir: string, file: JSZipObject) {
+async function extractFile(contentId: number, file: JSZipObject) {
     if (file.dir) {
-        fs.mkdirSync(path.join(baseDir, file.name), {
-            recursive: true,
-        });
-    } else {
-        fs.mkdirSync(path.join(baseDir, path.dirname(file.name)), {
-            recursive: true,
-        });
-        fs.writeFileSync(
-            path.join(baseDir, file.name),
-            await file.async("nodebuffer"),
-        );
+        return;
     }
+    await getS3Client().send(
+        new PutObjectCommand({
+            Bucket: getBucket(),
+            Key: `${contentId}/${file.name}`,
+            Body: await file.async("nodebuffer"),
+        }),
+    );
 }
 
-export async function deployGameZip(contentDir: string, gameZip: JSZip) {
+export async function deployGameZip(contentId: number, gameZip: JSZip) {
     await Promise.all(
         Object.values(gameZip.files).map(
-            async (file) => await extractFile(contentDir, file),
+            async (file) => await extractFile(contentId, file),
         ),
     );
 }
 
-export function toIconAbsPath(contentDir: string, iconPath: string) {
-    return path.join(contentDir, iconPath);
-}
-
 export async function deployIconFile(
-    contentDir: string,
+    contentId: number,
     iconPath: string,
     iconFile: File,
 ) {
-    fs.writeFileSync(
-        toIconAbsPath(contentDir, iconPath),
-        await iconFile.bytes(),
+    await getS3Client().send(
+        new PutObjectCommand({
+            Bucket: getBucket(),
+            Key: `${contentId}/${iconPath}`,
+            Body: await iconFile.bytes(),
+        }),
     );
 }
 
-export async function deleteContentDir(contentDir: string) {
-    fs.rmSync(contentDir, { recursive: true, force: true });
+export async function deleteContentDir(contentId: number) {
+    let continuationToken: string | undefined;
+    do {
+        const res = await getS3Client().send(
+            new ListObjectsV2Command({
+                Bucket: getBucket(),
+                Prefix: `${contentId}/`,
+                ContinuationToken: continuationToken,
+            }),
+        );
+        const objects = (res.Contents ?? [])
+            .map((obj) => obj.Key)
+            .filter((key) => Boolean(key))
+            .map((key) => ({ Key: key }));
+        if (objects.length > 0) {
+            await getS3Client().send(
+                new DeleteObjectsCommand({
+                    Bucket: getBucket(),
+                    Delete: {
+                        Objects: objects,
+                        Quiet: true,
+                    },
+                }),
+            );
+        }
+        continuationToken = res.NextContinuationToken;
+    } while (continuationToken);
 }

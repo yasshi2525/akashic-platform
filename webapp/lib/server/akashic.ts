@@ -5,6 +5,9 @@ import playlogVersion from "../../config/playlogClientVersion.json";
 export const publicBaseUrl =
     process.env.PUBLIC_BASE_URL ?? "http://localhost:3000";
 
+export const contentBaseUrl =
+    process.env.CONTENT_BASE_URL ?? `http://localhost:9000/akashic-content`;
+
 export const playlogServerUrl =
     process.env.STORAGE_URL ?? "http://localhost:3031";
 

@@ -38,12 +38,6 @@
 
 ![アーキテクチャ図](./architecture.png)
 
-> [!NOTE]
->
-> クラウドにデプロイする際、必要な作業
->
-> - public 配下 (akashic, content) を外部ストレージ
-
 ## リポジトリ構成
 
 ### webapp
@@ -94,6 +88,7 @@ openssl rand -base64 33
 ```
 
 `.env`
+
 ```sh
 AUTH_SECRET="<abcd...>"
 ```
@@ -113,6 +108,7 @@ docker compose up
 - Node.js
 - PostgreSQL: ユーザー・ゲーム情報・プレイ情報の保管
 - Valkey: ゲーム実行時情報の保管
+- Minio: コンテンツデータ（投稿ゲームデータ）の保管
 
 Valkey の JavaScript Client の制約により、Windows OS上では動作しません。(WSL上ならOK)
 
@@ -153,7 +149,6 @@ npm run dev -w ./webapp
 設定変更は `./schema/persist`, `./akashic-storage`, `./akashic-server`, `./webapp` 配下に `.env` を置くことでできます。 `.env.example` を参考にしてください。
 
 `http://localhost:3000` にアクセスするとゲームで遊ぶことができます。
-投稿されたゲームデータは `./webapp/public/content` 以下に保存されます。
 
 ## LICENSE
 

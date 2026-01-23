@@ -9,7 +9,6 @@ import {
     deployGameZip,
     deployIconFile,
     GameForm,
-    toContentDir,
     toIconPath,
     validateGameZip,
     deleteContentDir,
@@ -72,18 +71,17 @@ export async function registerContent(
         try {
             const iconPath = toIconPath(param.iconFile);
             const contentId = await createContentRecord(gameId, iconPath);
-            const contentDir = toContentDir(contentId);
             try {
-                throwIfInvalidContentDir(contentDir, contentId);
-                await deployGameZip(contentDir, gameZip);
-                await deployIconFile(contentDir, iconPath, param.iconFile);
+                await throwIfInvalidContentDir(contentId);
+                await deployGameZip(contentId, gameZip);
+                await deployIconFile(contentId, iconPath, param.iconFile);
                 return {
                     ok: true,
                     contentId,
                 };
             } catch (err) {
                 await deleteContentRecord(contentId);
-                deleteContentDir(contentDir);
+                await deleteContentDir(contentId);
                 throw err;
             }
         } catch (err) {
