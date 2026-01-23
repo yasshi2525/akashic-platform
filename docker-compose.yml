@@ -91,6 +91,7 @@ services:
     environment:
       PORT: 3000
       PUBLIC_BASE_URL: http://localhost:3000
+      INTERNAL_BASE_URL: http://webapp:3000
       CONTENT_BASE_URL: http://localhost:9000/akashic-content
       STORAGE_URL: http://akashic-storage:3031
       SERVER_URL: http://akashic-server:3032

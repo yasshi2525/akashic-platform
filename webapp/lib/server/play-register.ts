@@ -2,7 +2,7 @@
 
 import { prisma } from "@yasshi2525/persist-schema";
 import { GUEST_NAME } from "../types";
-import { akashicServerUrl, contentBaseUrl, publicBaseUrl } from "./akashic";
+import { akashicServerUrl, contentBaseUrl, internalBaseUrl } from "./akashic";
 
 interface PlayForm {
     gameMasterId: string;
@@ -45,7 +45,7 @@ export async function registerPlay({
             },
             body: JSON.stringify({
                 contentId,
-                contentUrl: `${publicBaseUrl}/api/content/${contentId}`,
+                contentUrl: `${internalBaseUrl}/api/internal/content/${contentId}`,
                 assetBaseUrl: `${contentBaseUrl}/${contentId}`,
                 configurationUrl: `${contentBaseUrl}/${contentId}/game.json`,
                 playerId: gameMasterId,
