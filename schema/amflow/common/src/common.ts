@@ -98,7 +98,7 @@ export type ClientEventSchema = typeof cliSchema;
 const playEndReasons = [
     "GAMEMASTER",
     "TIMEOUT",
-    "DEL_CONTNET",
+    "DEL_CONTENT",
     "INTERNAL_ERROR",
 ] as const;
 export type PlayEndReason = (typeof playEndReasons)[number];

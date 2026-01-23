@@ -156,7 +156,7 @@ async function endCurrentPlay(contentId: number) {
     ).plays.map(({ id }) => id.toString());
     await Promise.all(
         playIds.map(async (playId) => {
-            await endPlay({ playId, reason: "DEL_CONTNET" });
+            await endPlay({ playId, reason: "DEL_CONTENT" });
         }),
     );
 }

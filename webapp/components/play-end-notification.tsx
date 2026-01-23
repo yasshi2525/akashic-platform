@@ -21,7 +21,7 @@ export function PlayEndNotification({ reason }: { reason: PlayEndReason }) {
                 return "部屋主がゲームを終了しました。";
             case "TIMEOUT":
                 return "プレイ可能な最大時間を過ぎたため、強制終了しました。";
-            case "DEL_CONTNET":
+            case "DEL_CONTENT":
                 return "ゲームが削除されたため、強制終了しました。";
             case "INTERNAL_ERROR":
             default:
