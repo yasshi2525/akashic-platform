@@ -27,8 +27,6 @@ services:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
     command: server /data --console-address ":9001"
-    volumes:
-      - minio-data:/data
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
       interval: 5s
@@ -116,6 +114,3 @@ services:
     depends_on:
       db-migrate:
         condition: service_completed_successfully
-
-volumes:
-  minio-data:
