@@ -35,6 +35,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v5
         with:
@@ -45,18 +48,18 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Resolve image tag from package.json of "${{ matrix.service.name }}"
+      - name: Resolve version "${{ matrix.service.name }}"
         id: image-tag
         run: |
           version="$(node -p "require('./${{ matrix.service.workspace }}/package.json').version")"
           echo "image_tag=$version" >> "$GITHUB_OUTPUT"
 
-      - name: Build, tag, and push "${{ matrix.service.name }}" image
-        env:
-          IMAGE: ${{ matrix.service.name }}
-          TAG: ${{ steps.image-tag.outputs.image_tag }}
-        run: |
-          docker build -t akashic-platform/$IMAGE:$TAG -f ${{ matrix.service.dockerfile }} ${{ matrix.service.context }}
-          docker tag akashic-platform/$IMAGE:$TAG akashic-platform/$IMAGE:latest
-          docker push akashic-platform/$IMAGE:$TAG
-          docker push akashic-platform/$IMAGE:latest
+      - name: Build and push "${{ matrix.service.name }}"
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.service.context }}
+          file: ${{ matrix.service.dockerfile }}
+          tags: |
+            akashic-platform/${{ matrix.service.name }}:${{ steps.image-tag.outputs.image_tag }}
+            akashic-platform/${{ matrix.service.name }}:latest
+          push: true
