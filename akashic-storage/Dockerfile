@@ -3,10 +3,10 @@ FROM node:${NODE_VERSION}-alpine AS build
 WORKDIR /app
 COPY . .
 RUN npm ci -w @yasshi2525/amflow-server-event-schema \
-    && npm run prepare -w @yasshi2525/amflow-server-event-schema \
-    && npm ci -w @yasshi2525/akashic-storage \
-    && npm run prepare -w @yasshi2525/akashic-storage \
-    && npm run build -w @yasshi2525/akashic-storage
+  && npm run prepare -w @yasshi2525/amflow-server-event-schema \
+  && npm ci -w @yasshi2525/akashic-storage \
+  && npm run prepare -w @yasshi2525/akashic-storage \
+  && npm run build -w @yasshi2525/akashic-storage
 
 FROM node:${NODE_VERSION}-alpine
 WORKDIR /app
