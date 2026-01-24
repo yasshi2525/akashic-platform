@@ -10,6 +10,7 @@ export type FeedbackFormState = {
     ok: boolean;
     message?: string;
     submitted: boolean;
+    submittedAt?: number;
 };
 
 const initialState: FeedbackFormState = {
@@ -36,6 +37,7 @@ export async function postFeedbackAction(
             ok: false,
             message: "入力内容を確認してください。",
             submitted: true,
+            submittedAt: Date.now(),
         };
     }
 
@@ -59,6 +61,7 @@ export async function postFeedbackAction(
             ok: false,
             message: "ゲームが見つかりません。",
             submitted: true,
+            submittedAt: Date.now(),
         };
     }
 
@@ -70,6 +73,7 @@ export async function postFeedbackAction(
             ok: false,
             message: "表示名を入力してください。",
             submitted: true,
+            submittedAt: Date.now(),
         };
     }
 
@@ -96,7 +100,11 @@ export async function postFeedbackAction(
     }
 
     revalidatePath(`/game/${gameId}`);
-    return { ...initialState, submitted: true };
+    return {
+        ...initialState,
+        submitted: true,
+        submittedAt: Date.now(),
+    };
 }
 
 export async function postFeedbackReplyAction(
@@ -111,6 +119,7 @@ export async function postFeedbackReplyAction(
             ok: false,
             message: "入力内容を確認してください。",
             submitted: true,
+            submittedAt: Date.now(),
         };
     }
 
@@ -120,6 +129,7 @@ export async function postFeedbackReplyAction(
             ok: false,
             message: "返信にはサインインが必要です。",
             submitted: true,
+            submittedAt: Date.now(),
         };
     }
 
@@ -148,6 +158,7 @@ export async function postFeedbackReplyAction(
             ok: false,
             message: "フィードバックが見つかりません。",
             submitted: true,
+            submittedAt: Date.now(),
         };
     }
     if (post.game.publisherId !== user.id) {
@@ -155,10 +166,16 @@ export async function postFeedbackReplyAction(
             ok: false,
             message: "返信する権限がありません。",
             submitted: true,
+            submittedAt: Date.now(),
         };
     }
     if (post.reply) {
-        return { ok: false, message: "返信済みです。", submitted: true };
+        return {
+            ok: false,
+            message: "返信済みです。",
+            submitted: true,
+            submittedAt: Date.now(),
+        };
     }
 
     await prisma.feedbackReply.create({
@@ -183,5 +200,9 @@ export async function postFeedbackReplyAction(
     }
 
     revalidatePath(`/game/${post.game.id}`);
-    return { ...initialState, submitted: true };
+    return {
+        ...initialState,
+        submitted: true,
+        submittedAt: Date.now(),
+    };
 }

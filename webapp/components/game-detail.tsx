@@ -18,12 +18,14 @@ export function GameDetailClient({
     feedbackList,
     isPublisher,
     user,
+    onRefresh,
     error,
 }: {
     gameInfo: GameInfo | null;
     feedbackList: FeedbackPost[];
     isPublisher: boolean;
     user: User | null;
+    onRefresh?: () => void;
     error?: string;
 }) {
     if (error || !gameInfo) {
@@ -90,6 +92,7 @@ export function GameDetailClient({
                     feedbackList={feedbackList}
                     isPublisher={isPublisher}
                     user={user}
+                    onRefresh={onRefresh}
                 />
             </Box>
         </Container>

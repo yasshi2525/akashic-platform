@@ -22,7 +22,7 @@ const fetcher = async (url: string) => {
 };
 
 export function useFeedback(gameId: string) {
-    const { isLoading, data, error } = useSWR(
+    const { isLoading, data, error, mutate } = useSWR(
         gameId ? `/api/feedback/${gameId}` : null,
         fetcher,
     );
@@ -30,5 +30,6 @@ export function useFeedback(gameId: string) {
         isLoading,
         list: data,
         error: error ? error.message : undefined,
+        mutate,
     };
 }

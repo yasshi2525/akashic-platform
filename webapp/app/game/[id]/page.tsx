@@ -20,6 +20,7 @@ export default function GameDetail() {
         isLoading: isFeedbackLoading,
         list: feedbackList,
         error: feedbackError,
+        mutate: refreshFeedback,
     } = useFeedback(id);
 
     const isPublisher = useMemo(() => {
@@ -53,6 +54,7 @@ export default function GameDetail() {
             feedbackList={feedbackList ?? []}
             isPublisher={isPublisher}
             user={user}
+            onRefresh={refreshFeedback}
         />
     );
 }

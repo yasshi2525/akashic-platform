@@ -37,18 +37,27 @@ function SubmitButton({ label }: { label: string }) {
     );
 }
 
-function PostForm({ gameId, user }: { gameId: number; user: User | null }) {
+function PostForm({
+    gameId,
+    user,
+    onRefresh,
+}: {
+    gameId: number;
+    user: User | null;
+    onRefresh?: () => void;
+}) {
     const router = useRouter();
     const [state, action] = useFormState(postFeedbackAction, initialState);
     const [authorName, setAuthorName] = useState(GUEST_NAME);
     const [body, setBody] = useState("");
 
     useEffect(() => {
-        if (state.submitted && state.ok) {
+        if (state.submitted && state.ok && state.submittedAt) {
             setBody("");
+            onRefresh?.();
             router.refresh();
         }
-    }, [state.submitted, state.ok, router]);
+    }, [state.submitted, state.ok, state.submittedAt, router, onRefresh]);
 
     return (
         <Card sx={{ mb: 2 }}>
@@ -90,17 +99,24 @@ function PostForm({ gameId, user }: { gameId: number; user: User | null }) {
     );
 }
 
-function ReplyForm({ postId }: { postId: number }) {
+function ReplyForm({
+    postId,
+    onRefresh,
+}: {
+    postId: number;
+    onRefresh?: () => void;
+}) {
     const router = useRouter();
     const [state, action] = useFormState(postFeedbackReplyAction, initialState);
     const [body, setBody] = useState("");
 
     useEffect(() => {
-        if (state.submitted && state.ok) {
+        if (state.submitted && state.ok && state.submittedAt) {
             setBody("");
+            onRefresh?.();
             router.refresh();
         }
-    }, [state.submitted, state.ok, router]);
+    }, [state.submitted, state.ok, state.submittedAt, router, onRefresh]);
 
     return (
         <form action={action}>
@@ -132,15 +148,19 @@ export function FeedbackPanel({
     user,
     isPublisher,
     feedbackList,
+    onRefresh,
 }: {
     gameId: number;
     user: User | null;
     isPublisher: boolean;
     feedbackList: FeedbackPost[];
+    onRefresh?: () => void;
 }) {
     return (
         <>
-            {!isPublisher ? <PostForm gameId={gameId} user={user} /> : null}
+            {!isPublisher ? (
+                <PostForm gameId={gameId} user={user} onRefresh={onRefresh} />
+            ) : null}
             {feedbackList.length ? (
                 <Stack spacing={2}>
                     {feedbackList.map((post) => (
@@ -181,50 +201,70 @@ export function FeedbackPanel({
                                     {post.reply ? (
                                         <>
                                             <Divider />
-                                            <Stack direction="row" spacing={2}>
-                                                <Avatar
-                                                    src={
-                                                        post.reply.author
-                                                            .iconURL
-                                                    }
-                                                    sx={{
-                                                        width: 36,
-                                                        height: 36,
-                                                    }}
-                                                />
-                                                <Stack spacing={0.5}>
-                                                    <Typography variant="subtitle2">
-                                                        {post.reply.author.name}
-                                                    </Typography>
-                                                    <Typography
-                                                        variant="caption"
-                                                        color="text.secondary"
-                                                    >
-                                                        {formatDistance(
-                                                            new Date(
-                                                                post.reply
-                                                                    .createdAt,
-                                                            ),
-                                                            new Date(),
-                                                            {
-                                                                addSuffix: true,
-                                                                locale: ja,
-                                                            },
-                                                        )}
-                                                    </Typography>
-                                                </Stack>
-                                            </Stack>
-                                            <Typography
-                                                variant="body2"
-                                                sx={{ whiteSpace: "pre-wrap" }}
+                                            <Stack
+                                                spacing={1}
+                                                sx={{
+                                                    alignItems: "flex-end",
+                                                    textAlign: "right",
+                                                }}
                                             >
-                                                {post.reply.body}
-                                            </Typography>
+                                                <Stack
+                                                    direction="row"
+                                                    spacing={2}
+                                                >
+                                                    <Stack spacing={0.5}>
+                                                        <Typography variant="subtitle2">
+                                                            {
+                                                                post.reply
+                                                                    .author.name
+                                                            }
+                                                            （投稿者）
+                                                        </Typography>
+                                                        <Typography
+                                                            variant="caption"
+                                                            color="text.secondary"
+                                                        >
+                                                            {formatDistance(
+                                                                new Date(
+                                                                    post.reply
+                                                                        .createdAt,
+                                                                ),
+                                                                new Date(),
+                                                                {
+                                                                    addSuffix: true,
+                                                                    locale: ja,
+                                                                },
+                                                            )}
+                                                        </Typography>
+                                                    </Stack>
+                                                    <Avatar
+                                                        src={
+                                                            post.reply.author
+                                                                .iconURL
+                                                        }
+                                                        sx={{
+                                                            width: 36,
+                                                            height: 36,
+                                                        }}
+                                                    />
+                                                </Stack>
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{
+                                                        whiteSpace: "pre-wrap",
+                                                    }}
+                                                >
+                                                    {post.reply.body}
+                                                </Typography>
+                                            </Stack>
                                         </>
                                     ) : isPublisher ? (
                                         <>
                                             <Divider />
-                                            <ReplyForm postId={post.id} />
+                                            <ReplyForm
+                                                postId={post.id}
+                                                onRefresh={onRefresh}
+                                            />
                                         </>
                                     ) : null}
                                 </Stack>
