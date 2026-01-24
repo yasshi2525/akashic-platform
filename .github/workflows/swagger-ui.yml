@@ -42,6 +42,7 @@ jobs:
 
       - name: Build Swagger UI
         run: |
+          npm run prepare -w @yasshi2525/amflow-client-event-schema
           npm run prepare -w @yasshi2525/akashic-storage
           npm run prepare -w @yasshi2525/akashic-server
           npm run build -w @yasshi2525/http-schema
