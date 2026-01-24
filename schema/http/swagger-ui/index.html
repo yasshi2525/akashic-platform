@@ -20,26 +20,23 @@
   <body>
     <div id="swagger-ui"></div>
     <script src="./swagger-ui-bundle.js"></script>
+    <script src="./swagger-ui-standalone-preset.js"></script>
     <script>
       window.onload = () => {
-        const base = window.location.href.substring(
-          0,
-          window.location.href.lastIndexOf("/"),
-        );
         SwaggerUIBundle({
           dom_id: "#swagger-ui",
           urls: [
             {
               name: "akashic-server",
-              url: `${base}/akashic-server.openapi.json`,
+              url: "./akashic-server.openapi.json",
             },
             {
               name: "akashic-storage",
-              url: `${base}/akashic-storage.openapi.json`,
+              url: "./akashic-storage.openapi.json",
             },
           ],
-          presets: [SwaggerUIBundle.presets.apis],
-          layout: "BaseLayout",
+          presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+          layout: "StandaloneLayout",
         });
       };
     </script>

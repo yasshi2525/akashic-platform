@@ -51,6 +51,10 @@ await copyFile(
     path.join(swaggerDistDir, "swagger-ui-bundle.js"),
     path.join(outDir, "swagger-ui-bundle.js"),
 );
+await copyFile(
+    path.join(swaggerDistDir, "swagger-ui-standalone-preset.js"),
+    path.join(outDir, "swagger-ui-standalone-preset.js"),
+);
 
 for (const spec of specs) {
     const moduleUrl = pathToFileURL(spec.modulePath).href;
