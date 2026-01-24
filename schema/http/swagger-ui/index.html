@@ -22,9 +22,9 @@
     <script src="./swagger-ui-bundle.js"></script>
     <script>
       window.onload = () => {
-        const base = window.location.pathname.substring(
+        const base = window.location.href.substring(
           0,
-          window.location.pathname.lastIndexOf("/"),
+          window.location.href.lastIndexOf("/"),
         );
         SwaggerUIBundle({
           dom_id: "#swagger-ui",
