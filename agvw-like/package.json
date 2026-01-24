@@ -10,7 +10,7 @@
   ],
   "type": "module",
   "scripts": {
-    "prepare": "npm run build -w @yasshi2525/playlog-client-like",
+    "build:all": "npm run build:all -w @yasshi2525/playlog-client-like && npm run build",
     "build": "tsup"
   },
   "keywords": [],

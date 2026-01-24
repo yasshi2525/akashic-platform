@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "init": "prisma db push",
-    "reset": "prisma db push --force-reset && npm run setup",
+    "reset": "prisma db push --force-reset && npm run build",
     "build": "prisma generate && tsc"
   },
   "author": "yasshi2525",

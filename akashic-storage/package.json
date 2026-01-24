@@ -9,7 +9,7 @@
     "dist/**/*.d.ts"
   ],
   "scripts": {
-    "prepare": "npm run build -w @yasshi2525/amflow-server-event-schema",
+    "build:all": "npm run build:all -w @yasshi2525/amflow-server-event-schema && npm run build",
     "build": "tsc",
     "run": "node --env-file-if-exists=.env dist/index.js"
   },

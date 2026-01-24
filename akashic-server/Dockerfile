@@ -2,11 +2,8 @@ ARG NODE_VERSION=24
 FROM node:${NODE_VERSION}-alpine AS build
 WORKDIR /app
 COPY . .
-RUN npm ci -w @yasshi2525/amflow-client-event-schema \
-  && npm run prepare -w @yasshi2525/amflow-client-event-schema \
-  && npm ci -w @yasshi2525/akashic-server \
-  && npm run prepare -w @yasshi2525/akashic-server \
-  && npm run build -w @yasshi2525/akashic-server
+RUN npm ci -w @yasshi2525/akashic-server \
+  && npm run build:all -w @yasshi2525/akashic-server
 
 FROM node:${NODE_VERSION}-alpine
 WORKDIR /app

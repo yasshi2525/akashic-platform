@@ -8,8 +8,8 @@
   "files": [],
   "type": "module",
   "scripts": {
-    "prepare": "npm run build -w @yasshi2525/persist-schema && npm run build -w @yasshi2525/playlog-client-like && npm run build -w @yasshi2525/agvw-like && npm run setup",
-    "setup": "npm run setup:engineFiles && npm run setup:playlogClient && npm run setup:next",
+    "setup": "npm run setup:dependency && npm run setup:engineFiles && npm run setup:playlogClient && npm run setup:next",
+    "setup:dependency": "npm run build -w @yasshi2525/persist-schema && npm run build:all -w @yasshi2525/playlog-client-like && npm run build:all -w @yasshi2525/agvw-like",
     "setup:engineFiles": "node setup/updateEngineFiles.js",
     "setup:playlogClient": "node setup/updatePlaylogClientLike.js",
     "setup:next": "next typegen",

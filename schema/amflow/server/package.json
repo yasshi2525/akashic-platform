@@ -11,7 +11,7 @@
   "author": "yasshi2525",
   "license": "MIT",
   "scripts": {
-    "prepare": "npm run build -w @yasshi2525/amflow-event-schema",
+    "build:all": "npm run build -w @yasshi2525/amflow-event-schema && npm run build",
     "build": "tsc"
   },
   "devDependencies": {

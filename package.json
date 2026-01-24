@@ -8,12 +8,12 @@
     "schema/amflow/common",
     "schema/amflow/client",
     "schema/amflow/server",
+    "schema/http",
     "schema/persist",
     "playlogClient-like",
     "agvw-like",
     "akashic-server",
     "akashic-storage",
-    "schema/http",
     "webapp"
   ]
 }

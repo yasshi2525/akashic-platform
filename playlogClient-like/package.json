@@ -10,7 +10,7 @@
     "dist/**/*.d.ts"
   ],
   "scripts": {
-    "prepare": "npm run build -w @yasshi2525/amflow-client-event-schema",
+    "build:all": "npm run build:all -w @yasshi2525/amflow-client-event-schema && npm run build",
     "build": "tsup"
   },
   "keywords": [],

@@ -9,7 +9,7 @@
     "dist/**/*.d.ts"
   ],
   "scripts": {
-    "prepare": "npm run build -w @yasshi2525/persist-schema && npm run build -w @yasshi2525/playlog-client-like",
+    "build:all": "npm run build -w @yasshi2525/persist-schema && npm run build:all -w @yasshi2525/playlog-client-like && npm run build",
     "build": "tsc",
     "run": "node --env-file-if-exists=.env dist/index.js"
   },

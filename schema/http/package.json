@@ -8,7 +8,7 @@
   ],
   "type": "module",
   "scripts": {
-    "build": "npm run build -w @yasshi2525/akashic-server && npm run build -w @yasshi2525/akashic-storage && node build-swagger.js"
+    "build": "npm run build:all -w @yasshi2525/akashic-server && npm run build:all -w @yasshi2525/akashic-storage && node build-swagger.js"
   },
   "author": "yasshi2525",
   "license": "MIT",

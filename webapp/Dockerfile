@@ -2,12 +2,8 @@ ARG NODE_VERSION=24
 FROM node:${NODE_VERSION}-alpine AS build
 WORKDIR /app
 COPY . .
-RUN npm ci -w @yasshi2525/amflow-client-event-schema \
-  && npm run prepare -w @yasshi2525/amflow-client-event-schema \
-  && npm ci -w @yasshi2525/playlog-client-like \
-  && npm run prepare -w @yasshi2525/playlog-client-like \
-  && npm ci -w @yasshi2525/webapp \
-  && npm run prepare -w @yasshi2525/webapp \
+RUN npm ci -w @yasshi2525/webapp \
+  && npm run setup -w @yasshi2525/webapp \
   && npm run build -w @yasshi2525/webapp
 
 FROM node:${NODE_VERSION}-alpine
