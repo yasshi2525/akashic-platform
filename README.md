@@ -38,6 +38,8 @@
 
 ![アーキテクチャ図](./architecture.png)
 
+Web API 仕様: https://yasshi2525.github.io/akashic-platform/
+
 ## リポジトリ構成
 
 ### webapp

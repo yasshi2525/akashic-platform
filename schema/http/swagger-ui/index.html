@@ -22,11 +22,21 @@
     <script src="./swagger-ui-bundle.js"></script>
     <script>
       window.onload = () => {
+        const base = window.location.pathname.substring(
+          0,
+          window.location.pathname.lastIndexOf("/"),
+        );
         SwaggerUIBundle({
           dom_id: "#swagger-ui",
           urls: [
-            { name: "akashic-server", url: "./akashic-server.openapi.json" },
-            { name: "akashic-storage", url: "./akashic-storage.openapi.json" },
+            {
+              name: "akashic-server",
+              url: `${base}/akashic-server.openapi.json`,
+            },
+            {
+              name: "akashic-storage",
+              url: `${base}/akashic-storage.openapi.json`,
+            },
           ],
           presets: [SwaggerUIBundle.presets.apis],
           layout: "BaseLayout",
