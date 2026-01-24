@@ -1,4 +1,4 @@
-import type { GlideClient, GlideString } from "@valkey/valkey-glide";
+import { GlideClient, GlideString, ObjectType } from "@valkey/valkey-glide";
 import type {
     GetStartPointOptions,
     GetTickListOptions,
@@ -193,8 +193,12 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
             const ids = await this._valkey.zrange(
                 genKey(ValkeyZSetKey.StartPointByFrame, this.playId),
                 {
-                    start: opts.frame - 1,
-                    end: 0,
+                    start: {
+                        value: opts.frame - 1,
+                    },
+                    end: {
+                        value: 0,
+                    },
                     type: "byScore",
                     limit: {
                         offset: 0,
@@ -214,26 +218,30 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         if (this._isDestroyed) {
             return;
         }
-        const tokens = await this._valkey.hkeys(
+        const tokens = await this.getAllKeys(
             genKey(ValkeyKey.Token, this.playId, "*"),
         );
-        const ufEvents = await this._valkey.hkeys(
+        const ufEvents = await this.getAllKeys(
             genKey(ValkeyZSetKey.UnfilteredEvent, this.playId),
+            ObjectType.ZSET,
         );
-        const fEvents = await this._valkey.hkeys(
+        const fEvents = await this.getAllKeys(
             genKey(ValkeyZSetKey.FilteredEvent, this.playId),
+            ObjectType.ZSET,
         );
-        const events = await this._valkey.hkeys(
+        const events = await this.getAllKeys(
             genKey(ValkeyKey.Event, this.playId, "*"),
         );
-        const startpoints = await this._valkey.hkeys(
+        const startpoints = await this.getAllKeys(
             genKey(ValkeyKey.StartPoint, this.playId, "*"),
         );
-        const startpointsByFrame = await this._valkey.hkeys(
+        const startpointsByFrame = await this.getAllKeys(
             genKey(ValkeyZSetKey.StartPointByFrame, this.playId),
+            ObjectType.ZSET,
         );
-        const startpointsByTimestamp = await this._valkey.hkeys(
+        const startpointsByTimestamp = await this.getAllKeys(
             genKey(ValkeyZSetKey.StartPointByTimestamp, this.playId),
+            ObjectType.ZSET,
         );
         await Promise.all(
             [
@@ -466,5 +474,19 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
             );
             return null;
         }
+    }
+
+    async getAllKeys(match: string, type: ObjectType = ObjectType.STRING) {
+        const keys: GlideString[] = [];
+        let cursor = "0";
+        do {
+            const res = await this._valkey.scan(cursor, {
+                match,
+                type,
+            });
+            cursor = res[0].toString();
+            keys.push(...res[1]);
+        } while (cursor !== "0");
+        return keys;
     }
 }
