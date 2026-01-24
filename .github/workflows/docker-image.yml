@@ -1,0 +1,63 @@
+name: Deploy Docker Image
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+
+    strategy:
+      matrix:
+        service:
+          - name: db-migrate
+            workspace: schema/persist
+            context: .
+            dockerfile: schema/persist/Dockerfile
+          - name: akashic-storage
+            workspace: akashic-storage
+            context: .
+            dockerfile: akashic-storage/Dockerfile
+          - name: akashic-server
+            workspace: akashic-server
+            context: .
+            dockerfile: akashic-server/Dockerfile
+          - name: webapp
+            workspace: webapp
+            context: .
+            dockerfile: webapp/Dockerfile
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Resolve image tag from package.json of "${{ matrix.service.name }}"
+        id: image-tag
+        run: |
+          version="$(node -p "require('./${{ matrix.service.workspace }}/package.json').version")"
+          echo "image_tag=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Build, tag, and push "${{ matrix.service.name }}" image
+        env:
+          IMAGE: ${{ matrix.service.name }}
+          TAG: ${{ steps.image-tag.outputs.image_tag }}
+        run: |
+          docker build -t akashic-platform/$IMAGE:$TAG -f ${{ matrix.service.dockerfile }} ${{ matrix.service.context }}
+          docker tag akashic-platform/$IMAGE:$TAG akashic-platform/$IMAGE:latest
+          docker push akashic-platform/$IMAGE:$TAG
+          docker push akashic-platform/$IMAGE:latest
