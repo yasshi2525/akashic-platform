@@ -40,6 +40,18 @@ export class RunnerManager {
         this._runners.delete(playId);
     }
 
+    getRemaining(playId: number) {
+        return this._runners.get(playId)?.getRemaining();
+    }
+
+    async extend(playId: number) {
+        const runner = this._runners.get(playId);
+        if (!runner) {
+            return { ok: false, reason: "NotFound" } as const;
+        }
+        return await runner.extend();
+    }
+
     async destroy() {
         await Promise.all(
             [...this._runners.entries()].map(async ([playId, runner]) => {

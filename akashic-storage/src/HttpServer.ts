@@ -1,7 +1,10 @@
 import { Server, createServer } from "node:http";
 import * as express from "express";
 import * as cors from "cors";
-import type { PlayEndReason } from "@yasshi2525/amflow-server-event-schema";
+import type {
+    PlayEndReason,
+    PlayExtendPayload,
+} from "@yasshi2525/amflow-server-event-schema";
 import { AMFlowServerManager } from "./AMFlowServerManager";
 import { PlayManager } from "./PlayManager";
 
@@ -44,6 +47,7 @@ export class HttpServer {
 
     _createHttp(allowOrigins: string[] | undefined) {
         const app = express();
+        app.use(express.json());
         if (allowOrigins && allowOrigins.length > 0) {
             app.use(
                 cors({
@@ -125,6 +129,36 @@ export class HttpServer {
                         `failed to end. (playId = "${playId}, reason = "${(err as Error).message}")`,
                     );
                 }
+            }
+        });
+
+        app.post("/extend", (req, res) => {
+            const { playId, expiresAt, remainingMs, extendMs } = req.body as {
+                playId?: string;
+            } & Partial<PlayExtendPayload>;
+            if (!playId?.toString()) {
+                res.status(400).send("no playId was specified.");
+                return;
+            }
+            if (expiresAt == null || remainingMs == null || extendMs == null) {
+                res.status(400).send("invalid payload was specified.");
+                return;
+            }
+            const payload: PlayExtendPayload = {
+                expiresAt: expiresAt as number,
+                remainingMs: remainingMs as number,
+                extendMs: extendMs as number,
+            };
+            try {
+                this._amfManager.broadcastPlayExtend(
+                    playId.toString(),
+                    payload,
+                );
+                res.json({ ok: true });
+            } catch (err) {
+                res.status(422).send(
+                    `failed to extend. (playId = "${playId}, reason = "${(err as Error).message}")`,
+                );
             }
         });
 

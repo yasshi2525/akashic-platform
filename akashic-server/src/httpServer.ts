@@ -100,6 +100,51 @@ export class HttpServer {
             }
         });
 
+        app.get("/remaining", (req, res) => {
+            const playId = req.query.playId;
+            if (!playId?.toString()) {
+                res.status(400).send("no playId was specified.");
+                return;
+            }
+            const remaining = this._manager.getRemaining(
+                parseInt(playId.toString()),
+            );
+            if (!remaining) {
+                res.status(404).send("play was not found.");
+                return;
+            }
+            res.json({
+                ok: true,
+                ...remaining,
+            });
+        });
+
+        app.post("/extend", async (req, res) => {
+            const { playId } = req.body as { playId?: string };
+            if (!playId?.toString()) {
+                res.status(400).send("no playId was specified.");
+                return;
+            }
+            try {
+                const result = await this._manager.extend(
+                    parseInt(playId.toString()),
+                );
+                if (!result.ok && result.reason === "NotFound") {
+                    res.status(404).send("play was not found.");
+                    return;
+                }
+                if (!result.ok && result.reason === "TooEarly") {
+                    res.status(409).json(result);
+                    return;
+                }
+                res.json(result);
+            } catch (err) {
+                res.status(500).send(
+                    `failed to extend. cause = ${(err as Error).message}`,
+                );
+            }
+        });
+
         return app;
     }
 }

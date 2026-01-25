@@ -67,6 +67,72 @@ export const openapi = {
                 },
             },
         },
+        "/remaining": {
+            get: {
+                summary: "Get remaining time of a play session",
+                parameters: [
+                    {
+                        name: "playId",
+                        in: "query",
+                        required: true,
+                        schema: { type: "integer", format: "int32" },
+                    },
+                ],
+                responses: {
+                    "200": {
+                        description: "OK",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/RemainingResponse",
+                                },
+                            },
+                        },
+                    },
+                    "400": { description: "Bad Request" },
+                    "404": { description: "Not Found" },
+                },
+            },
+        },
+        "/extend": {
+            post: {
+                summary: "Extend a play session",
+                requestBody: {
+                    required: true,
+                    content: {
+                        "application/json": {
+                            schema: {
+                                $ref: "#/components/schemas/ExtendRequest",
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    "200": {
+                        description: "OK",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ExtendResponse",
+                                },
+                            },
+                        },
+                    },
+                    "400": { description: "Bad Request" },
+                    "404": { description: "Not Found" },
+                    "409": {
+                        description: "Too Early",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ExtendTooEarlyResponse",
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
     },
     components: {
         schemas: {
@@ -102,6 +168,42 @@ export const openapi = {
                 required: ["ok"],
                 properties: {
                     ok: { type: "boolean" },
+                },
+            },
+            RemainingResponse: {
+                type: "object",
+                required: ["ok", "remainingMs", "expiresAt"],
+                properties: {
+                    ok: { type: "boolean" },
+                    remainingMs: { type: "integer", format: "int64" },
+                    expiresAt: { type: "integer", format: "int64" },
+                },
+            },
+            ExtendRequest: {
+                type: "object",
+                required: ["playId"],
+                properties: {
+                    playId: { type: "integer", format: "int32" },
+                },
+            },
+            ExtendResponse: {
+                type: "object",
+                required: ["ok", "remainingMs", "expiresAt", "extendMs"],
+                properties: {
+                    ok: { type: "boolean" },
+                    remainingMs: { type: "integer", format: "int64" },
+                    expiresAt: { type: "integer", format: "int64" },
+                    extendMs: { type: "integer", format: "int64" },
+                },
+            },
+            ExtendTooEarlyResponse: {
+                type: "object",
+                required: ["ok", "reason", "remainingMs", "expiresAt"],
+                properties: {
+                    ok: { type: "boolean" },
+                    reason: { type: "string" },
+                    remainingMs: { type: "integer", format: "int64" },
+                    expiresAt: { type: "integer", format: "int64" },
                 },
             },
         },

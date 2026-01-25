@@ -25,3 +25,8 @@
 > [!WARNING]
 >
 > 利用されていない `putStorageData`, `getStorageData` は定義対象外です
+
+### 独自イベント `playExtend`
+
+プレイ時間の延長が発生したことを、全クライアントへ通知するためのイベントです。
+サーバー側で `expiresAt`, `remainingMs`, `extendMs` を含むペイロードを配信します。

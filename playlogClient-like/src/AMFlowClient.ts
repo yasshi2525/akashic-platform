@@ -25,6 +25,7 @@ import {
     toTickList,
     toTickPack,
     PlayEndReason,
+    PlayExtendPayload,
     BadRequestError,
     createAMFlowError,
     NotImplementedError,
@@ -48,9 +49,11 @@ export class AMFlowClient implements AMFlow {
     _tickHandlers: ((tick: Tick) => void)[];
     _eventHandlers: ((event: Event) => void)[];
     _playEndHandlers: ((reason: PlayEndReason) => void)[];
+    _playExtendHandlers: ((payload: PlayExtendPayload) => void)[];
     _onTickPackBound: ListenSchema[typeof ListenEvent.TickPack];
     _onEventBound: ListenSchema[typeof ListenEvent.Event];
     _onPlayEndBound: ListenSchema[typeof ListenEvent.PlayEnd];
+    _onPlayExtendBound: ListenSchema[typeof ListenEvent.PlayExtend];
 
     constructor(param: AMFlowClientParameterObject) {
         this._socket = param.socket;
@@ -60,9 +63,11 @@ export class AMFlowClient implements AMFlow {
         this._tickHandlers = [];
         this._eventHandlers = [];
         this._playEndHandlers = [];
+        this._playExtendHandlers = [];
         this._onTickPackBound = this._onTickPack.bind(this);
         this._onEventBound = this._onEvent.bind(this);
         this._onPlayEndBound = this._onPlayEnd.bind(this);
+        this._onPlayExtendBound = this._onPlayExtend.bind(this);
     }
 
     open(playId: string, callback?: (error: Error | null) => void) {
@@ -70,6 +75,7 @@ export class AMFlowClient implements AMFlow {
             this._socket.on(ListenEvent.TickPack, this._onTickPackBound);
             this._socket.on(ListenEvent.Event, this._onEventBound);
             this._socket.on(ListenEvent.PlayEnd, this._onPlayEndBound);
+            this._socket.on(ListenEvent.PlayExtend, this._onPlayExtendBound);
             this._socket.emit(EmitEvent.Open, playId, (err) => {
                 this._isOpened = true;
                 if (callback) {
@@ -87,6 +93,7 @@ export class AMFlowClient implements AMFlow {
             this._socket.off(ListenEvent.TickPack, this._onTickPackBound);
             this._socket.off(ListenEvent.Event, this._onEventBound);
             this._socket.off(ListenEvent.PlayEnd, this._onPlayEndBound);
+            this._socket.off(ListenEvent.PlayExtend, this._onPlayExtendBound);
             this._socket.emit(EmitEvent.Close, (err) => {
                 if (!err) {
                     this._isOpened = false;
@@ -173,6 +180,17 @@ export class AMFlowClient implements AMFlow {
     }
     offPlayEnd(handler: (reason: PlayEndReason) => void) {
         this._playEndHandlers = this._playEndHandlers.filter(
+            (h) => h !== handler,
+        );
+    }
+    /**
+     * 独自の実装。プレイが延長された際の通知を受ける
+     */
+    onPlayExtend(handler: (payload: PlayExtendPayload) => void) {
+        this._playExtendHandlers.push(handler);
+    }
+    offPlayExtend(handler: (payload: PlayExtendPayload) => void) {
+        this._playExtendHandlers = this._playExtendHandlers.filter(
             (h) => h !== handler,
         );
     }
@@ -285,6 +303,12 @@ export class AMFlowClient implements AMFlow {
     _onPlayEnd(reason: PlayEndReason) {
         for (const handler of this._playEndHandlers) {
             handler(reason);
+        }
+    }
+
+    _onPlayExtend(payload: PlayExtendPayload) {
+        for (const handler of this._playExtendHandlers) {
+            handler(payload);
         }
     }
 

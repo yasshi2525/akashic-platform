@@ -3,6 +3,7 @@ import type { GlideClient } from "@valkey/valkey-glide";
 import {
     InvalidStatusError,
     PlayEndReason,
+    PlayExtendPayload,
 } from "@yasshi2525/amflow-server-event-schema";
 import { ValkeyAMFlowStore } from "./ValkeyAMFlowStore";
 import { AMFlowServer } from "./AMFlowServer";
@@ -49,6 +50,10 @@ export class AMFlowServerManager {
             throw new InvalidStatusError("invalid playId was specified.");
         }
         return server;
+    }
+
+    broadcastPlayExtend(playId: string, payload: PlayExtendPayload) {
+        this.getServer(playId).broadcastPlayExtend(payload);
     }
 
     async destroy() {

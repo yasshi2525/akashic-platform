@@ -11,6 +11,7 @@ import {
     ListenSchema,
     ListenEvent,
     PlayEndReason,
+    PlayExtendPayload,
 } from "@yasshi2525/amflow-server-event-schema";
 import { ValkeyAMFlowStore } from "./ValkeyAMFlowStore";
 
@@ -103,6 +104,12 @@ export class AMFlowServer {
     broadcastPlayEnd(reason: PlayEndReason) {
         for (const client of this._clients) {
             client.emit(EmitEvent.PlayEnd, reason);
+        }
+    }
+
+    broadcastPlayExtend(payload: PlayExtendPayload) {
+        for (const client of this._clients) {
+            client.emit(EmitEvent.PlayExtend, payload);
         }
     }
 

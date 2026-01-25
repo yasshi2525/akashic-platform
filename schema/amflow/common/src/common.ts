@@ -42,7 +42,12 @@ export const cliEvMap = {
 
 export type ClientEventName = keyof typeof cliEvMap;
 
-const srvEvents = ["amf:[tp]", "amf:[e]", "amf:playEnd"] as const;
+const srvEvents = [
+    "amf:[tp]",
+    "amf:[e]",
+    "amf:playEnd",
+    "amf:playExtend",
+] as const;
 
 export type ServerEvent = (typeof srvEvents)[number];
 
@@ -50,6 +55,7 @@ export const srvEvMap = {
     TickPack: "amf:[tp]",
     Event: "amf:[e]",
     PlayEnd: "amf:playEnd",
+    PlayExtend: "amf:playExtend",
 } as const satisfies Record<string, ServerEvent>;
 
 export type ServerEventName = keyof typeof srvEvMap;
@@ -103,10 +109,17 @@ const playEndReasons = [
 ] as const;
 export type PlayEndReason = (typeof playEndReasons)[number];
 
+export interface PlayExtendPayload {
+    expiresAt: number;
+    remainingMs: number;
+    extendMs: number;
+}
+
 const srvSchema = {
     [srvEvMap.TickPack]: (tickPack: TickPack) => {},
     [srvEvMap.Event]: (event: Event) => {},
     [srvEvMap.PlayEnd]: (reason: PlayEndReason) => {},
+    [srvEvMap.PlayExtend]: (payload: PlayExtendPayload) => {},
 } as const satisfies Record<ServerEvent, unknown>;
 
 export type ServerEventSchema = typeof srvSchema;

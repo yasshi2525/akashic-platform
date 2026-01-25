@@ -1,4 +1,7 @@
-import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
+import type {
+    PlayEndReason,
+    PlayExtendPayload,
+} from "@yasshi2525/amflow-client-event-schema";
 import type { AMFlowClient } from "@yasshi2525/playlog-client-like";
 import {
     AkashicGameView,
@@ -22,6 +25,7 @@ interface AkashicContainerCreateParameterObject {
     onSkip: (skip: boolean) => void;
     onError: (errMsg: string) => void;
     onPlayEnd: (reason: PlayEndReason) => void;
+    onPlayExtend: (payload: PlayExtendPayload) => void;
     onRequestPlayerInfo: (
         param: ResolvingPlayerInfoRequest | undefined,
     ) => void;
@@ -114,6 +118,9 @@ export class AkashicContainer {
                 const amflowcontent = content.getGameDriver()!._platform
                     .amflow as AMFlowClient;
                 amflowcontent.onPlayEnd((reason) => param.onPlayEnd(reason));
+                amflowcontent.onPlayExtend((payload) =>
+                    param.onPlayExtend(payload),
+                );
             },
         });
         return content;

@@ -18,6 +18,10 @@ const ProtocolType = {
     WebSocket: 0,
 } as const;
 
+const PLAY_DURATION_MS = 30 * 60 * 1000;
+const EXTEND_WINDOW_MS = 10 * 60 * 1000;
+const EXTEND_MS = 30 * 60 * 1000;
+
 export interface RunnerParameterObject {
     storageUrl: string;
     contentId: number;
@@ -35,6 +39,9 @@ export class Runner {
     _runner?: RunnerV3;
     _session?: SessionLike;
     _onPlayEndBound: (reason: PlayEndReason) => void;
+    _playId?: number;
+    _expiresAt?: number;
+    _timeoutId?: NodeJS.Timeout;
 
     constructor(param: RunnerParameterObject) {
         this._param = param;
@@ -48,6 +55,7 @@ export class Runner {
             );
         }
         const playId = await this._createPlayId();
+        this._playId = playId;
         try {
             const playToken = await this._fetchPlayToken(playId);
             this._session = this._openSession(playId, playToken);
@@ -55,14 +63,17 @@ export class Runner {
             this._subscribePlayEnd(amflow);
             this._runner = await this._createRunner(playId, playToken, amflow);
             this._initGame(amflow);
+            this._setTimer(Date.now() + PLAY_DURATION_MS);
             return playId;
         } catch (err) {
+            this._clearTimer();
             this._deletePlayId(playId);
             throw err;
         }
     }
 
     async end(reason: PlayEndReason, notifyPlaylogServer = true) {
+        this._clearTimer();
         if (this._runner) {
             const playId = parseInt(this._runner.playId);
             // playlogServer に終了要求を出すと PlayEnd が飛んでくる。
@@ -87,6 +98,41 @@ export class Runner {
         }
         this._runner = undefined;
         this._session = undefined;
+        this._playId = undefined;
+    }
+
+    getRemaining() {
+        if (this._expiresAt == null) {
+            return undefined;
+        }
+        return {
+            remainingMs: Math.max(this._expiresAt - Date.now(), 0),
+            expiresAt: this._expiresAt,
+        };
+    }
+
+    async extend() {
+        if (this._expiresAt == null || this._playId == null) {
+            return { ok: false, reason: "NotFound" } as const;
+        }
+        const remainingMs = this._expiresAt - Date.now();
+        if (remainingMs > EXTEND_WINDOW_MS) {
+            return {
+                ok: false,
+                reason: "TooEarly",
+                remainingMs,
+                expiresAt: this._expiresAt,
+            } as const;
+        }
+        this._expiresAt += EXTEND_MS;
+        this._setTimer(this._expiresAt);
+        const payload = {
+            expiresAt: this._expiresAt,
+            remainingMs: Math.max(this._expiresAt - Date.now(), 0),
+            extendMs: EXTEND_MS,
+        };
+        await this._notifyExtend(this._playId, payload);
+        return { ok: true, ...payload } as const;
     }
 
     async _createPlayId() {
@@ -109,7 +155,7 @@ export class Runner {
                 },
             });
         } catch (err) {
-            console.warn(`failed to delete playId "${playId}"`, err)
+            console.warn(`failed to delete playId "${playId}"`, err);
         }
     }
 
@@ -233,7 +279,7 @@ export class Runner {
             console.error(
                 `error on runner "${runner.runnerId}", playId = "${playId}")`,
                 err,
-                (err as any).cause
+                (err as any).cause,
             );
             await this.end("INTERNAL_ERROR");
         });
@@ -274,6 +320,44 @@ export class Runner {
         if (res.status !== 200) {
             console.warn(
                 `failed to end because of storage-server error. (cause = "${await res.text()}")`,
+            );
+        }
+    }
+
+    _setTimer(expiresAt: number) {
+        this._clearTimer();
+        this._expiresAt = expiresAt;
+        const delay = Math.max(expiresAt - Date.now(), 0);
+        this._timeoutId = setTimeout(() => {
+            void this.end("TIMEOUT");
+        }, delay);
+    }
+
+    _clearTimer() {
+        if (this._timeoutId) {
+            clearTimeout(this._timeoutId);
+            this._timeoutId = undefined;
+        }
+        this._expiresAt = undefined;
+    }
+
+    async _notifyExtend(
+        playId: number,
+        payload: { expiresAt: number; remainingMs: number; extendMs: number },
+    ) {
+        const res = await fetch(`${this._param.storageUrl}/extend`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                playId: playId.toString(),
+                ...payload,
+            }),
+        });
+        if (res.status !== 200) {
+            console.warn(
+                `failed to notify extend. (playId = "${playId}", cause = "${await res.text()}")`,
             );
         }
     }
