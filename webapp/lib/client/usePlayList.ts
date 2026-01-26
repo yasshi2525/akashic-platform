@@ -4,7 +4,7 @@ import { PlayInfo, PLAYLIST_LIMITS } from "../types";
 const fetcher = async (url: string) =>
     (await (await fetch(url)).json()).data as PlayInfo[];
 
-export function usePlayList(keyword?: string) {
+export function usePlayList(keyword?: string, gameMasterId?: string) {
     function getKey(page: number, previousData: PlayInfo[]) {
         if (previousData && !previousData.length) {
             return null;
@@ -12,6 +12,9 @@ export function usePlayList(keyword?: string) {
         const query = new URLSearchParams({ page: page.toString() });
         if (keyword) {
             query.set("keyword", keyword);
+        }
+        if (gameMasterId) {
+            query.set("gameMasterId", gameMasterId);
         }
         return `/api/plays?${query.toString()}`;
     }

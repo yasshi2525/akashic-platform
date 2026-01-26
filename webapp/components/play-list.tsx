@@ -187,12 +187,22 @@ function LoadMore({ handleClickMore }: { handleClickMore: () => void }) {
     );
 }
 
-export function PlayList() {
+export function PlayList({
+    title = "ゲームで遊ぶ",
+    description = "現在プレイ中の部屋",
+    gameMasterId,
+}: {
+    title?: string;
+    description?: string;
+    gameMasterId?: string;
+}) {
     const theme = useTheme();
     const [keyword, setKeyword] = useState("");
     const [debouncedKeyword] = useDebounce(keyword, 500);
-    const { isLoading, list, page, setPage, isEmpty, isEnd } =
-        usePlayList(debouncedKeyword);
+    const { isLoading, list, page, setPage, isEmpty, isEnd } = usePlayList(
+        debouncedKeyword,
+        gameMasterId,
+    );
 
     function handleSearch(event: ChangeEvent<HTMLInputElement>) {
         setKeyword(event.target.value);
@@ -224,13 +234,13 @@ export function PlayList() {
             >
                 <Box>
                     <Typography variant="h4" component="h1">
-                        ゲームで遊ぶ
+                        {title}
                     </Typography>
                     <Typography
                         variant="body2"
                         sx={{ color: theme.palette.text.secondary }}
                     >
-                        現在プレイ中の部屋
+                        {description}
                     </Typography>
                 </Box>
                 <TextField

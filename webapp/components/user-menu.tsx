@@ -14,6 +14,7 @@ import {
 import {
     AddCircle,
     FormatListBulleted,
+    ListAlt,
     Logout,
     Settings,
 } from "@mui/icons-material";
@@ -68,6 +69,19 @@ function AuthorizedMenu({ user, anchorEl, handleClose }: AuthorizedMenuProps) {
         >
             <MenuItem>
                 <Button
+                    href="/my-play"
+                    style={{
+                        color: "inherit",
+                    }}
+                >
+                    <FormatListBulleted />
+                    <Typography variant="body1" sx={{ ml: 1 }}>
+                        自分が立てた部屋一覧
+                    </Typography>
+                </Button>
+            </MenuItem>
+            <MenuItem>
+                <Button
                     href="/new-game"
                     style={{
                         color: "inherit",
@@ -86,7 +100,7 @@ function AuthorizedMenu({ user, anchorEl, handleClose }: AuthorizedMenuProps) {
                         color: "inherit",
                     }}
                 >
-                    <FormatListBulleted />
+                    <ListAlt />
                     <Typography variant="body1" sx={{ ml: 1 }}>
                         投稿ゲーム一覧
                     </Typography>

@@ -8,29 +8,33 @@ import { GUEST_NAME, PlayInfo, PLAYLIST_LIMITS } from "@/lib/types";
 
 export async function GET(req: NextRequest) {
     const keyword = req.nextUrl.searchParams.get("keyword") ?? undefined;
+    const gameMasterId =
+        req.nextUrl.searchParams.get("gameMasterId") ?? undefined;
     const limits = parseInt(
         req.nextUrl.searchParams.get("limits") ?? PLAYLIST_LIMITS.toString(),
     );
     const page = parseInt(req.nextUrl.searchParams.get("page") ?? "0");
 
-    const containsKeyword: Awaited<
+    const where: Awaited<
         NonNullable<Parameters<typeof prisma.play.findMany>[0]>["where"]
-    > = keyword
-        ? {
-              content: {
-                  game: {
-                      title: {
-                          contains: keyword,
-                      },
-                  },
-              },
-          }
-        : undefined;
+    > = {};
+    if (keyword) {
+        where.content = {
+            game: {
+                title: {
+                    contains: keyword,
+                },
+            },
+        };
+    }
+    if (gameMasterId) {
+        where.gameMasterId = gameMasterId;
+    }
 
     const result = await prisma.play.findMany({
         take: limits,
         skip: page * limits,
-        where: containsKeyword,
+        where,
         orderBy: {
             id: "desc",
         },
