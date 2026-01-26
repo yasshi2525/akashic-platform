@@ -85,7 +85,7 @@ export async function registerContent(
                 throw err;
             }
         } catch (err) {
-            deleteGameRecord(gameId);
+            await deleteGameRecord(gameId);
             throw err;
         }
     } catch (err) {

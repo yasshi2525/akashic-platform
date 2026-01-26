@@ -169,7 +169,6 @@ export async function editContent(
         return validationErrParam;
     }
     try {
-        await updateGameRecord(param);
         if (param.gameFile) {
             const gameZip = await extractGameFile(param.gameFile);
             const validationErrGameZip = await validateGameZip(gameZip);
@@ -198,6 +197,7 @@ export async function editContent(
                 await endCurrentPlay(param.contentId);
                 await deleteContentRecord(param.contentId);
                 await deleteContentDir(param.contentId);
+                await updateGameRecord(param);
                 return {
                     ok: true,
                     contentId: newContentId,
@@ -210,9 +210,10 @@ export async function editContent(
         } else {
             if (param.iconFile) {
                 const iconPath = toIconPath(param.iconFile);
-                await updateContentRecord(param.contentId, iconPath);
                 await deployIconFile(param.contentId, iconPath, param.iconFile);
+                await updateContentRecord(param.contentId, iconPath);
             }
+            await updateGameRecord(param);
             return {
                 ok: true,
                 contentId: param.contentId,
