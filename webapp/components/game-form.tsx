@@ -34,6 +34,7 @@ import { editContent } from "@/lib/server/content-edit";
 import { useAuth } from "@/lib/client/useAuth";
 import { SignInAlert } from "./sign-in-alert";
 import { GameTermsAndConditions } from "./game-tac";
+import { GameDeleteDialog } from "./game-delete-dialog";
 
 const VisuallyHiddenInput = styled("input")();
 
@@ -435,6 +436,19 @@ export function GameForm({
                                     ゲームを{gameId == null ? "投稿" : "更新"}
                                 </Button>
                             </Box>
+                            {gameId != null ? (
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        justifyContent: "center",
+                                    }}
+                                >
+                                    <GameDeleteDialog
+                                        gameId={gameId}
+                                        publisherId={user.id}
+                                    />
+                                </Box>
+                            ) : null}
                             {serverError ? (
                                 <Alert
                                     variant="outlined"

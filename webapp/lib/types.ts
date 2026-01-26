@@ -103,6 +103,16 @@ export type ContentResponse =
     | { ok: true; contentId: number }
     | ContentErrorResponse;
 
+const deleteGameErrReasons = [
+    "InvalidParams",
+    "NotFound",
+    "InternalError",
+] as const;
+export type DeleteGameErrorType = (typeof deleteGameErrReasons)[number];
+export type DeleteGameResponse =
+    | { ok: true }
+    | { ok: false; reason: DeleteGameErrorType };
+
 const gameErrReasons = ["InvalidParams", "NotFound", "InternalError"] as const;
 export type GameErrorType = (typeof gameErrReasons)[number];
 export type GameResponse =
@@ -150,6 +160,7 @@ export const messages = {
     content: {
         registerSuccessful: "registerContentSuccessful",
         editSuccessful: "editContentSuccessful",
+        deleteSuccessful: "deleteContentSuccessful",
     },
     play: {
         registerSuccessful: "registerPlaySuccessful",
