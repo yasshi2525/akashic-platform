@@ -328,8 +328,8 @@ export class Runner {
         this._clearTimer();
         this._expiresAt = expiresAt;
         const delay = Math.max(expiresAt - Date.now(), 0);
-        this._timeoutId = setTimeout(() => {
-            void this.end("TIMEOUT");
+        this._timeoutId = setTimeout(async () => {
+            await this.end("TIMEOUT");
         }, delay);
     }
 
