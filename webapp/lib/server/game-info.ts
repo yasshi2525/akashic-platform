@@ -1,6 +1,6 @@
 import { prisma } from "@yasshi2525/persist-schema";
 import { GameInfo } from "../types";
-import { publicContentBaseUrl } from "./akashic";
+import { internalContentBaseUrl, publicContentBaseUrl } from "./akashic";
 
 export async function fetchGameInfo(gameId: number) {
     const game = await prisma.game.findUniqueOrThrow({
@@ -53,7 +53,7 @@ export async function fetchGameInfo(gameId: number) {
 
 export async function fetchLicense(contentId: number) {
     const res = await fetch(
-        `${publicContentBaseUrl}/${contentId}/library_license.txt`,
+        `${internalContentBaseUrl}/${contentId}/library_license.txt`,
     );
     if (res.status === 200) {
         return await res.text();
