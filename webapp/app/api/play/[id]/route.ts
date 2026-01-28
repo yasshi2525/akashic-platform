@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GameConfiguration } from "@akashic/game-configuration";
 import { Play, prisma } from "@yasshi2525/persist-schema";
-import { PlayResponse } from "@/lib/types";
+import { GUEST_NAME, PlayResponse } from "@/lib/types";
 import {
     internalContentBaseUrl,
     internalPlaylogServerUrl,
+    publicContentBaseUrl,
 } from "@/lib/server/akashic";
+import { fetchLicense } from "@/lib/server/game-info";
 
 async function fetchViewSize(contentId: number) {
     const res = (await (
@@ -55,9 +57,33 @@ export async function GET(
                 id: true,
                 contentId: true,
                 gameMasterId: true,
+                createdAt: true,
+                gmUser: {
+                    select: {
+                        name: true,
+                        image: true,
+                    },
+                },
                 content: {
                     select: {
-                        gameId: true,
+                        icon: true,
+                        game: {
+                            select: {
+                                id: true,
+                                title: true,
+                                description: true,
+                                credit: true,
+                                streaming: true,
+                                publisher: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                    },
+                                },
+                                createdAt: true,
+                                updatedAt: true,
+                            },
+                        },
                     },
                 },
             },
@@ -72,9 +98,28 @@ export async function GET(
             ok: true,
             data: {
                 playToken: await fetchPlayToken(play),
-                contentId: play.contentId,
-                gameMasterId: play.gameMasterId,
-                gameId: play.content.gameId,
+                gameMaster: {
+                    id: play.gameMasterId,
+                    name: play.gmUser?.name ?? GUEST_NAME,
+                    iconURL: play.gmUser?.image ?? undefined,
+                },
+                game: {
+                    id: play.content.game.id,
+                    title: play.content.game.title,
+                    iconURL: `${publicContentBaseUrl}/${play.contentId}/${play.content.icon}`,
+                    description: play.content.game.description,
+                    credit: play.content.game.credit,
+                    streaming: play.content.game.streaming,
+                    license: await fetchLicense(play.contentId),
+                    publisher: {
+                        id: play.content.game.publisher.id,
+                        name: play.content.game.publisher.name!,
+                    },
+                    contentId: play.contentId,
+                    createdAt: play.content.game.createdAt,
+                    updatedAt: play.content.game.updatedAt,
+                },
+                createdAt: play.createdAt,
                 ...(await fetchViewSize(play.contentId)),
             },
         });

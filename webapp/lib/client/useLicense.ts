@@ -1,0 +1,24 @@
+"use client";
+
+import useSWR from "swr";
+import { internalContentBaseUrl } from "../server/akashic";
+
+const fetcher = async (url: string): Promise<string | undefined> => {
+    const res = await fetch(url);
+    if (res.status === 200) {
+        return await res.text();
+    }
+    return undefined;
+};
+
+export function useLicense(contentId: number) {
+    const { data, error, isLoading } = useSWR(
+        `${internalContentBaseUrl}/${contentId}/library_license.txt`,
+        fetcher,
+    );
+    return {
+        license: data,
+        isLoading,
+        error,
+    };
+}

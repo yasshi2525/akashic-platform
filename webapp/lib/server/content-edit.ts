@@ -71,25 +71,27 @@ async function validateParam({
     }
 }
 
-async function updateGameRecord({ gameId, title, description }: EditGameForm) {
-    const data:
-        | Awaited<Parameters<typeof prisma.game.update>[0]["data"]>
-        | undefined =
-        title && description
-            ? {
-                  title,
-                  description,
-              }
-            : title
-              ? {
-                    title,
-                }
-              : description
-                ? {
-                      description,
-                  }
-                : undefined;
-    if (!data) {
+async function updateGameRecord({
+    gameId,
+    title,
+    description,
+    credit,
+    streaming,
+}: EditGameForm) {
+    const data: Awaited<Parameters<typeof prisma.game.update>[0]["data"]> = {};
+    if (title != null) {
+        data.title = title;
+    }
+    if (description != null) {
+        data.description = description;
+    }
+    if (credit != null) {
+        data.credit = credit;
+    }
+    if (streaming != null) {
+        data.streaming = streaming;
+    }
+    if (Object.keys(data).length === 0) {
         return;
     }
     await prisma.game.update({

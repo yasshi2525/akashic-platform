@@ -35,11 +35,12 @@ export default function Play() {
         <PlayView
             playId={id}
             playToken={data.playToken}
-            contentId={data.contentId}
-            gameId={data.gameId}
             isGameMaster={data.isGameMaster}
             contentWidth={data.contentWidth}
             contentHeight={data.contentHeight}
+            createdAt={data.createdAt}
+            gameMaster={data.gameMaster}
+            game={data.game}
             user={user}
             ref={container}
         />

@@ -89,7 +89,16 @@ function GameTableCells({
                         }}
                     />
                     <Stack spacing={1}>
-                        <Typography variant="body1">{game.title}</Typography>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                            <Typography variant="body1">
+                                {game.title}
+                            </Typography>
+                            {!game.streaming ? (
+                                <Typography variant="body2" color="error">
+                                    実況不可
+                                </Typography>
+                            ) : null}
+                        </Stack>
                         <Typography
                             variant="body2"
                             sx={{ color: theme.palette.text.secondary }}

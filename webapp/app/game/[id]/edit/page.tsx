@@ -49,6 +49,8 @@ export default function GameEdit() {
             title={gameInfo.title}
             iconUrl={gameInfo.iconURL}
             description={gameInfo.description}
+            credit={gameInfo.credit}
+            streaming={gameInfo.streaming}
         />
     );
 }

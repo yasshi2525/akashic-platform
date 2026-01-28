@@ -29,6 +29,9 @@ export interface GameInfo {
     title: string;
     iconURL: string;
     description: string;
+    credit: string;
+    streaming: boolean;
+    license?: string;
     publisher: { id: string; name: string };
     contentId: number;
     createdAt: Date;
@@ -130,11 +133,15 @@ export type PlayResponse =
           ok: true;
           data: {
               playToken: string;
-              contentId: number;
-              gameMasterId: string;
-              gameId: number;
+              game: GameInfo;
+              gameMaster: {
+                  id: string;
+                  name: string;
+                  iconURL?: string;
+              };
               width: number;
               height: number;
+              createdAt: Date;
           };
       }
     | { ok: false; reason: PlayErrorType };

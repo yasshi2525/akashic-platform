@@ -2,16 +2,20 @@
 
 import { MouseEvent, RefObject, TouchEvent, useEffect, useState } from "react";
 import Link from "next/link";
+import { format } from "date-fns";
 import {
     Alert,
+    Avatar,
     Button,
+    Card,
+    CardContent,
     Container,
     Snackbar,
     Stack,
     Typography,
 } from "@mui/material";
 import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
-import { User } from "@/lib/types";
+import { GameInfo, User } from "@/lib/types";
 import { useAkashic } from "@/lib/client/useAkashic";
 import { ResolvingPlayerInfoRequest } from "@/lib/client/akashic-plugins/coe-limited-plugin";
 import { AkashicContainer } from "@/lib/client/akashic-container";
@@ -20,6 +24,7 @@ import { extendPlay } from "@/lib/server/play-extend";
 import { PlayCloseDialog } from "./play-close-dialog";
 import { PlayEndNotification } from "./play-end-notification";
 import { PlayPlayerInfoResolver } from "./play-player-info-resolver";
+import { CreditPanel } from "./credit-panel";
 
 const warnings = ["EVENT_ON_SKIPPING"] as const;
 type WarningType = (typeof warnings)[number];
@@ -45,21 +50,23 @@ const EXTEND_WINDOW_MS = 10 * 60 * 1000;
 export function PlayView({
     playId,
     playToken,
-    contentId,
-    gameId,
+    game,
+    gameMaster,
     isGameMaster,
     contentWidth,
     contentHeight,
+    createdAt,
     user,
     ref,
 }: {
     playId: string;
     playToken: string;
-    contentId: number;
-    gameId: number;
+    game: GameInfo;
+    gameMaster: { name: string; iconURL?: string };
     isGameMaster: boolean;
     contentWidth: number;
     contentHeight: number;
+    createdAt: Date;
     user: User;
     ref: RefObject<HTMLDivElement | null>;
 }) {
@@ -84,6 +91,14 @@ export function PlayView({
         const minutes = Math.floor(totalSeconds / 60);
         const seconds = totalSeconds % 60;
         return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+    }
+
+    function formatCreatedAt() {
+        try {
+            return format(new Date(createdAt), "yyyy/MM/dd HH:mm");
+        } catch {
+            return "--";
+        }
     }
 
     function handleMouseEvent(ev: MouseEvent<HTMLDivElement>) {
@@ -113,7 +128,7 @@ export function PlayView({
         container.create({
             parent: ref.current,
             user,
-            contentId,
+            contentId: game.contentId,
             playId,
             playToken,
             playlogServerUrl,
@@ -227,42 +242,143 @@ export function PlayView({
                 </Snackbar>
             ) : null}
             <Container maxWidth="md" sx={{ mt: 2 }}>
-                <Stack
-                    direction={{ xs: "column", sm: "row" }}
-                    spacing={2}
-                    alignItems={{ xs: "flex-start", sm: "center" }}
-                    justifyContent="space-between"
-                >
-                    <Typography variant="body1">
-                        残り時間: {formatRemaining(remainingMs)}
-                    </Typography>
-                    <Button
-                        variant="contained"
-                        onClick={handleExtend}
-                        disabled={
-                            remainingMs == null ||
-                            remainingMs > EXTEND_WINDOW_MS ||
-                            extendLoading
-                        }
-                    >
-                        30分延長する
-                    </Button>
-                </Stack>
-                {extendError ? (
-                    <Alert severity="warning" sx={{ mt: 2 }}>
-                        {extendError}
-                    </Alert>
-                ) : null}
-            </Container>
-            <Container maxWidth="md" sx={{ mt: 2 }}>
-                <Stack direction="row" justifyContent="flex-end">
-                    <Button
-                        component={Link}
-                        href={`/game/${gameId}#feedback`}
-                        variant="outlined"
-                    >
-                        このゲームの投稿者にフィードバックを送る
-                    </Button>
+                <Stack spacing={2}>
+                    <Card>
+                        <CardContent>
+                            <Stack spacing={2}>
+                                <Stack
+                                    direction={{ xs: "column", sm: "row" }}
+                                    spacing={2}
+                                >
+                                    <Avatar
+                                        variant="square"
+                                        src={game.iconURL}
+                                        sx={{
+                                            width: 120,
+                                            height: 120,
+                                        }}
+                                    />
+                                    <Stack spacing={1} sx={{ flex: 1 }}>
+                                        <Stack
+                                            direction="row"
+                                            spacing={1}
+                                            alignItems="center"
+                                        >
+                                            <Typography
+                                                variant="h5"
+                                                component="h1"
+                                            >
+                                                {game.title}
+                                            </Typography>
+                                            {!game.streaming ? (
+                                                <Typography
+                                                    variant="body2"
+                                                    color="error"
+                                                >
+                                                    実況不可
+                                                </Typography>
+                                            ) : null}
+                                        </Stack>
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                        >
+                                            制作者: {game.publisher.name}
+                                        </Typography>
+                                        <Typography
+                                            variant="body1"
+                                            sx={{ whiteSpace: "pre-wrap" }}
+                                        >
+                                            {game.description}
+                                        </Typography>
+                                        <CreditPanel
+                                            credit={game.credit}
+                                            contentId={game.contentId}
+                                        />
+                                    </Stack>
+                                </Stack>
+                                <Stack
+                                    direction="row"
+                                    justifyContent="flex-end"
+                                >
+                                    <Button
+                                        component={Link}
+                                        href={`/game/${game.contentId}#feedback`}
+                                        variant="outlined"
+                                    >
+                                        このゲームの投稿者にフィードバックを送る
+                                    </Button>
+                                </Stack>
+                            </Stack>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent>
+                            <Stack spacing={2}>
+                                <Stack
+                                    direction={{ xs: "column", sm: "row" }}
+                                    spacing={2}
+                                    alignItems={{
+                                        xs: "flex-start",
+                                        sm: "center",
+                                    }}
+                                    justifyContent="space-between"
+                                >
+                                    <Stack spacing={1}>
+                                        <Stack
+                                            direction="row"
+                                            spacing={1}
+                                            alignItems="center"
+                                        >
+                                            <Avatar
+                                                src={gameMaster.iconURL}
+                                                sx={{ width: 32, height: 32 }}
+                                            />
+                                            <Typography variant="body2">
+                                                部屋主: {gameMaster.name}
+                                            </Typography>
+                                        </Stack>
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                        >
+                                            部屋作成: {formatCreatedAt()}
+                                        </Typography>
+                                    </Stack>
+                                    <Stack
+                                        direction={{ xs: "column", sm: "row" }}
+                                        spacing={2}
+                                        alignItems={{
+                                            xs: "flex-start",
+                                            sm: "center",
+                                        }}
+                                    >
+                                        <Typography variant="body1">
+                                            残り時間:{" "}
+                                            {formatRemaining(remainingMs)}
+                                        </Typography>
+                                        <Button
+                                            variant="contained"
+                                            onClick={handleExtend}
+                                            disabled={
+                                                remainingMs == null ||
+                                                remainingMs >
+                                                    EXTEND_WINDOW_MS ||
+                                                extendLoading
+                                            }
+                                        >
+                                            30分延長する
+                                        </Button>
+                                    </Stack>
+                                </Stack>
+                                {extendError ? (
+                                    <Alert severity="warning">
+                                        {extendError}
+                                    </Alert>
+                                ) : null}
+                            </Stack>
+                        </CardContent>
+                    </Card>
                 </Stack>
             </Container>
         </>

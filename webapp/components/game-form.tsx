@@ -2,6 +2,7 @@
 
 import { ChangeEvent, useState, useOptimistic } from "react";
 import { redirect } from "next/navigation";
+import JSZip from "jszip";
 import {
     Alert,
     Avatar,
@@ -10,7 +11,9 @@ import {
     Card,
     CardContent,
     Container,
+    FormControlLabel,
     Stack,
+    Switch,
     TextField,
     Typography,
     useTheme,
@@ -44,6 +47,8 @@ type GameFormProps = Partial<{
     title: string;
     iconUrl: string;
     description: string;
+    credit: string;
+    streaming: boolean;
 }>;
 
 export function GameForm({
@@ -52,6 +57,8 @@ export function GameForm({
     title: initialTitle,
     iconUrl,
     description: initialDescription,
+    credit: initialCredit,
+    streaming: initialStreaming,
 }: GameFormProps) {
     const [user] = useAuth();
     const theme = useTheme();
@@ -60,6 +67,9 @@ export function GameForm({
     const [iconFile, setIconFile] = useState<File>();
     const [iconPreview, setIconPreview] = useState<string | undefined>(iconUrl);
     const [description, setDescription] = useState(initialDescription ?? "");
+    const [credit, setCredit] = useState(initialCredit ?? "");
+    const [streaming, setStreaming] = useState(initialStreaming ?? true);
+    const [license, setLicense] = useState<string>();
     const [sending, setIsSending] = useOptimistic(false, () => true);
     const [titleError, setTitleError] = useState<string>();
     const [gameFileError, setGameFileError] = useState<string>();
@@ -74,10 +84,24 @@ export function GameForm({
         setTitle(event.target.value);
     }
 
-    function handleUploadGameFile(event: ChangeEvent<HTMLInputElement>) {
+    async function handleUploadGameFile(event: ChangeEvent<HTMLInputElement>) {
         if (event.target.files && event.target.files[0]) {
             setGameFileError(undefined);
-            setGameFile(event.target.files[0]);
+            const file = event.target.files[0];
+            setGameFile(file);
+            try {
+                const zip = await JSZip.loadAsync(await file.arrayBuffer());
+                const licenseFile = zip.file("library_license.txt");
+                if (licenseFile) {
+                    const text = await licenseFile.async("text");
+                    setLicense(text);
+                } else {
+                    setLicense(undefined);
+                }
+            } catch (err) {
+                console.warn("failed to read library_license.txt", err);
+                setLicense(undefined);
+            }
         }
     }
 
@@ -94,6 +118,10 @@ export function GameForm({
             setDescriptionError(undefined);
         }
         setDescription(event.target.value);
+    }
+
+    function handleInputCredit(event: ChangeEvent<HTMLInputElement>) {
+        setCredit(event.target.value);
     }
 
     function handleServerErr(res: ContentErrorResponse) {
@@ -164,6 +192,8 @@ export function GameForm({
                         gameFile,
                         iconFile,
                         description,
+                        credit,
+                        streaming,
                     });
                     if (res.ok) {
                         redirect(
@@ -182,6 +212,8 @@ export function GameForm({
                     gameFile,
                     iconFile,
                     description,
+                    credit,
+                    streaming,
                 });
                 if (res.ok) {
                     redirect(
@@ -400,7 +432,7 @@ export function GameForm({
                                     fullWidth
                                     multiline
                                     rows={6}
-                                    placeholder="ゲームの内容、遊び方などの説明と、使用素材のクレジットを記入してください"
+                                    placeholder="ゲームの内容、遊び方などの説明を記入してください"
                                     value={description}
                                     onChange={handleInputDescription}
                                 />
@@ -413,6 +445,75 @@ export function GameForm({
                                         {descriptionError}
                                     </Alert>
                                 ) : null}
+                            </Box>
+                            <Box>
+                                <Typography variant="h6" gutterBottom>
+                                    クレジット
+                                </Typography>
+                                <TextField
+                                    fullWidth
+                                    multiline
+                                    rows={5}
+                                    placeholder="使用素材・ライブラリ・協力者などのクレジットを記入してください"
+                                    value={credit}
+                                    onChange={handleInputCredit}
+                                />
+                            </Box>
+                            {license ? (
+                                <Box>
+                                    <Typography variant="h6" gutterBottom>
+                                        ライブラリライセンス
+                                        (library_license.txt)
+                                    </Typography>
+                                    <TextField
+                                        fullWidth
+                                        multiline
+                                        rows={6}
+                                        value={license}
+                                        size="small"
+                                        slotProps={{
+                                            input: {
+                                                readOnly: true,
+                                            },
+                                        }}
+                                        sx={{
+                                            color: theme.palette.text.secondary,
+                                            fontFamily: "monospace",
+                                        }}
+                                    />
+                                </Box>
+                            ) : null}
+                            <Box>
+                                <Typography variant="h6" gutterBottom>
+                                    実況可否
+                                </Typography>
+                                <Stack
+                                    spacing={1}
+                                    direction="row"
+                                    alignItems="center"
+                                >
+                                    <FormControlLabel
+                                        control={
+                                            <Switch
+                                                checked={streaming}
+                                                onChange={(event) =>
+                                                    setStreaming(
+                                                        event.target.checked,
+                                                    )
+                                                }
+                                            />
+                                        }
+                                        label="このゲームの実況動画・配信を許可する"
+                                    />
+                                    {!streaming ? (
+                                        <Typography
+                                            variant="body2"
+                                            color="error"
+                                        >
+                                            プレイされるとき、実況不可として表示します。
+                                        </Typography>
+                                    ) : null}
+                                </Stack>
                             </Box>
                             <GameTermsAndConditions />
                             <Box>

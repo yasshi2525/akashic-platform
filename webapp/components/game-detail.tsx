@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import { FeedbackPost, GameInfo, User } from "@/lib/types";
 import { FeedbackPanel } from "./feedback-panel";
+import { CreditPanel } from "./credit-panel";
 
 export function GameDetailClient({
     gameInfo,
@@ -77,6 +78,10 @@ export function GameDetailClient({
                                 >
                                     {gameInfo.description}
                                 </Typography>
+                                <CreditPanel
+                                    credit={gameInfo.credit}
+                                    contentId={gameInfo.contentId}
+                                />
                             </Stack>
                         </Stack>
                     </Stack>

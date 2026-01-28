@@ -32,11 +32,12 @@ export function usePlay(playId: string) {
         data: data
             ? {
                   playToken: data.playToken,
-                  contentId: data.contentId,
-                  isGameMaster: !!user && user.id === data.gameMasterId,
-                  gameId: data.gameId,
+                  gameMaster: data.gameMaster,
+                  game: data.game,
+                  isGameMaster: !!user && user.id === data.gameMaster.id,
                   contentWidth: data.width,
                   contentHeight: data.height,
+                  createdAt: data.createdAt,
               }
             : undefined,
         error: error ? error.message : undefined,

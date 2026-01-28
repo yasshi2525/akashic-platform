@@ -41,6 +41,8 @@ async function createGameRecord(param: NewGameForm) {
                 publisherId: param.publisherId,
                 title: param.title,
                 description: param.description,
+                credit: param.credit,
+                streaming: param.streaming,
             },
         })
     ).id;

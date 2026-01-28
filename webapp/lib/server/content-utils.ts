@@ -20,6 +20,8 @@ export interface GameForm {
     gameFile: File;
     iconFile: File;
     description: string;
+    credit: string;
+    streaming: boolean;
 }
 
 let s3Client: S3Client | undefined;

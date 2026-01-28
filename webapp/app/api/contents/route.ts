@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@yasshi2525/persist-schema";
-import { publicContentBaseUrl } from "@/lib/server/akashic";
 import { GameInfo, GAMELIST_LIMITS } from "@/lib/types";
+import { publicContentBaseUrl } from "@/lib/server/akashic";
+import { fetchLicense } from "@/lib/server/game-info";
 
 export async function GET(req: NextRequest) {
     const keyword = req.nextUrl.searchParams.get("keyword") ?? undefined;
@@ -62,6 +63,8 @@ export async function GET(req: NextRequest) {
             id: true,
             title: true,
             description: true,
+            credit: true,
+            streaming: true,
             publisher: {
                 select: {
                     id: true,
@@ -84,20 +87,35 @@ export async function GET(req: NextRequest) {
     });
     return NextResponse.json({
         ok: true,
-        data: result.map(
-            ({ id, title, description, publisher, versions, createdAt }) => ({
-                id,
-                title,
-                iconURL: `${publicContentBaseUrl}/${versions[0].id}/${versions[0].icon}`,
-                publisher: {
-                    id: publisher.id,
-                    name: publisher.name!,
-                },
-                description,
-                contentId: versions[0].id,
-                createdAt,
-                updatedAt: versions[0].updatedAt,
-            }),
-        ) satisfies GameInfo[],
+        data: await Promise.all(
+            result.map(
+                async ({
+                    id,
+                    title,
+                    description,
+                    credit,
+                    streaming,
+                    publisher,
+                    versions,
+                    createdAt,
+                }) =>
+                    ({
+                        id,
+                        title,
+                        iconURL: `${publicContentBaseUrl}/${versions[0].id}/${versions[0].icon}`,
+                        publisher: {
+                            id: publisher.id,
+                            name: publisher.name!,
+                        },
+                        description,
+                        credit,
+                        streaming,
+                        license: await fetchLicense(versions[0].id),
+                        contentId: versions[0].id,
+                        createdAt,
+                        updatedAt: versions[0].updatedAt,
+                    }) satisfies GameInfo,
+            ),
+        ),
     });
 }
