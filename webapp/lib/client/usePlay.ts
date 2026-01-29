@@ -38,6 +38,8 @@ export function usePlay(playId: string) {
                   contentWidth: data.width,
                   contentHeight: data.height,
                   createdAt: data.createdAt,
+                  remainingMs: data.remainingMs,
+                  expiresAt: data.expiresAt,
               }
             : undefined,
         error: error ? error.message : undefined,

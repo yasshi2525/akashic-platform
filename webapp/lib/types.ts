@@ -142,6 +142,8 @@ export type PlayResponse =
               width: number;
               height: number;
               createdAt: Date;
+              remainingMs: number;
+              expiresAt: number;
           };
       }
     | { ok: false; reason: PlayErrorType };

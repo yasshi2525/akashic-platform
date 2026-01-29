@@ -19,7 +19,6 @@ import { GameInfo, User } from "@/lib/types";
 import { useAkashic } from "@/lib/client/useAkashic";
 import { ResolvingPlayerInfoRequest } from "@/lib/client/akashic-plugins/coe-limited-plugin";
 import { AkashicContainer } from "@/lib/client/akashic-container";
-import { usePlayRemaining } from "@/lib/client/usePlayRemaining";
 import { extendPlay } from "@/lib/server/play-extend";
 import { PlayCloseDialog } from "./play-close-dialog";
 import { PlayEndNotification } from "./play-end-notification";
@@ -56,6 +55,8 @@ export function PlayView({
     contentWidth,
     contentHeight,
     createdAt,
+    remainingMs: initialRemainingMs,
+    expiresAt: initialExpiresAt,
     user,
     ref,
 }: {
@@ -67,6 +68,8 @@ export function PlayView({
     contentWidth: number;
     contentHeight: number;
     createdAt: Date;
+    remainingMs: number;
+    expiresAt: number;
     user: User;
     ref: RefObject<HTMLDivElement | null>;
 }) {
@@ -77,11 +80,14 @@ export function PlayView({
     const [playEndReason, setPlayEndReason] = useState<PlayEndReason>();
     const [requestPlayerInfo, setRequestPlayerInfo] =
         useState<ResolvingPlayerInfoRequest>();
-    const [expiresAt, setExpiresAt] = useState<number>();
-    const [remainingMs, setRemainingMs] = useState<number>();
+    const [expiresAt, setExpiresAt] = useState<number | undefined>(
+        initialExpiresAt,
+    );
+    const [remainingMs, setRemainingMs] = useState<number | undefined>(
+        initialRemainingMs,
+    );
     const [extendError, setExtendError] = useState<string>();
     const [extendLoading, setExtendLoading] = useState(false);
-    const { data: remainingData } = usePlayRemaining(playId);
 
     function formatRemaining(ms: number | undefined) {
         if (ms == null) {
@@ -146,13 +152,6 @@ export function PlayView({
             container.destroy();
         };
     }, []);
-
-    useEffect(() => {
-        if (remainingData && remainingData.ok) {
-            setExpiresAt(remainingData.expiresAt);
-            setRemainingMs(remainingData.remainingMs);
-        }
-    }, [remainingData]);
 
     useEffect(() => {
         if (expiresAt == null) {

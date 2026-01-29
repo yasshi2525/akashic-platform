@@ -39,6 +39,8 @@ export default function Play() {
             contentWidth={data.contentWidth}
             contentHeight={data.contentHeight}
             createdAt={data.createdAt}
+            remainingMs={data.remainingMs}
+            expiresAt={data.expiresAt}
             gameMaster={data.gameMaster}
             game={data.game}
             user={user}

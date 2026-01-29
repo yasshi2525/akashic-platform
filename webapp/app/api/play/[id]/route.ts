@@ -3,9 +3,11 @@ import { GameConfiguration } from "@akashic/game-configuration";
 import { Play, prisma } from "@yasshi2525/persist-schema";
 import { GUEST_NAME, PlayResponse } from "@/lib/types";
 import {
+    akashicServerUrl,
     internalContentBaseUrl,
     internalPlaylogServerUrl,
     publicContentBaseUrl,
+    withAkashicServerAuth,
 } from "@/lib/server/akashic";
 import { fetchLicense } from "@/lib/server/game-info";
 
@@ -94,6 +96,24 @@ export async function GET(
                 reason: "ClosedPlay",
             });
         }
+        const res = await fetch(
+            `${akashicServerUrl}/remaining?playId=${playId}`,
+            { headers: withAkashicServerAuth() },
+        );
+        if (res.status !== 200) {
+            console.warn(
+                `failed to join because of /remaining error (playId = "${playId}")`,
+                await res.text(),
+            );
+            return NextResponse.json({
+                ok: false,
+                reason: "InternalError",
+            });
+        }
+        const { remainingMs, expiresAt } = (await res.json()) as {
+            remainingMs: number;
+            expiresAt: number;
+        };
         return NextResponse.json({
             ok: true,
             data: {
@@ -120,6 +140,8 @@ export async function GET(
                     updatedAt: play.content.game.updatedAt,
                 },
                 createdAt: play.createdAt,
+                expiresAt,
+                remainingMs,
                 ...(await fetchViewSize(play.contentId)),
             },
         });
