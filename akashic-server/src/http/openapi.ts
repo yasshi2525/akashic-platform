@@ -4,6 +4,7 @@ export const openapi = {
         title: "akashic-server HTTP API",
         version: "0.1.0",
     },
+    security: [{ InternalToken: [] }],
     paths: {
         "/start": {
             post: {
@@ -135,6 +136,13 @@ export const openapi = {
         },
     },
     components: {
+        securitySchemes: {
+            InternalToken: {
+                type: "apiKey",
+                in: "header",
+                name: "X-Akashic-Internal-Token",
+            },
+        },
         schemas: {
             StartRequest: {
                 type: "object",

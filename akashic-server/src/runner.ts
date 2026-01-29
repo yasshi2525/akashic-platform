@@ -23,7 +23,9 @@ const EXTEND_WINDOW_MS = 10 * 60 * 1000;
 const EXTEND_MS = 30 * 60 * 1000;
 
 export interface RunnerParameterObject {
-    storageUrl: string;
+    storagePublicUrl: string;
+    storageAdminUrl: string;
+    storageAdminToken: string;
     contentId: number;
     contentUrl: string;
     assetBaseUrl: string;
@@ -161,7 +163,12 @@ export class Runner {
 
     async _fetchPlayToken(playId: number) {
         const res = await fetch(
-            `${this._param.storageUrl}/start?playId=${playId}`,
+            `${this._param.storageAdminUrl}/start?playId=${playId}`,
+            {
+                headers: {
+                    "x-akashic-internal-token": this._param.storageAdminToken,
+                },
+            },
         );
         if (res.status !== 200) {
             throw new Error(
@@ -173,7 +180,7 @@ export class Runner {
     }
 
     _openSession(playId: number, playToken: string) {
-        const session = (this._session = Session(this._param.storageUrl, {
+        const session = (this._session = Session(this._param.storagePublicUrl, {
             socketType: ProtocolType.WebSocket,
             validationData: {
                 playId: playId.toString(),
@@ -315,7 +322,12 @@ export class Runner {
 
     async _endPlay(playId: number, reason: PlayEndReason) {
         const res = await fetch(
-            `${this._param.storageUrl}/end?playId=${playId}&reason=${reason}`,
+            `${this._param.storageAdminUrl}/end?playId=${playId}&reason=${reason}`,
+            {
+                headers: {
+                    "x-akashic-internal-token": this._param.storageAdminToken,
+                },
+            },
         );
         if (res.status !== 200) {
             console.warn(
@@ -345,7 +357,7 @@ export class Runner {
         playId: number,
         payload: { expiresAt: number; remainingMs: number; extendMs: number },
     ) {
-        const res = await fetch(`${this._param.storageUrl}/extend`, {
+        const res = await fetch(`${this._param.storagePublicUrl}/extend`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

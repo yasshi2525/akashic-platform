@@ -1,7 +1,7 @@
 "use server";
 
 import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
-import { akashicServerUrl } from "./akashic";
+import { akashicServerUrl, withAkashicServerAuth } from "./akashic";
 
 const errReasons = ["InvalidParams", "InternalError"] as const;
 type EndPlayErrorType = (typeof errReasons)[number];
@@ -22,6 +22,9 @@ export async function endPlay({
     }
     const res = await fetch(
         `${akashicServerUrl}/end?playId=${playId}&reason=${reason}`,
+        {
+            headers: withAkashicServerAuth(),
+        },
     );
     if (res.status !== 200) {
         console.warn(

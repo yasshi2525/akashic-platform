@@ -22,9 +22,10 @@ import { AMFlowServerManager } from "./AMFlowServerManager";
         amfManager,
         playManager,
         allowOrigins,
+        adminApiToken: process.env.STORAGE_ADMIN_TOKEN ?? "",
     });
     new SocketServer({
-        http: http.getHttp(),
+        http: http.getPublicHttp(),
         amfManager,
         allowOrigins,
     });
@@ -43,6 +44,8 @@ import { AMFlowServerManager } from "./AMFlowServerManager";
     process.on("SIGINT", async () => await exit());
     process.on("SIGTERM", async () => await exit());
 
-    const port = parseInt(process.env.PORT ?? "3031");
-    http.listen(port);
+    http.listen(
+        parseInt(process.env.PUBLIC_PORT ?? "3031"),
+        parseInt(process.env.ADMIN_PORT ?? "3033"),
+    );
 })();

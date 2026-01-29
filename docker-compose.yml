@@ -61,13 +61,16 @@ services:
       dockerfile: akashic-storage/Dockerfile
     ports:
       - 3031:3031
+      - 3033:3033
     user: 1000:1000
     environment:
-      PORT: 3031
+      PUBLIC_PORT: 3031
+      ADMIN_PORT: 3033
       CLIENT_ORIGIN: http://localhost:3000
       VALKEY_HOST: valkey
       VALKEY_PORT: 6379
       VALKEY_NO_TLS: true
+      STORAGE_ADMIN_TOKEN: ${STORAGE_ADMIN_TOKEN:-local-storage-admin-token}
     depends_on:
       - valkey
 
@@ -80,7 +83,10 @@ services:
     user: 1000:1000
     environment:
       PORT: 3032
-      STORAGE_URL: http://akashic-storage:3031
+      STORAGE_PUBLIC_URL: http://akashic-storage:3031
+      STORAGE_ADMIN_URL: http://akashic-storage:3033
+      STORAGE_ADMIN_TOKEN: ${STORAGE_ADMIN_TOKEN:-local-storage-admin-token}
+      SERVER_API_TOKEN: ${SERVER_API_TOKEN:-local-server-api-token}
       DATABASE_URL: postgres://ap-user:${POSTGRES_PASSWORD:-postgres}@postgres:5432/akashic
     depends_on:
       db-migrate:
@@ -102,6 +108,7 @@ services:
       PUBLIC_STORAGE_URL: http://localhost:3031
       INTERNAL_STORAGE_URL: http://akashic-storage:3031
       SERVER_URL: http://akashic-server:3032
+      SERVER_API_TOKEN: ${SERVER_API_TOKEN:-local-server-api-token}
       DATABASE_URL: postgres://ap-user:${POSTGRES_PASSWORD:-postgres}@postgres:5432/akashic
       NEXTAUTH_URL: http://localhost:3000
       AUTH_TRUST_HOST: true

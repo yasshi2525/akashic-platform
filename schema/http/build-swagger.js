@@ -30,13 +30,23 @@ const specs = [
         ),
     },
     {
-        name: "akashic-storage",
+        name: "akashic-storage-public",
         modulePath: path.join(
             rootDir,
             "akashic-storage",
             "dist",
             "http",
-            "openapi.js",
+            "openapi-public.js",
+        ),
+    },
+    {
+        name: "akashic-storage-admin",
+        modulePath: path.join(
+            rootDir,
+            "akashic-storage",
+            "dist",
+            "http",
+            "openapi-admin.js",
         ),
     },
 ];

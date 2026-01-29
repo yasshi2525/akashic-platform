@@ -2,9 +2,19 @@ import * as process from "node:process";
 import { RunnerManager } from "./runnerManager";
 import { HttpServer } from "./httpServer";
 
-const storageUrl = process.env.STORAGE_URL ?? "http://localhost:3031";
-const manager = new RunnerManager({ storageUrl });
-const http = new HttpServer({ manager });
+const storagePublicUrl =
+    process.env.STORAGE_PUBLIC_URL ?? "http://localhost:3031";
+const storageAdminUrl =
+    process.env.STORAGE_ADMIN_URL ?? "http://localhost:3033";
+const storageAdminToken = process.env.STORAGE_ADMIN_TOKEN ?? "";
+const apiToken = process.env.SERVER_API_TOKEN ?? "";
+
+const manager = new RunnerManager({
+    storagePublicUrl,
+    storageAdminUrl,
+    storageAdminToken,
+});
+const http = new HttpServer({ manager, apiToken });
 
 const exit = async () => {
     console.log("destroy server forcibly");

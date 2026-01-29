@@ -32,11 +32,16 @@
             },
             {
               name: "akashic-storage",
-              url: "./akashic-storage.openapi.json",
+              url: "./akashic-storage-public.openapi.json",
+            },
+            {
+              name: "akashic-storage-admin",
+              url: "./akashic-storage-admin.openapi.json",
             },
           ],
           presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
           layout: "StandaloneLayout",
+          supportedSubmitMethods: [],
         });
       };
     </script>

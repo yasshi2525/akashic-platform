@@ -6,6 +6,7 @@ import {
     akashicServerUrl,
     internalBaseUrl,
     internalContentBaseUrl,
+    withAkashicServerAuth,
 } from "./akashic";
 
 interface PlayForm {
@@ -46,6 +47,7 @@ export async function registerPlay({
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                ...withAkashicServerAuth(),
             },
             body: JSON.stringify({
                 contentId,

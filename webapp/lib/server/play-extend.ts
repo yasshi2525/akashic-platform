@@ -1,6 +1,6 @@
 "use server";
 
-import { akashicServerUrl } from "./akashic";
+import { akashicServerUrl, withAkashicServerAuth } from "./akashic";
 
 const errReasons = ["InvalidParams", "InternalError", "NotFound"] as const;
 export type ExtendPlayErrorType = (typeof errReasons)[number];
@@ -35,6 +35,7 @@ export async function extendPlay({
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                ...withAkashicServerAuth(),
             },
             body: JSON.stringify({ playId }),
         });

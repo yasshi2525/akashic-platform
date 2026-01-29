@@ -6,15 +6,21 @@ import { RunnerManager } from "./runnerManager";
 
 interface HttpServerParameterObject {
     manager: RunnerManager;
+    apiToken: string;
 }
 
 export class HttpServer {
     _manager: RunnerManager;
     _app: Express;
     _server?: Server;
+    _apiToken: string;
 
     constructor(param: HttpServerParameterObject) {
         this._manager = param.manager;
+        if (!param.apiToken) {
+            throw new Error("SERVER_API_TOKEN is required");
+        }
+        this._apiToken = param.apiToken;
         this._app = this._createHttp();
     }
 
@@ -37,6 +43,13 @@ export class HttpServer {
     _createHttp() {
         const app = express();
         app.use(express.json());
+        app.use((req, res, next) => {
+            if (req.header("x-akashic-internal-token") !== this._apiToken) {
+                res.status(401).send("unauthorized");
+                return;
+            }
+            next();
+        });
 
         app.post("/start", async (req, res) => {
             const {

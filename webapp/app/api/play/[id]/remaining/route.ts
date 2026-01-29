@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { akashicServerUrl } from "@/lib/server/akashic";
+import { akashicServerUrl, withAkashicServerAuth } from "@/lib/server/akashic";
 
 export async function GET(
     req: NextRequest,
@@ -12,6 +12,7 @@ export async function GET(
     try {
         const res = await fetch(
             `${akashicServerUrl}/remaining?playId=${playId}`,
+            { headers: withAkashicServerAuth() },
         );
         if (res.status === 200) {
             return NextResponse.json(await res.json());

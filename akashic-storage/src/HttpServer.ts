@@ -15,50 +15,77 @@ interface HttpServerParameterObject {
      * if undefined or empty array, skip setting cors.
      */
     allowOrigins?: string[];
+    adminApiToken: string;
 }
 
 export class HttpServer {
     _amfManager: AMFlowServerManager;
     _playManager: PlayManager;
-    _http: Server;
+    _publicHttp: Server;
+    _adminHttp: Server;
+    _adminApiToken: string;
 
     constructor(param: HttpServerParameterObject) {
         this._amfManager = param.amfManager;
         this._playManager = param.playManager;
-        this._http = this._createHttp(param.allowOrigins);
+        if (!param.adminApiToken) {
+            throw new Error("STORAGE_ADMIN_TOKEN is required");
+        }
+        this._adminApiToken = param.adminApiToken;
+        const { publicHttp, adminHttp } = this._createHttp(param.allowOrigins);
+        this._publicHttp = publicHttp;
+        this._adminHttp = adminHttp;
     }
 
-    /**
-     * @param port default 3031
-     */
-    listen(port: number = 3031) {
-        this._http.listen(port, () => {
-            console.log(`start to listen port ${port}`);
+    listen(publicPort: number, adminPort: number) {
+        this._publicHttp.listen(publicPort, () => {
+            console.log(`start to listen public port ${publicPort}`);
+        });
+        this._adminHttp.listen(adminPort, () => {
+            console.log(`start to listen admin port ${adminPort}`);
         });
     }
 
     close() {
-        this._http.close();
+        this._publicHttp.close();
+        this._adminHttp.close();
     }
 
-    getHttp() {
-        return this._http;
+    getPublicHttp() {
+        return this._publicHttp;
+    }
+
+    getAdminHttp() {
+        return this._adminHttp;
     }
 
     _createHttp(allowOrigins: string[] | undefined) {
-        const app = express();
-        app.use(express.json());
+        const publicApp = express();
+        publicApp.use(express.json());
         if (allowOrigins && allowOrigins.length > 0) {
-            app.use(
+            publicApp.use(
                 cors({
                     origin: allowOrigins,
                 }),
             );
         }
 
-        const http = createServer(app);
+        const adminApp = express();
+        adminApp.use(express.json());
+        adminApp.use((req, res, next) => {
+            if (
+                req.header("x-akashic-internal-token") !== this._adminApiToken
+            ) {
+                res.status(401).send("unauthorized");
+                return;
+            }
+            next();
+        });
 
-        app.get("/start", async (req, res) => {
+        const publicHttp = createServer(publicApp);
+        const adminHttp = createServer(adminApp);
+
+        adminApp.get("/start", async (req, res) => {
             const playId = req.query.playId;
             if (!playId?.toString()) {
                 res.status(400).send("no playId was specified.");
@@ -75,7 +102,7 @@ export class HttpServer {
             }
         });
 
-        app.get("/join", async (req, res) => {
+        publicApp.get("/join", async (req, res) => {
             const playId = req.query.playId;
             if (!playId?.toString()) {
                 res.status(400).send("no playId was specified.");
@@ -93,7 +120,7 @@ export class HttpServer {
             }
         });
 
-        app.get("/participants", (req, res) => {
+        publicApp.get("/participants", (req, res) => {
             const playId = req.query.playId;
             if (!playId?.toString()) {
                 res.status(400).send("no playId was specified.");
@@ -111,7 +138,7 @@ export class HttpServer {
             }
         });
 
-        app.get("/end", async (req, res) => {
+        adminApp.get("/end", async (req, res) => {
             const playId = req.query.playId;
             const reason = req.query.reason;
             if (!playId?.toString()) {
@@ -132,7 +159,7 @@ export class HttpServer {
             }
         });
 
-        app.post("/extend", (req, res) => {
+        publicApp.post("/extend", (req, res) => {
             const { playId, expiresAt, remainingMs, extendMs } = req.body as {
                 playId?: string;
             } & Partial<PlayExtendPayload>;
@@ -162,6 +189,6 @@ export class HttpServer {
             }
         });
 
-        return http;
+        return { publicHttp, adminHttp };
     }
 }

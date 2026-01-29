@@ -23,6 +23,15 @@ export const internalPlaylogServerUrl =
 export const akashicServerUrl =
     process.env.SERVER_URL ?? "http://localhost:3032";
 
+export const akashicServerApiToken = process.env.SERVER_API_TOKEN ?? "";
+
+export const withAkashicServerAuth = (headers?: HeadersInit) => {
+    return {
+        ...headers,
+        "x-akashic-internal-token": akashicServerApiToken,
+    };
+};
+
 const engineFilePaths = Object.entries(engineVersions)
     .map(([, v]) => v.fileName)
     .map((path) => `/akashic/${path}`);
