@@ -470,15 +470,20 @@ export function GameForm({
                                         multiline
                                         rows={6}
                                         value={license}
-                                        size="small"
                                         slotProps={{
                                             input: {
                                                 readOnly: true,
                                             },
                                         }}
                                         sx={{
-                                            color: theme.palette.text.secondary,
-                                            fontFamily: "monospace",
+                                            "& .MuiInputBase-input": {
+                                                color: theme.palette.text
+                                                    .secondary,
+                                                fontSize:
+                                                    theme.typography.body2
+                                                        .fontSize,
+                                                fontFamily: "monospace",
+                                            },
                                         }}
                                     />
                                 </Box>

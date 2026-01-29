@@ -10,6 +10,7 @@ import {
     Skeleton,
     Stack,
     Typography,
+    useTheme,
 } from "@mui/material";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { useLicense } from "@/lib/client/useLicense";
@@ -21,6 +22,7 @@ export function CreditPanel({
     credit?: string;
     contentId: number;
 }) {
+    const theme = useTheme();
     const [open, setOpen] = useState(false);
     const { license, isLoading, error } = useLicense(contentId);
 
@@ -68,7 +70,9 @@ export function CreditPanel({
                             </Typography>
                             <Typography
                                 variant="body2"
+                                fontSize="small"
                                 sx={{
+                                    color: theme.palette.text.secondary,
                                     fontFamily: "monospace",
                                     whiteSpace: "pre-wrap",
                                 }}
