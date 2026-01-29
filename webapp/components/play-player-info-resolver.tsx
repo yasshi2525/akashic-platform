@@ -8,6 +8,7 @@ import {
     DialogContent,
     DialogContentText,
     DialogTitle,
+    TextField,
 } from "@mui/material";
 import { ResolvingPlayerInfoRequest } from "@/lib/client/akashic-plugins/coe-limited-plugin";
 import { useAuth } from "@/lib/client/useAuth";
@@ -22,6 +23,7 @@ export function PlayPlayerInfoResolver({
         request.limitSeconds,
     );
     const [open, setOpen] = useState(true);
+    const [guestName, setGuestName] = useState<string>();
 
     function handleDeny() {
         request.onResolve(false, request.guestName);
@@ -29,7 +31,10 @@ export function PlayPlayerInfoResolver({
     }
 
     function handleAccept() {
-        request.onResolve(true, user?.name ?? request.guestName);
+        const resolvedName =
+            (user?.authType === "guest" ? guestName : user?.name) ??
+            request.guestName;
+        request.onResolve(true, resolvedName);
         setOpen(false);
     }
 
@@ -63,9 +68,29 @@ export function PlayPlayerInfoResolver({
             {user ? (
                 <DialogContent>
                     <DialogContentText id="dialog-description">
-                        ユーザー名で参加するか、匿名で参加するか選択してください。(残り
+                        {user.authType === "guest"
+                            ? "ユーザー名を入力して参加するか、匿名で参加するか選択してください。"
+                            : "ユーザー名で参加するか、匿名で参加するか選択してください。"}
+                        (残り
                         {remainingSeconds}秒) ※未選択の場合は匿名で参加します。
                     </DialogContentText>
+                    {user.authType === "guest" ? (
+                        <TextField
+                            autoFocus
+                            fullWidth
+                            margin="dense"
+                            label="ユーザー名"
+                            value={guestName}
+                            onChange={(event) =>
+                                setGuestName(event.target.value)
+                            }
+                            slotProps={{
+                                htmlInput: {
+                                    maxLength: 16,
+                                },
+                            }}
+                        />
+                    ) : null}
                     <DialogActions>
                         <Button
                             variant="contained"
@@ -73,8 +98,11 @@ export function PlayPlayerInfoResolver({
                             sx={{
                                 textTransform: "none",
                             }}
+                            disabled={user.authType === "guest" && !guestName}
                         >
-                            ユーザー名 ({user.name})
+                            {user.authType === "guest"
+                                ? "入力した名前で参加"
+                                : `ユーザー名 (${user.name})`}
                         </Button>
                         <Button
                             variant="contained"
