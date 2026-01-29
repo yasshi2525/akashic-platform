@@ -20,3 +20,7 @@
 #### プレイ終了通知
 
 サーバーからのプレイ終了通知リスナを追加できます。詳細は [`AMFlowClient.onPlayEnd()`](./src/AMFlowClient.ts) を参照してください。
+
+#### プレイ時間延長通知
+
+プレイ時間延長通知リスナを追加できます。詳細は [`AMFlowClient.onPlayEnd()`](./src/AMFlowClient.ts) を参照してください。

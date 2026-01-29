@@ -2,6 +2,15 @@
 
 [`@akashic/amflow`](https://github.com/akashic-games/amflow) のメッセージを [Socket.IO](https://socket.io/) を使ってサーバー・クライアント間で送受信するためのスキーマ定義です。
 
+> [!IMPORTANT]
+>
+> ここでは「クライアント」はゲームインスタンスを指しています。
+> つまりサーバー上で実行されるアクティブインスタンスもクライアントである点に注意してください。
+
+> [!WARNING]
+>
+> 利用されていない `putStorageData`, `getStorageData` は定義対象外です
+
 ## NOTE
 
 イベント名は [`@akashic/agvw`](https://github.com/akashic-games/agvw) で使用されている値に合わせています。
@@ -16,15 +25,6 @@
 
 本アプリケーションでは、プレイヤー操作やコンテンツ削除でPlayが強制的に終了する場合があります。
 強制終了したこと、およびその理由をクライアントに通知できるようにするため、独自イベントを定義しています。
-
-> [!IMPORTANT]
->
-> ここでは「クライアント」はゲームインスタンスを指しています。
-> つまりサーバー上で実行されるアクティブインスタンスもクライアントである点に注意してください。
-
-> [!WARNING]
->
-> 利用されていない `putStorageData`, `getStorageData` は定義対象外です
 
 ### 独自イベント `playExtend`
 
