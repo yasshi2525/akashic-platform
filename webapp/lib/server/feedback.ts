@@ -29,8 +29,8 @@ export async function postFeedbackAction(
     formData: FormData,
 ): Promise<FeedbackFormState> {
     const gameId = toNumber(formData.get("gameId"));
-    const body = formData.get("body")?.toString().trim();
-    const authorName = formData.get("authorName")?.toString().trim();
+    const body = formData.get("body")?.toString();
+    const authorName = formData.get("authorName")?.toString();
 
     if (gameId == null || !body) {
         return {
@@ -112,7 +112,7 @@ export async function postFeedbackReplyAction(
     formData: FormData,
 ): Promise<FeedbackFormState> {
     const postId = toNumber(formData.get("postId"));
-    const body = formData.get("body")?.toString().trim();
+    const body = formData.get("body")?.toString();
 
     if (postId == null || !body) {
         return {

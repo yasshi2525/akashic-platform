@@ -20,8 +20,8 @@ import { FeedbackPost, GUEST_NAME, User } from "@/lib/types";
 import {
     FeedbackFormState,
     postFeedbackAction,
-    postFeedbackReplyAction,
 } from "@/lib/server/feedback";
+import { FeedbackReplyForm } from "./feedback-reply-form";
 
 const initialState: FeedbackFormState = {
     ok: true,
@@ -96,50 +96,6 @@ function PostForm({
                 </form>
             </CardContent>
         </Card>
-    );
-}
-
-function ReplyForm({
-    postId,
-    onRefresh,
-}: {
-    postId: number;
-    onRefresh?: () => void;
-}) {
-    const router = useRouter();
-    const [state, action] = useFormState(postFeedbackReplyAction, initialState);
-    const [body, setBody] = useState("");
-
-    useEffect(() => {
-        if (state.submitted && state.ok && state.submittedAt) {
-            setBody("");
-            onRefresh?.();
-            router.refresh();
-        }
-    }, [state.submitted, state.ok, state.submittedAt, router, onRefresh]);
-
-    return (
-        <form action={action}>
-            <Stack spacing={2}>
-                <Typography variant="subtitle2">返信する</Typography>
-                <input type="hidden" name="postId" value={postId} />
-                <TextField
-                    label="返信"
-                    name="body"
-                    value={body}
-                    onChange={(event) => setBody(event.target.value)}
-                    fullWidth
-                    multiline
-                    minRows={2}
-                />
-                {!state.ok && state.submitted ? (
-                    <Alert severity="error" variant="outlined">
-                        {state.message}
-                    </Alert>
-                ) : null}
-                <SubmitButton label="返信する" />
-            </Stack>
-        </form>
     );
 }
 
@@ -261,7 +217,7 @@ export function FeedbackPanel({
                                     ) : isPublisher ? (
                                         <>
                                             <Divider />
-                                            <ReplyForm
+                                            <FeedbackReplyForm
                                                 postId={post.id}
                                                 onRefresh={onRefresh}
                                             />

@@ -5,8 +5,10 @@ export function authReducer(state: User | null, action: AuthAction) {
     switch (action.type) {
         case "login":
             return login(state, action.user);
+        case "update-profile":
+            return updateProfile(state, action.update);
         default:
-            throw new Error(`unknown action: ${action.type}`);
+            throw new Error(`unknown action: ${(action as any).type}`);
     }
 }
 
@@ -20,4 +22,18 @@ function login(state: User | null, user: User) {
     } else {
         return { ...state };
     }
+}
+
+function updateProfile(state: User | null, update: { name?: string }) {
+    if (state == null) {
+        return null;
+    }
+    if (state.authType === "guest") {
+        return { ...state };
+    }
+    const next = { ...state };
+    if (update.name) {
+        next.name = update.name;
+    }
+    return next;
 }

@@ -73,6 +73,21 @@ export interface FeedbackPost {
     reply?: FeedbackReply;
 }
 
+export interface FeedbackGameSummary {
+    id: number;
+    title: string;
+    iconURL: string;
+}
+
+export interface UserFeedbackItem {
+    id: number;
+    author: FeedbackAuthor;
+    body: string;
+    createdAt: Date;
+    reply?: FeedbackReply;
+    game: FeedbackGameSummary;
+}
+
 export const NOTIFICATION_LIMITS = 10;
 
 export interface NotificationInfo {
@@ -83,6 +98,12 @@ export interface NotificationInfo {
     body: string;
     link?: string;
     createdAt: Date;
+}
+
+export interface UserProfile {
+    id: string;
+    name: string;
+    image?: string;
 }
 
 export const supportedAkashicVersions = ["3"];
@@ -160,6 +181,22 @@ export type FeedbackErrorType = (typeof feedbackErrReasons)[number];
 export type FeedbackResponse =
     | { ok: true; data: FeedbackPost[] }
     | { ok: false; reason: FeedbackErrorType };
+
+const userProfileErrReasons = ["InvalidParams", "NotFound"] as const;
+export type UserProfileErrorType = (typeof userProfileErrReasons)[number];
+export type UserProfileResponse =
+    | { ok: true; data: UserProfile }
+    | { ok: false; reason: UserProfileErrorType };
+
+const userFeedbackErrReasons = [
+    "InvalidParams",
+    "NotFound",
+    "InternalError",
+] as const;
+export type UserFeedbackErrorType = (typeof userFeedbackErrReasons)[number];
+export type UserFeedbackResponse =
+    | { ok: true; data: UserFeedbackItem[] }
+    | { ok: false; reason: UserFeedbackErrorType };
 
 const notificationErrReasons = ["NotAuthorized", "InternalError"] as const;
 export type NotificationErrorType = (typeof notificationErrReasons)[number];

@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import {
     AddCircle,
+    AccountCircle,
     FormatListBulleted,
     ListAlt,
     Logout,
@@ -67,6 +68,19 @@ function AuthorizedMenu({ user, anchorEl, handleClose }: AuthorizedMenuProps) {
             onClose={handleClose}
             onClick={handleClose}
         >
+            <MenuItem>
+                <Button
+                    href={`/user/${user.id}`}
+                    style={{
+                        color: "inherit",
+                    }}
+                >
+                    <AccountCircle />
+                    <Typography variant="body1" sx={{ ml: 1 }}>
+                        マイページ
+                    </Typography>
+                </Button>
+            </MenuItem>
             <MenuItem>
                 <Button
                     href="/my-play"

@@ -20,7 +20,7 @@ export function useGameList(keyword: string | undefined, userId?: string) {
     }
     const { isLoading, data, size, setSize } = useSWRInfinite(getKey, fetcher);
     const isEmpty = data?.[0].length === 0;
-    const isEnd = data && data[data.length - 1].length < GAMELIST_LIMITS;
+    const isEnd = !!data && data[data.length - 1].length < GAMELIST_LIMITS;
 
     return {
         isLoading,
