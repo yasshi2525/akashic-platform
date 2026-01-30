@@ -68,7 +68,7 @@ export function GameDetailClient({
                                 >
                                     <Typography
                                         variant="body2"
-                                        color="text.secondary"
+                                        color={theme.palette.text.secondary}
                                     >
                                         投稿者
                                     </Typography>

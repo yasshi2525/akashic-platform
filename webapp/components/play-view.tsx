@@ -292,14 +292,14 @@ export function PlayView({
                                             spacing={1}
                                             alignItems="center"
                                         >
-                                        <Typography
-                                            variant="body2"
+                                            <Typography
+                                                variant="body2"
                                                 color={
                                                     theme.palette.text.secondary
                                                 }
-                                        >
+                                            >
                                                 制作者
-                                        </Typography>
+                                            </Typography>
                                             <UserInline
                                                 user={{
                                                     id: game.publisher.id,
@@ -375,7 +375,7 @@ export function PlayView({
                                         </Stack>
                                         <Typography
                                             variant="body2"
-                                            color="text.secondary"
+                                            color={theme.palette.text.secondary}
                                         >
                                             部屋作成: {formatCreatedAt()}
                                         </Typography>

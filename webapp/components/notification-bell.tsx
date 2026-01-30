@@ -17,6 +17,7 @@ import {
     MenuItem,
     Stack,
     Typography,
+    useTheme,
 } from "@mui/material";
 import { Notifications } from "@mui/icons-material";
 import {
@@ -27,6 +28,7 @@ import { useAuth } from "@/lib/client/useAuth";
 import { useNotifications } from "@/lib/client/useNotifications";
 
 export function NotificationBell() {
+    const theme = useTheme();
     const [user] = useAuth();
     const enabled = user?.authType === "oauth";
     const { isLoading, list, error, mutate } = useNotifications(!!enabled);
@@ -143,7 +145,7 @@ export function NotificationBell() {
                                 </Typography>
                                 <Typography
                                     variant="caption"
-                                    color="text.secondary"
+                                    color={theme.palette.text.secondary}
                                 >
                                     {formatDistance(
                                         new Date(notice.createdAt),

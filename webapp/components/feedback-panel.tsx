@@ -16,6 +16,7 @@ import {
     Stack,
     TextField,
     Typography,
+    useTheme,
 } from "@mui/material";
 import { FeedbackPost, GUEST_NAME, User } from "@/lib/types";
 import { FeedbackFormState, postFeedbackAction } from "@/lib/server/feedback";
@@ -110,6 +111,7 @@ export function FeedbackPanel({
     feedbackList: FeedbackPost[];
     onRefresh?: () => void;
 }) {
+    const theme = useTheme();
     return (
         <>
             {!isPublisher ? (
@@ -146,7 +148,9 @@ export function FeedbackPanel({
                                             )}
                                             <Typography
                                                 variant="caption"
-                                                color="text.secondary"
+                                                color={
+                                                    theme.palette.text.secondary
+                                                }
                                             >
                                                 {formatDistance(
                                                     new Date(post.createdAt),
@@ -212,7 +216,11 @@ export function FeedbackPanel({
                                                         )}
                                                         <Typography
                                                             variant="caption"
-                                                            color="text.secondary"
+                                                            color={
+                                                                theme.palette
+                                                                    .text
+                                                                    .secondary
+                                                            }
                                                         >
                                                             {formatDistance(
                                                                 new Date(
