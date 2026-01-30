@@ -329,7 +329,8 @@ export function PlayView({
                                 >
                                     <Button
                                         component={Link}
-                                        href={`/game/${game.contentId}#feedback`}
+                                        href={`/game/${game.id}#feedback`}
+                                        target="_blank"
                                         variant="outlined"
                                     >
                                         このゲームの投稿者にフィードバックを送る
