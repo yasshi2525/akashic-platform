@@ -282,7 +282,7 @@ export default function UserPage() {
                                     詳細
                                 </Button>
                                 <Button
-                                    variant="contained"
+                                    variant="outlined"
                                     onClick={() => handleOpenDialog(game)}
                                 >
                                     部屋を建てる
@@ -290,7 +290,6 @@ export default function UserPage() {
                                 {isOwner ? (
                                     <Button
                                         variant="contained"
-                                        color="inherit"
                                         component={Link}
                                         href={`/game/${game.id}/edit`}
                                     >
