@@ -81,10 +81,10 @@ model Game {
 }
 
 model Content {
-  id      Int     @id @default(autoincrement())
-  gameId  Int
-  icon    String
-  plays   Play[]
+  id     Int    @id @default(autoincrement())
+  gameId Int
+  icon   String
+  plays  Play[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -97,6 +97,7 @@ model Play {
   contentId    Int
   gameMasterId String
   gmUserId     String?
+  name         String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

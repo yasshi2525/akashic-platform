@@ -147,6 +147,7 @@ export const openapi = {
             StartRequest: {
                 type: "object",
                 required: [
+                    "playName",
                     "contentId",
                     "contentUrl",
                     "assetBaseUrl",
@@ -155,6 +156,7 @@ export const openapi = {
                     "playerName",
                 ],
                 properties: {
+                    playName: { type: "string" },
                     contentId: { type: "string" },
                     contentUrl: { type: "string", format: "uri" },
                     assetBaseUrl: { type: "string", format: "uri" },

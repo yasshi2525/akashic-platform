@@ -49,6 +49,7 @@ const EXTEND_WINDOW_MS = 10 * 60 * 1000;
 export function PlayView({
     playId,
     playToken,
+    playName,
     game,
     gameMaster,
     isGameMaster,
@@ -62,6 +63,7 @@ export function PlayView({
 }: {
     playId: string;
     playToken: string;
+    playName: string | null;
     game: GameInfo;
     gameMaster: { name: string; iconURL?: string };
     isGameMaster: boolean;
@@ -324,6 +326,9 @@ export function PlayView({
                                     justifyContent="space-between"
                                 >
                                     <Stack spacing={1}>
+                                        <Typography variant="h6">
+                                            {playName}
+                                        </Typography>
                                         <Stack
                                             direction="row"
                                             spacing={1}

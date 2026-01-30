@@ -26,6 +26,7 @@ export interface RunnerParameterObject {
     storagePublicUrl: string;
     storageAdminUrl: string;
     storageAdminToken: string;
+    playName: string;
     contentId: number;
     contentUrl: string;
     assetBaseUrl: string;
@@ -144,6 +145,7 @@ export class Runner {
                     contentId: this._param.contentId,
                     gameMasterId: this._param.playerId,
                     gmUserId: this._param.playerUserId,
+                    name: this._param.playName,
                 },
             })
         ).id;

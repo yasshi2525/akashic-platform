@@ -35,6 +35,7 @@ export default function Play() {
         <PlayView
             playId={id}
             playToken={data.playToken}
+            playName={data.playName}
             isGameMaster={data.isGameMaster}
             contentWidth={data.contentWidth}
             contentHeight={data.contentHeight}

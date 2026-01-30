@@ -42,6 +42,7 @@ export const PLAYLIST_LIMITS = 12;
 
 export interface PlayInfo {
     id: number;
+    playName: string;
     game: { title: string; iconURL: string };
     gameMaster: { name: string; iconURL?: string };
     participants: number;
@@ -133,6 +134,7 @@ export type PlayResponse =
           ok: true;
           data: {
               playToken: string;
+              playName: string;
               game: GameInfo;
               gameMaster: {
                   id: string;

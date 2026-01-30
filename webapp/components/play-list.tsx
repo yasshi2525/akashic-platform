@@ -82,6 +82,15 @@ function PlayGrid({ list }: { list: PlayInfo[] }) {
                             }}
                         >
                             <Typography variant="h6" component="h2">
+                                {info.playName}
+                            </Typography>
+                            <Typography
+                                variant="body2"
+                                color={theme.palette.text.secondary}
+                                sx={{
+                                    mb: 1,
+                                }}
+                            >
                                 {info.game.title}
                             </Typography>
                             <Avatar
@@ -244,7 +253,7 @@ export function PlayList({
                     </Typography>
                 </Box>
                 <TextField
-                    placeholder="ゲーム名で検索"
+                    placeholder="ゲーム名/部屋名で検索"
                     value={keyword}
                     onChange={handleSearch}
                     slotProps={{

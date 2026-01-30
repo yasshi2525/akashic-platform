@@ -59,6 +59,7 @@ export async function GET(
                 id: true,
                 contentId: true,
                 gameMasterId: true,
+                name: true,
                 createdAt: true,
                 gmUser: {
                     select: {
@@ -118,6 +119,7 @@ export async function GET(
             ok: true,
             data: {
                 playToken: await fetchPlayToken(play),
+                playName: play.name,
                 gameMaster: {
                     id: play.gameMasterId,
                     name: play.gmUser?.name ?? GUEST_NAME,

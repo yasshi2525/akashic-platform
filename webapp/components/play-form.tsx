@@ -24,12 +24,18 @@ import { GameList } from "./game-list";
 export function PlayForm() {
     const [user] = useAuth();
     const [selectedContent, setSelectedContent] = useState<number>();
+    const [selectedGameTitle, setSelectedGameTitle] = useState<string>();
     const [keyword, setKeyword] = useState("");
+    const [playName, setPlayName] = useState("");
     const [sending, setIsSending] = useOptimistic(false, () => true);
     const [error, setError] = useState<string>();
 
     function handleSearch(event: ChangeEvent<HTMLInputElement>) {
         setKeyword(event.target.value);
+    }
+
+    function handlePlayName(event: ChangeEvent<HTMLInputElement>) {
+        setPlayName(event.target.value);
     }
 
     async function handleSubmit() {
@@ -45,6 +51,7 @@ export function PlayForm() {
                 contentId: selectedContent,
                 gameMasterId: user.id,
                 gmUserId: user.authType !== "guest" ? user.id : undefined,
+                playName,
             });
             if (res.ok) {
                 redirect(
@@ -109,6 +116,23 @@ export function PlayForm() {
                     <Stack spacing={2}>
                         <Box>
                             <Typography variant="h6" gutterBottom>
+                                部屋名
+                            </Typography>
+                            <TextField
+                                placeholder={`例）「${selectedGameTitle ?? "〇〇ゲーム"}」で遊ぼう！`}
+                                value={playName}
+                                onChange={handlePlayName}
+                                fullWidth
+                                slotProps={{
+                                    htmlInput: {
+                                        maxLength: 100,
+                                    },
+                                }}
+                                helperText={`最大 100 文字`}
+                            />
+                        </Box>
+                        <Box>
+                            <Typography variant="h6" gutterBottom>
                                 ゲーム選択{" "}
                                 <Typography component="span" color="error">
                                     *
@@ -134,6 +158,7 @@ export function PlayForm() {
                             keyword={keyword}
                             selected={selectedContent}
                             setSelected={setSelectedContent}
+                            setGameTitle={setSelectedGameTitle}
                         />
                     </Stack>
                 </CardContent>

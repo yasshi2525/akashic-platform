@@ -53,6 +53,7 @@ export class HttpServer {
 
         app.post("/start", async (req, res) => {
             const {
+                playName,
                 contentId,
                 contentUrl,
                 assetBaseUrl,
@@ -62,6 +63,7 @@ export class HttpServer {
                 playerName,
             } = req.body;
             if (
+                !playName?.toString() ||
                 contentId == null ||
                 !contentUrl?.toString() ||
                 !assetBaseUrl?.toString() ||
@@ -75,6 +77,7 @@ export class HttpServer {
             }
             try {
                 const playId = await this._manager.start({
+                    playName: playName.toString(),
                     contentId,
                     contentUrl: contentUrl.toString(),
                     assetBaseUrl: assetBaseUrl.toString(),

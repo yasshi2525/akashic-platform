@@ -32,6 +32,7 @@ export function usePlay(playId: string) {
         data: data
             ? {
                   playToken: data.playToken,
+                  playName: data.playName,
                   gameMaster: data.gameMaster,
                   game: data.game,
                   isGameMaster: !!user && user.id === data.gameMaster.id,

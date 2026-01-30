@@ -19,13 +19,22 @@ export async function GET(req: NextRequest) {
         NonNullable<Parameters<typeof prisma.play.findMany>[0]>["where"]
     > = {};
     if (keyword) {
-        where.content = {
-            game: {
-                title: {
+        where.OR = [
+            {
+                content: {
+                    game: {
+                        title: {
+                            contains: keyword,
+                        },
+                    },
+                },
+            },
+            {
+                name: {
                     contains: keyword,
                 },
             },
-        };
+        ];
     }
     if (gameMasterId) {
         where.gameMasterId = gameMasterId;
@@ -40,6 +49,7 @@ export async function GET(req: NextRequest) {
         },
         select: {
             id: true,
+            name: true,
             content: {
                 select: {
                     id: true,
@@ -80,8 +90,9 @@ export async function GET(req: NextRequest) {
     );
     return NextResponse.json({
         ok: true,
-        data: result.map(({ id, content, gmUser, createdAt }) => ({
+        data: result.map(({ id, name, content, gmUser, createdAt }) => ({
             id,
+            playName: name,
             game: {
                 title: content.game.title,
                 iconURL: `${publicContentBaseUrl}/${content.id}/${content.icon}`,

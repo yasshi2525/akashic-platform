@@ -51,17 +51,21 @@ function GameTableCells({
     list,
     selected,
     setSelected,
+    setGameTitle,
 }: {
     list: GameInfo[];
     selected?: number;
     setSelected: (selected?: number) => void;
+    setGameTitle: (title?: string) => void;
 }) {
     const theme = useTheme();
-    function handleClick(id: number) {
+    function handleClick(id: number, title: string) {
         if (id === selected) {
             setSelected(undefined);
+            setGameTitle(undefined);
         } else {
             setSelected(id);
+            setGameTitle(title);
         }
     }
 
@@ -69,7 +73,7 @@ function GameTableCells({
         <TableRow
             key={game.contentId}
             hover
-            onClick={() => handleClick(game.contentId)}
+            onClick={() => handleClick(game.contentId, game.title)}
             sx={{
                 cursor: "pointer",
                 bgcolor:
@@ -124,10 +128,12 @@ export function GameList({
     keyword,
     selected,
     setSelected,
+    setGameTitle,
 }: {
     keyword?: string;
     selected?: number;
     setSelected: (selected?: number) => void;
+    setGameTitle: (title?: string) => void;
 }) {
     const theme = useTheme();
     const [debouncedKeyword] = useDebounce(keyword, 500);
@@ -162,6 +168,7 @@ export function GameList({
                             list={list.flat()}
                             selected={selected}
                             setSelected={setSelected}
+                            setGameTitle={setGameTitle}
                         />
                         {!isEnd ? (
                             <TableRow>

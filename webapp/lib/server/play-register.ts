@@ -13,6 +13,7 @@ interface PlayForm {
     gameMasterId: string;
     gmUserId: string | undefined;
     contentId: number;
+    playName: string;
 }
 
 const errReasons = ["InvalidParams", "InternalError"] as const;
@@ -25,6 +26,7 @@ export async function registerPlay({
     gameMasterId,
     gmUserId,
     contentId,
+    playName,
 }: PlayForm): Promise<RegisterPlayResponse> {
     if (!gameMasterId || contentId == null) {
         return {
@@ -56,7 +58,10 @@ export async function registerPlay({
                 configurationUrl: `${internalContentBaseUrl}/${contentId}/game.json`,
                 playerId: gameMasterId,
                 playerUserId: gmUserId,
-                playerName: playerName,
+                playerName,
+                playName: !!playName
+                    ? playName
+                    : await fetchDefaultPlayName(contentId),
             }),
         });
         if (res.status !== 200) {
@@ -80,4 +85,22 @@ export async function registerPlay({
             reason: "InternalError",
         };
     }
+}
+
+async function fetchDefaultPlayName(contentId: number) {
+    const title = (
+        await prisma.content.findUniqueOrThrow({
+            select: {
+                game: {
+                    select: {
+                        title: true,
+                    },
+                },
+            },
+            where: {
+                id: contentId,
+            },
+        })
+    ).game.title;
+    return `「${title}」で遊ぼう！`;
 }
