@@ -71,6 +71,7 @@ model Game {
   description String
   credit      String         @default("")
   streaming   Boolean        @default(true)
+  playCount   Int            @default(0)
   versions    Content[]
   feedbacks   FeedbackPost[]
 

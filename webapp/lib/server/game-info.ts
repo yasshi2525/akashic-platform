@@ -13,6 +13,7 @@ export async function fetchGameInfo(gameId: number) {
             description: true,
             credit: true,
             streaming: true,
+            playCount: true,
             publisher: {
                 select: {
                     id: true,
@@ -44,6 +45,7 @@ export async function fetchGameInfo(gameId: number) {
         description: game.description,
         credit: game.credit,
         streaming: game.streaming,
+        playCount: game.playCount,
         license: await fetchLicense(game.versions[0].id),
         contentId: game.versions[0].id,
         createdAt: game.createdAt,

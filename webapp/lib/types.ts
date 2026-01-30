@@ -31,6 +31,7 @@ export interface GameInfo {
     description: string;
     credit: string;
     streaming: boolean;
+    playCount: number;
     license?: string;
     publisher: { id: string; name: string };
     contentId: number;

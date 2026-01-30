@@ -77,6 +77,7 @@ export async function GET(
                                 description: true,
                                 credit: true,
                                 streaming: true,
+                                playCount: true,
                                 publisher: {
                                     select: {
                                         id: true,
@@ -132,6 +133,7 @@ export async function GET(
                     description: play.content.game.description,
                     credit: play.content.game.credit,
                     streaming: play.content.game.streaming,
+                    playCount: play.content.game.playCount,
                     license: await fetchLicense(play.contentId),
                     publisher: {
                         id: play.content.game.publisher.id,

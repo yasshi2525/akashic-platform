@@ -23,7 +23,7 @@ import { useGameList } from "@/lib/client/useGameList";
 function Loading() {
     return (
         <TableRow>
-            <TableCell colSpan={3}>
+            <TableCell colSpan={4}>
                 <Skeleton variant="rounded" width="100%" />
             </TableCell>
         </TableRow>
@@ -34,7 +34,7 @@ function NoResult() {
     const theme = useTheme();
     return (
         <TableRow>
-            <TableCell colSpan={3}>
+            <TableCell colSpan={4}>
                 <Typography
                     variant="body1"
                     color={theme.palette.text.secondary}
@@ -115,6 +115,14 @@ function GameTableCells({
             <TableCell>
                 <Typography variant="body1">{game.publisher.name}</Typography>
             </TableCell>
+            <TableCell width={120}>
+                <Typography
+                    variant="body2"
+                    sx={{ color: theme.palette.text.secondary }}
+                >
+                    {game.playCount} 回
+                </Typography>
+            </TableCell>
             <TableCell width={100}>
                 {selected === game.contentId ? (
                     <CheckBox fontSize="large" />
@@ -151,6 +159,7 @@ export function GameList({
                     <TableRow>
                         <TableCell>ゲーム名</TableCell>
                         <TableCell>制作者</TableCell>
+                        <TableCell>プレイ数</TableCell>
                         <TableCell></TableCell>
                     </TableRow>
                 </TableHead>
@@ -173,7 +182,7 @@ export function GameList({
                         {!isEnd ? (
                             <TableRow>
                                 <TableCell
-                                    colSpan={3}
+                                    colSpan={4}
                                     sx={{ textAlign: "center" }}
                                 >
                                     <Button

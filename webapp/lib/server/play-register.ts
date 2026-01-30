@@ -73,9 +73,11 @@ export async function registerPlay({
                 reason: "InternalError",
             };
         } else {
+            const { playId } = (await res.json()) as { playId: number };
+            await incrementPlayCount(contentId);
             return {
                 ok: true,
-                playId: (await res.json()).playId,
+                playId,
             };
         }
     } catch (err) {
@@ -103,4 +105,21 @@ async function fetchDefaultPlayName(contentId: number) {
         })
     ).game.title;
     return `「${title}」で遊ぼう！`;
+}
+
+async function incrementPlayCount(contentId: number) {
+    await prisma.game.updateMany({
+        data: {
+            playCount: {
+                increment: 1,
+            },
+        },
+        where: {
+            versions: {
+                some: {
+                    id: contentId,
+                },
+            },
+        },
+    });
 }

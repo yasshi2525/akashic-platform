@@ -9,6 +9,7 @@ import {
     Container,
     Stack,
     Typography,
+    useTheme,
 } from "@mui/material";
 import { FeedbackPost, GameInfo, User } from "@/lib/types";
 import { FeedbackPanel } from "./feedback-panel";
@@ -29,6 +30,8 @@ export function GameDetailClient({
     onRefresh?: () => void;
     error?: string;
 }) {
+    const theme = useTheme();
+
     if (error || !gameInfo) {
         return (
             <Container maxWidth="md" sx={{ py: 2 }}>
@@ -70,6 +73,21 @@ export function GameDetailClient({
                                     </Typography>
                                     <Typography variant="body2">
                                         {gameInfo.publisher.name}
+                                    </Typography>
+                                </Stack>
+                                <Stack
+                                    direction="row"
+                                    spacing={1}
+                                    alignItems="center"
+                                >
+                                    <Typography
+                                        variant="body2"
+                                        color={theme.palette.text.secondary}
+                                    >
+                                        プレイ数
+                                    </Typography>
+                                    <Typography variant="body2">
+                                        {gameInfo.playCount.toLocaleString()}
                                     </Typography>
                                 </Stack>
                                 <Typography

@@ -65,6 +65,7 @@ export async function GET(req: NextRequest) {
             description: true,
             credit: true,
             streaming: true,
+            playCount: true,
             publisher: {
                 select: {
                     id: true,
@@ -95,6 +96,7 @@ export async function GET(req: NextRequest) {
                     description,
                     credit,
                     streaming,
+                    playCount,
                     publisher,
                     versions,
                     createdAt,
@@ -110,6 +112,7 @@ export async function GET(req: NextRequest) {
                         description,
                         credit,
                         streaming,
+                        playCount,
                         license: await fetchLicense(versions[0].id),
                         contentId: versions[0].id,
                         createdAt,

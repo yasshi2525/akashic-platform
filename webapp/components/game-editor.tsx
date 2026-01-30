@@ -34,7 +34,7 @@ import { SignInAlert } from "./sign-in-alert";
 function Loading() {
     return (
         <TableRow>
-            <TableCell colSpan={3}>
+            <TableCell colSpan={4}>
                 <Skeleton variant="rounded" width="100%" />
             </TableCell>
         </TableRow>
@@ -45,7 +45,7 @@ function NoResult() {
     const theme = useTheme();
     return (
         <TableRow>
-            <TableCell colSpan={3}>
+            <TableCell colSpan={4}>
                 <Typography
                     variant="body1"
                     color={theme.palette.text.secondary}
@@ -93,6 +93,14 @@ function GameTableCells({ list }: { list: GameInfo[] }) {
                 </Typography>
             </TableCell>
             <TableCell>
+                <Typography
+                    variant="body2"
+                    sx={{ color: theme.palette.text.secondary }}
+                >
+                    {game.playCount} 回
+                </Typography>
+            </TableCell>
+            <TableCell>
                 <Button
                     variant="contained"
                     size="large"
@@ -125,6 +133,7 @@ function GameList({ userId, keyword }: { userId: string; keyword?: string }) {
                     <TableRow>
                         <TableCell>ゲーム名</TableCell>
                         <TableCell>投稿日</TableCell>
+                        <TableCell>プレイ数</TableCell>
                         <TableCell></TableCell>
                     </TableRow>
                 </TableHead>
@@ -142,7 +151,7 @@ function GameList({ userId, keyword }: { userId: string; keyword?: string }) {
                         {!isEnd ? (
                             <TableRow>
                                 <TableCell
-                                    colSpan={3}
+                                    colSpan={4}
                                     sx={{ textAlign: "center" }}
                                 >
                                     <Button
