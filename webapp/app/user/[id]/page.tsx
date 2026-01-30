@@ -20,15 +20,14 @@ import {
     Typography,
 } from "@mui/material";
 import { Logout } from "@mui/icons-material";
+import { GameInfo } from "@/lib/types";
 import { useAuth } from "@/lib/client/useAuth";
-import { useGameList } from "@/lib/client/useGameList";
 import { useUserFeedback } from "@/lib/client/useUserFeedback";
 import { useUserProfile } from "@/lib/client/useUserProfile";
-import { GameInfo } from "@/lib/types";
 import { updateUserNameAction } from "@/lib/server/user";
-import { GameListTable } from "@/components/game-list-table";
 import { PlayCreateDialog } from "@/components/play-create-dialog";
 import { UserFeedbackList } from "@/components/user-feedback-list";
+import { UserGameListSection } from "@/components/user-game-list-section";
 
 type UserNameFormState = {
     ok: boolean;
@@ -157,25 +156,12 @@ export default function UserPage() {
         return user?.authType === "oauth" && user.id === id;
     }, [user, id]);
 
-    const {
-        isLoading: isGameLoading,
-        list,
-        page,
-        setPage,
-        isEmpty,
-        isEnd,
-    } = useGameList(undefined, id);
-
     function handleSignOut() {
         if (signouting) {
             return;
         }
         setIsSignouting(true);
         signOut();
-    }
-
-    function handleLoadMoreGames() {
-        setPage(page + 1);
     }
 
     function handleOpenDialog(game: GameInfo) {
@@ -264,42 +250,36 @@ export default function UserPage() {
                     </CardContent>
                 </Card>
 
-                <Stack spacing={2}>
-                    <Typography variant="h5">投稿したゲーム</Typography>
-                    <GameListTable
-                        list={list?.flat()}
-                        isLoading={isGameLoading}
-                        isEmpty={isEmpty}
-                        isEnd={isEnd}
-                        onLoadMore={handleLoadMoreGames}
-                        renderActions={(game: GameInfo) => (
-                            <Stack direction="row" spacing={1}>
+                <UserGameListSection
+                    userId={id}
+                    title="投稿したゲーム"
+                    renderActions={(game: GameInfo) => (
+                        <Stack direction="row" spacing={1}>
+                            <Button
+                                variant="outlined"
+                                component={Link}
+                                href={`/game/${game.id}`}
+                            >
+                                詳細
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                onClick={() => handleOpenDialog(game)}
+                            >
+                                部屋を建てる
+                            </Button>
+                            {isOwner ? (
                                 <Button
-                                    variant="outlined"
+                                    variant="contained"
                                     component={Link}
-                                    href={`/game/${game.id}`}
+                                    href={`/game/${game.id}/edit`}
                                 >
-                                    詳細
+                                    編集
                                 </Button>
-                                <Button
-                                    variant="outlined"
-                                    onClick={() => handleOpenDialog(game)}
-                                >
-                                    部屋を建てる
-                                </Button>
-                                {isOwner ? (
-                                    <Button
-                                        variant="contained"
-                                        component={Link}
-                                        href={`/game/${game.id}/edit`}
-                                    >
-                                        編集
-                                    </Button>
-                                ) : null}
-                            </Stack>
-                        )}
-                    />
-                </Stack>
+                            ) : null}
+                        </Stack>
+                    )}
+                />
 
                 {isOwner ? <OwnerFeedbackSection userId={profile.id} /> : null}
             </Stack>
