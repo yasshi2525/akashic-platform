@@ -13,6 +13,7 @@ import {
     Snackbar,
     Stack,
     Typography,
+    useTheme,
 } from "@mui/material";
 import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
 import { GameInfo, User } from "@/lib/types";
@@ -24,6 +25,7 @@ import { PlayCloseDialog } from "./play-close-dialog";
 import { PlayEndNotification } from "./play-end-notification";
 import { PlayPlayerInfoResolver } from "./play-player-info-resolver";
 import { CreditPanel } from "./credit-panel";
+import { UserInline } from "./user-inline";
 
 const warnings = ["EVENT_ON_SKIPPING"] as const;
 type WarningType = (typeof warnings)[number];
@@ -65,7 +67,11 @@ export function PlayView({
     playToken: string;
     playName: string | null;
     game: GameInfo;
-    gameMaster: { name: string; iconURL?: string };
+    gameMaster: {
+        userId?: string;
+        name: string;
+        iconURL?: string;
+    };
     isGameMaster: boolean;
     contentWidth: number;
     contentHeight: number;
@@ -75,6 +81,7 @@ export function PlayView({
     user: User;
     ref: RefObject<HTMLDivElement | null>;
 }) {
+    const theme = useTheme();
     const { playlogServerUrl } = useAkashic();
     const [skipping, setSkipping] = useState(false);
     const [warning, setWarning] = useState<WarningType>();
@@ -280,12 +287,30 @@ export function PlayView({
                                                 </Typography>
                                             ) : null}
                                         </Stack>
+                                        <Stack
+                                            direction="row"
+                                            spacing={1}
+                                            alignItems="center"
+                                        >
                                         <Typography
                                             variant="body2"
-                                            color="text.secondary"
+                                                color={
+                                                    theme.palette.text.secondary
+                                                }
                                         >
-                                            制作者: {game.publisher.name}
+                                                制作者
                                         </Typography>
+                                            <UserInline
+                                                user={{
+                                                    id: game.publisher.id,
+                                                    name: game.publisher.name,
+                                                    image: game.publisher.image,
+                                                }}
+                                                textVariant="body2"
+                                                avatarSize={20}
+                                                openInNewWindow
+                                            />
+                                        </Stack>
                                         <Typography
                                             variant="body1"
                                             sx={{ whiteSpace: "pre-wrap" }}
@@ -334,13 +359,19 @@ export function PlayView({
                                             spacing={1}
                                             alignItems="center"
                                         >
-                                            <Avatar
-                                                src={gameMaster.iconURL}
-                                                sx={{ width: 32, height: 32 }}
-                                            />
                                             <Typography variant="body2">
-                                                部屋主: {gameMaster.name}
+                                                部屋主
                                             </Typography>
+                                            <UserInline
+                                                user={{
+                                                    id: gameMaster.userId,
+                                                    name: gameMaster.name,
+                                                    image: gameMaster.iconURL,
+                                                }}
+                                                textVariant="body2"
+                                                avatarSize={32}
+                                                openInNewWindow
+                                            />
                                         </Stack>
                                         <Typography
                                             variant="body2"

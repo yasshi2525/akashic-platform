@@ -63,6 +63,7 @@ export async function GET(req: NextRequest) {
             },
             gmUser: {
                 select: {
+                    id: true,
                     name: true,
                     image: true,
                 },
@@ -98,6 +99,7 @@ export async function GET(req: NextRequest) {
                 iconURL: `${publicContentBaseUrl}/${content.id}/${content.icon}`,
             },
             gameMaster: {
+                userId: gmUser?.id ?? undefined,
                 name: gmUser?.name ?? GUEST_NAME,
                 iconURL: gmUser?.image ?? undefined,
             },

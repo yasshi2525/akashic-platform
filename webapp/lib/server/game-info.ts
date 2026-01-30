@@ -18,6 +18,7 @@ export async function fetchGameInfo(gameId: number) {
                 select: {
                     id: true,
                     name: true,
+                    image: true,
                 },
             },
             versions: {
@@ -41,6 +42,7 @@ export async function fetchGameInfo(gameId: number) {
         publisher: {
             id: game.publisher.id,
             name: game.publisher.name!,
+            image: game.publisher.image ?? undefined,
         },
         description: game.description,
         credit: game.credit,

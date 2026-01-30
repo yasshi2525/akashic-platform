@@ -70,6 +70,7 @@ export async function GET(req: NextRequest) {
                 select: {
                     id: true,
                     name: true,
+                    image: true,
                 },
             },
             versions: {
@@ -108,6 +109,7 @@ export async function GET(req: NextRequest) {
                         publisher: {
                             id: publisher.id,
                             name: publisher.name!,
+                            image: publisher.image ?? undefined,
                         },
                         description,
                         credit,

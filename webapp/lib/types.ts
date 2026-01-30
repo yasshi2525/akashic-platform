@@ -33,7 +33,11 @@ export interface GameInfo {
     streaming: boolean;
     playCount: number;
     license?: string;
-    publisher: { id: string; name: string };
+    publisher: {
+        id: string;
+        name: string;
+        image?: string;
+    };
     contentId: number;
     createdAt: Date;
     updatedAt: Date;
@@ -45,7 +49,11 @@ export interface PlayInfo {
     id: number;
     playName: string;
     game: { title: string; iconURL: string };
-    gameMaster: { name: string; iconURL?: string };
+    gameMaster: {
+        userId?: string;
+        name: string;
+        iconURL?: string;
+    };
     participants: number;
     createdAt: Date;
 }
@@ -160,6 +168,7 @@ export type PlayResponse =
               game: GameInfo;
               gameMaster: {
                   id: string;
+                  userId?: string;
                   name: string;
                   iconURL?: string;
               };

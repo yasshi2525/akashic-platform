@@ -19,6 +19,7 @@ import {
 import { CheckBox } from "@mui/icons-material";
 import { GameInfo } from "@/lib/types";
 import { useGameList } from "@/lib/client/useGameList";
+import { UserInline } from "./user-inline";
 
 function Loading() {
     return (
@@ -113,7 +114,15 @@ function GameTableCells({
                 </Stack>
             </TableCell>
             <TableCell>
-                <Typography variant="body1">{game.publisher.name}</Typography>
+                <UserInline
+                    user={{
+                        id: game.publisher.id,
+                        name: game.publisher.name,
+                        image: game.publisher.image,
+                    }}
+                    textVariant="body1"
+                    avatarSize={24}
+                />
             </TableCell>
             <TableCell width={120}>
                 <Typography

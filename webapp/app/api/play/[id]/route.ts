@@ -63,6 +63,7 @@ export async function GET(
                 createdAt: true,
                 gmUser: {
                     select: {
+                        id: true,
                         name: true,
                         image: true,
                     },
@@ -82,6 +83,7 @@ export async function GET(
                                     select: {
                                         id: true,
                                         name: true,
+                                        image: true,
                                     },
                                 },
                                 createdAt: true,
@@ -123,6 +125,7 @@ export async function GET(
                 playName: play.name,
                 gameMaster: {
                     id: play.gameMasterId,
+                    userId: play.gmUser?.id ?? undefined,
                     name: play.gmUser?.name ?? GUEST_NAME,
                     iconURL: play.gmUser?.image ?? undefined,
                 },
@@ -138,6 +141,7 @@ export async function GET(
                     publisher: {
                         id: play.content.game.publisher.id,
                         name: play.content.game.publisher.name!,
+                        image: play.content.game.publisher.image ?? undefined,
                     },
                     contentId: play.contentId,
                     createdAt: play.content.game.createdAt,

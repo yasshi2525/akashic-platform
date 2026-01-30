@@ -14,6 +14,7 @@ import {
 import { FeedbackPost, GameInfo, User } from "@/lib/types";
 import { FeedbackPanel } from "./feedback-panel";
 import { CreditPanel } from "./credit-panel";
+import { UserInline } from "./user-inline";
 
 export function GameDetailClient({
     gameInfo,
@@ -71,9 +72,15 @@ export function GameDetailClient({
                                     >
                                         投稿者
                                     </Typography>
-                                    <Typography variant="body2">
-                                        {gameInfo.publisher.name}
-                                    </Typography>
+                                    <UserInline
+                                        user={{
+                                            id: gameInfo.publisher.id,
+                                            name: gameInfo.publisher.name,
+                                            image: gameInfo.publisher.image,
+                                        }}
+                                        textVariant="body2"
+                                        avatarSize={20}
+                                    />
                                 </Stack>
                                 <Stack
                                     direction="row"

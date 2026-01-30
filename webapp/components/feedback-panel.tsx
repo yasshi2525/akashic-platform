@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useFormState, useFormStatus } from "react-dom";
 import { formatDistance } from "date-fns";
@@ -17,10 +18,7 @@ import {
     Typography,
 } from "@mui/material";
 import { FeedbackPost, GUEST_NAME, User } from "@/lib/types";
-import {
-    FeedbackFormState,
-    postFeedbackAction,
-} from "@/lib/server/feedback";
+import { FeedbackFormState, postFeedbackAction } from "@/lib/server/feedback";
 import { FeedbackReplyForm } from "./feedback-reply-form";
 
 const initialState: FeedbackFormState = {
@@ -129,9 +127,23 @@ export function FeedbackPanel({
                                             sx={{ width: 40, height: 40 }}
                                         />
                                         <Stack spacing={0.5}>
-                                            <Typography variant="subtitle1">
-                                                {post.author.name}
-                                            </Typography>
+                                            {post.author.id ? (
+                                                <Typography
+                                                    variant="subtitle1"
+                                                    component={Link}
+                                                    href={`/user/${post.author.id}`}
+                                                    sx={{
+                                                        textDecoration: "none",
+                                                        color: "inherit",
+                                                    }}
+                                                >
+                                                    {post.author.name}
+                                                </Typography>
+                                            ) : (
+                                                <Typography variant="subtitle1">
+                                                    {post.author.name}
+                                                </Typography>
+                                            )}
                                             <Typography
                                                 variant="caption"
                                                 color="text.secondary"
@@ -169,13 +181,35 @@ export function FeedbackPanel({
                                                     spacing={2}
                                                 >
                                                     <Stack spacing={0.5}>
-                                                        <Typography variant="subtitle2">
-                                                            {
-                                                                post.reply
-                                                                    .author.name
-                                                            }
-                                                            （投稿者）
-                                                        </Typography>
+                                                        {post.reply.author
+                                                            .id ? (
+                                                            <Typography
+                                                                variant="subtitle2"
+                                                                component={Link}
+                                                                href={`/user/${post.reply.author.id}`}
+                                                                sx={{
+                                                                    textDecoration:
+                                                                        "none",
+                                                                    color: "inherit",
+                                                                }}
+                                                            >
+                                                                {
+                                                                    post.reply
+                                                                        .author
+                                                                        .name
+                                                                }
+                                                                （投稿者）
+                                                            </Typography>
+                                                        ) : (
+                                                            <Typography variant="subtitle2">
+                                                                {
+                                                                    post.reply
+                                                                        .author
+                                                                        .name
+                                                                }
+                                                                （投稿者）
+                                                            </Typography>
+                                                        )}
                                                         <Typography
                                                             variant="caption"
                                                             color="text.secondary"

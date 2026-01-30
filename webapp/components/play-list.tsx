@@ -24,6 +24,7 @@ import {
 import { Add, Person, AccessTime, Search } from "@mui/icons-material";
 import { PlayInfo } from "@/lib/types";
 import { usePlayList } from "@/lib/client/usePlayList";
+import { UserInline } from "./user-inline";
 
 function Loading() {
     return (
@@ -110,6 +111,7 @@ function PlayGrid({ list }: { list: PlayInfo[] }) {
                             >
                                 <Stack
                                     direction="row"
+                                    spacing={1}
                                     sx={{
                                         alignItems: "center",
                                     }}
@@ -142,21 +144,15 @@ function PlayGrid({ list }: { list: PlayInfo[] }) {
                                     <Typography variant="body2">
                                         部屋主
                                     </Typography>
-                                    {info.gameMaster.iconURL ? (
-                                        <Avatar
-                                            src={info.gameMaster.iconURL}
-                                            sx={{
-                                                ml: 1,
-                                                width: theme.typography.h4
-                                                    .fontSize,
-                                                height: theme.typography.h4
-                                                    .fontSize,
-                                            }}
-                                        />
-                                    ) : null}
-                                    <Typography variant="body2" sx={{ ml: 1 }}>
-                                        {info.gameMaster.name}
-                                    </Typography>
+                                    <UserInline
+                                        user={{
+                                            id: info.gameMaster.userId,
+                                            name: info.gameMaster.name,
+                                            image: info.gameMaster.iconURL,
+                                        }}
+                                        textVariant="body2"
+                                        avatarSize={20}
+                                    />
                                 </Stack>
                             </Stack>
                             <CardActions sx={{ marginTop: "auto" }}>
