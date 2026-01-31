@@ -1,28 +1,51 @@
 "use client";
 
-import { useState } from "react";
+import { JSX, useState } from "react";
 import { signIn } from "next-auth/react";
-import { Button } from "@mui/material";
+import { Button, Stack } from "@mui/material";
+import { GitHub, Google, Twitter } from "@mui/icons-material";
+import {
+    AuthProvider,
+    authProviderNames,
+    authProviders,
+} from "@/lib/client/auth-providers";
 
-export function SignIn() {
-    const [sending, setIsSending] = useState(false);
+const providerIcons: Record<AuthProvider, JSX.Element> = {
+    github: <GitHub />,
+    google: <Google />,
+    twitter: <Twitter />,
+};
 
-    function handleClick() {
-        if (sending) {
+export function SignIn({
+    size = "large",
+}: {
+    size?: "small" | "medium" | "large";
+}) {
+    const [sendingProvider, setSendingProvider] = useState<AuthProvider>();
+
+    function handleClick(provider: AuthProvider) {
+        if (sendingProvider) {
             return;
         }
-        setIsSending(true);
-        signIn("github");
+        setSendingProvider(provider);
+        signIn(provider);
     }
 
     return (
-        <Button
-            variant="contained"
-            size="large"
-            onClick={handleClick}
-            disabled={sending}
-        >
-            GitHubでサインイン
-        </Button>
+        <Stack spacing={2} alignItems="stretch" sx={{ width: "100%" }}>
+            {authProviders.map((provider) => (
+                <Button
+                    key={provider}
+                    variant="contained"
+                    size={size}
+                    onClick={() => handleClick(provider)}
+                    disabled={!!sendingProvider}
+                    startIcon={providerIcons[provider]}
+                    sx={{ textTransform: "none" }}
+                >
+                    {authProviderNames[provider]}でサインイン
+                </Button>
+            ))}
+        </Stack>
     );
 }

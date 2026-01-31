@@ -112,6 +112,10 @@ export interface UserProfile {
     id: string;
     name: string;
     image?: string;
+    /**
+     * 自分自身の場合のみ値が格納。サインイン中のプロパイダ
+     */
+    provider?: string;
 }
 
 export const supportedAkashicVersions = ["3"];

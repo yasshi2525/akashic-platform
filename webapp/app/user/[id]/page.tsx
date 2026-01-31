@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { JSX, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -12,6 +12,7 @@ import {
     Button,
     Card,
     CardContent,
+    Chip,
     Container,
     Divider,
     Skeleton,
@@ -19,15 +20,38 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
-import { Logout } from "@mui/icons-material";
+import { GitHub, Google, Logout, Twitter } from "@mui/icons-material";
 import { GameInfo } from "@/lib/types";
 import { useAuth } from "@/lib/client/useAuth";
 import { useUserFeedback } from "@/lib/client/useUserFeedback";
 import { useUserProfile } from "@/lib/client/useUserProfile";
+import { AuthProvider, authProviderNames } from "@/lib/client/auth-providers";
 import { updateUserNameAction } from "@/lib/server/user";
 import { PlayCreateDialog } from "@/components/play-create-dialog";
 import { UserFeedbackList } from "@/components/user-feedback-list";
 import { UserGameListSection } from "@/components/user-game-list-section";
+
+const providerIcons: Record<AuthProvider, JSX.Element> = {
+    github: <GitHub />,
+    google: <Google />,
+    twitter: <Twitter />,
+};
+
+function UserAuthProvider({ provider }: { provider?: string }) {
+    const icon = useMemo(() => {
+        return providerIcons[provider as AuthProvider];
+    }, [provider]);
+    const label = useMemo(() => {
+        return authProviderNames[provider as AuthProvider] ?? "Unknown";
+    }, [provider]);
+
+    if (icon == null) {
+        return null;
+    }
+    return (
+        <Chip icon={icon} label={`${label}でサインイン中`} variant="outlined" />
+    );
+}
 
 type UserNameFormState = {
     ok: boolean;
@@ -220,6 +244,11 @@ export default function UserPage() {
                                 <Typography variant="h4" component="h1">
                                     {profile.name}
                                 </Typography>
+                                {isOwner ? (
+                                    <UserAuthProvider
+                                        provider={profile.provider}
+                                    />
+                                ) : null}
                             </Stack>
                             {isOwner ? (
                                 <>

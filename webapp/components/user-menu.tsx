@@ -22,7 +22,7 @@ import {
 import { User } from "@/lib/types";
 import { useAuth } from "@/lib/client/useAuth";
 import { UserLabel } from "./user-label";
-import { SignIn } from "./sign-in";
+import { SignInDialog } from "./sign-in-dialog";
 import { NotificationBell } from "./notification-bell";
 
 interface MenuProps {
@@ -32,14 +32,9 @@ interface MenuProps {
 
 function AnonymousMenu({ anchorEl, handleClose }: MenuProps) {
     return (
-        <Menu
-            anchorEl={anchorEl}
-            open={!!anchorEl}
-            onClose={handleClose}
-            onClick={handleClose}
-        >
+        <Menu anchorEl={anchorEl} open={!!anchorEl} onClose={handleClose}>
             <MenuItem>
-                <SignIn />
+                <SignInDialog />
             </MenuItem>
         </Menu>
     );
@@ -138,7 +133,6 @@ function AuthorizedMenu({ user, anchorEl, handleClose }: AuthorizedMenuProps) {
 }
 
 export function UserMenu() {
-    const theme = useTheme();
     const [user] = useAuth();
     const [anchorEl, setAnchorEl] = useState<HTMLElement>();
 
