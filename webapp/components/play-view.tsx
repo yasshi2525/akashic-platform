@@ -257,6 +257,82 @@ export function PlayView({
                                 <Stack
                                     direction={{ xs: "column", sm: "row" }}
                                     spacing={2}
+                                    alignItems={{
+                                        xs: "flex-start",
+                                        sm: "center",
+                                    }}
+                                    justifyContent="space-between"
+                                >
+                                    <Stack spacing={1}>
+                                        <Typography variant="h6">
+                                            {playName}
+                                        </Typography>
+                                        <Stack
+                                            direction="row"
+                                            spacing={1}
+                                            alignItems="center"
+                                        >
+                                            <Typography variant="body2">
+                                                部屋主
+                                            </Typography>
+                                            <UserInline
+                                                user={{
+                                                    id: gameMaster.userId,
+                                                    name: gameMaster.name,
+                                                    image: gameMaster.iconURL,
+                                                }}
+                                                textVariant="body2"
+                                                avatarSize={32}
+                                                openInNewWindow
+                                            />
+                                        </Stack>
+                                        <Typography
+                                            variant="body2"
+                                            color={theme.palette.text.secondary}
+                                        >
+                                            部屋作成: {formatCreatedAt()}
+                                        </Typography>
+                                    </Stack>
+                                    <Stack
+                                        direction={{ xs: "column", sm: "row" }}
+                                        spacing={2}
+                                        alignItems={{
+                                            xs: "flex-start",
+                                            sm: "center",
+                                        }}
+                                    >
+                                        <Typography variant="body1">
+                                            プレイ可能 残り時間:{" "}
+                                            {formatRemaining(remainingMs)}
+                                        </Typography>
+                                        <Button
+                                            variant="contained"
+                                            onClick={handleExtend}
+                                            disabled={
+                                                remainingMs == null ||
+                                                remainingMs >
+                                                    EXTEND_WINDOW_MS ||
+                                                extendLoading
+                                            }
+                                        >
+                                            30分延長する
+                                        </Button>
+                                    </Stack>
+                                </Stack>
+                                {extendError ? (
+                                    <Alert severity="warning">
+                                        {extendError}
+                                    </Alert>
+                                ) : null}
+                            </Stack>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent>
+                            <Stack spacing={2}>
+                                <Stack
+                                    direction={{ xs: "column", sm: "row" }}
+                                    spacing={2}
                                 >
                                     <Avatar
                                         variant="square"
@@ -341,82 +417,6 @@ export function PlayView({
                                         このゲームの投稿者にフィードバックを送る
                                     </Button>
                                 </Stack>
-                            </Stack>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent>
-                            <Stack spacing={2}>
-                                <Stack
-                                    direction={{ xs: "column", sm: "row" }}
-                                    spacing={2}
-                                    alignItems={{
-                                        xs: "flex-start",
-                                        sm: "center",
-                                    }}
-                                    justifyContent="space-between"
-                                >
-                                    <Stack spacing={1}>
-                                        <Typography variant="h6">
-                                            {playName}
-                                        </Typography>
-                                        <Stack
-                                            direction="row"
-                                            spacing={1}
-                                            alignItems="center"
-                                        >
-                                            <Typography variant="body2">
-                                                部屋主
-                                            </Typography>
-                                            <UserInline
-                                                user={{
-                                                    id: gameMaster.userId,
-                                                    name: gameMaster.name,
-                                                    image: gameMaster.iconURL,
-                                                }}
-                                                textVariant="body2"
-                                                avatarSize={32}
-                                                openInNewWindow
-                                            />
-                                        </Stack>
-                                        <Typography
-                                            variant="body2"
-                                            color={theme.palette.text.secondary}
-                                        >
-                                            部屋作成: {formatCreatedAt()}
-                                        </Typography>
-                                    </Stack>
-                                    <Stack
-                                        direction={{ xs: "column", sm: "row" }}
-                                        spacing={2}
-                                        alignItems={{
-                                            xs: "flex-start",
-                                            sm: "center",
-                                        }}
-                                    >
-                                        <Typography variant="body1">
-                                            残り時間:{" "}
-                                            {formatRemaining(remainingMs)}
-                                        </Typography>
-                                        <Button
-                                            variant="contained"
-                                            onClick={handleExtend}
-                                            disabled={
-                                                remainingMs == null ||
-                                                remainingMs >
-                                                    EXTEND_WINDOW_MS ||
-                                                extendLoading
-                                            }
-                                        >
-                                            30分延長する
-                                        </Button>
-                                    </Stack>
-                                </Stack>
-                                {extendError ? (
-                                    <Alert severity="warning">
-                                        {extendError}
-                                    </Alert>
-                                ) : null}
                             </Stack>
                         </CardContent>
                     </Card>
