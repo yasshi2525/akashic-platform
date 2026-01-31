@@ -19,6 +19,7 @@ import {
     Stack,
     TextField,
     Typography,
+    useTheme,
 } from "@mui/material";
 import { GitHub, Google, Logout, Twitter } from "@mui/icons-material";
 import { GameInfo } from "@/lib/types";
@@ -169,6 +170,7 @@ function OwnerFeedbackSection({ userId }: { userId: string }) {
 }
 
 export default function UserPage() {
+    const theme = useTheme();
     const { id } = useParams<{ id: string }>();
     const [user, userDispatch] = useAuth();
     const { isLoading, profile, error, mutate } = useUserProfile(id);
@@ -265,9 +267,15 @@ export default function UserPage() {
                                         <Box>
                                             <Button
                                                 variant="outlined"
-                                                color="inherit"
                                                 startIcon={<Logout />}
                                                 onClick={handleSignOut}
+                                                sx={{
+                                                    borderColor:
+                                                        theme.palette.primary
+                                                            .light,
+                                                    color: theme.palette.primary
+                                                        .light,
+                                                }}
                                             >
                                                 サインアウト
                                             </Button>
@@ -288,14 +296,22 @@ export default function UserPage() {
                                 variant="outlined"
                                 component={Link}
                                 href={`/game/${game.id}`}
+                                sx={{
+                                    borderColor: theme.palette.primary.light,
+                                    color: theme.palette.primary.light,
+                                }}
                             >
                                 詳細
                             </Button>
                             <Button
                                 variant="outlined"
                                 onClick={() => handleOpenDialog(game)}
+                                sx={{
+                                    borderColor: theme.palette.primary.light,
+                                    color: theme.palette.primary.light,
+                                }}
                             >
-                                部屋を建てる
+                                部屋を立てる
                             </Button>
                             {isOwner ? (
                                 <Button

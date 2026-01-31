@@ -33,7 +33,11 @@ export function CreditPanel({
                 size="small"
                 onClick={() => setOpen((prev) => !prev)}
                 endIcon={open ? <ExpandLess /> : <ExpandMore />}
-                sx={{ alignSelf: "flex-start" }}
+                sx={{
+                    alignSelf: "flex-start",
+                    borderColor: theme.palette.primary.light,
+                    color: theme.palette.primary.light,
+                }}
             >
                 {open ? "クレジットを閉じる" : "クレジットを表示"}
             </Button>

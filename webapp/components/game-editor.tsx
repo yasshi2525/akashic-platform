@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Button, Container, Stack } from "@mui/material";
+import { Button, Container, Stack, useTheme } from "@mui/material";
 import { GameInfo } from "@/lib/types";
 import { useAuth } from "@/lib/client/useAuth";
 import { SignInAlert } from "./sign-in-alert";
 import { UserGameListSection } from "./user-game-list-section";
 
 export function GameEditor() {
+    const theme = useTheme();
     const [user] = useAuth();
 
     if (!user || user.authType === "guest") {
@@ -35,6 +36,10 @@ export function GameEditor() {
                             variant="outlined"
                             component={Link}
                             href={`/game/${game.id}`}
+                            sx={{
+                                borderColor: theme.palette.primary.light,
+                                color: theme.palette.primary.light,
+                            }}
                         >
                             詳細
                         </Button>

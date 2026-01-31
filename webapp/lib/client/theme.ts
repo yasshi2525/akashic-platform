@@ -13,11 +13,11 @@ export const theme = createTheme({
         },
         background: {
             default: colors.blueGrey[900],
-            paper: colors.blueGrey[800],
+            paper: colors.blueGrey[700],
         },
         text: {
             primary: colors.blueGrey[50],
-            secondary: colors.blueGrey[300],
+            secondary: colors.blueGrey[200],
         },
     },
 });

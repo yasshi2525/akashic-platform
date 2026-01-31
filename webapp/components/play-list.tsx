@@ -137,6 +137,7 @@ function PlayGrid({ list }: { list: PlayInfo[] }) {
                                 </Stack>
                                 <Stack
                                     direction="row"
+                                    spacing={1}
                                     sx={{
                                         alignItems: "center",
                                     }}

@@ -332,6 +332,11 @@ export function PlayView({
                                         href={`/game/${game.id}#feedback`}
                                         target="_blank"
                                         variant="outlined"
+                                        sx={{
+                                            borderColor:
+                                                theme.palette.primary.light,
+                                            color: theme.palette.primary.light,
+                                        }}
                                     >
                                         このゲームの投稿者にフィードバックを送る
                                     </Button>
