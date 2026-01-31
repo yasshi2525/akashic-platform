@@ -1,6 +1,13 @@
 "use client";
 
-import { Box, Container, Typography, useTheme } from "@mui/material";
+import {
+    Box,
+    Container,
+    Link,
+    Stack,
+    Typography,
+    useTheme,
+} from "@mui/material";
 
 export function SiteFooter() {
     const theme = useTheme();
@@ -15,9 +22,38 @@ export function SiteFooter() {
             }}
         >
             <Container maxWidth="xl">
-                <Typography variant="body2" align="center">
-                    © 2025 みんなでゲーム! All rights reserved.
-                </Typography>
+                <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{
+                        justifyContent: "center",
+                        color: theme.palette.text.secondary,
+                    }}
+                >
+                    <Typography variant="body2">
+                        © 2026 みんなでゲーム! All rights reserved.
+                    </Typography>
+                    <Typography variant="body2">
+                        問い合わせ: やっしー
+                    </Typography>
+                    <Link
+                        href="https://x.com/yasshi2525"
+                        target="_blank"
+                        color="inherit"
+                        variant="body2"
+                    >
+                        X
+                    </Link>
+                    <Typography variant="body2">, </Typography>
+                    <Link
+                        href="https://github.com/yasshi2525/akashic-platform"
+                        target="_blank"
+                        color="inherit"
+                        variant="body2"
+                    >
+                        GitHub
+                    </Link>
+                </Stack>
             </Container>
         </Box>
     );
