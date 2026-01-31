@@ -4,7 +4,7 @@ import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Box, CssBaseline, ThemeProvider } from "@mui/material";
 import { getAuth } from "@/lib/server/auth";
-import { akashicServerUrl, publicPlaylogServerUrl } from "@/lib/server/akashic";
+import { publicPlaylogServerUrl } from "@/lib/server/akashic";
 import { theme } from "@/lib/client/theme";
 import { AkashicProvider } from "@/components/akashic-provider";
 import { AuthProvider } from "@/components/auth-provider";
@@ -37,10 +37,7 @@ export default async function RootLayout({
         >
             <body>
                 <AppRouterCacheProvider>
-                    <AkashicProvider
-                        akashicServerUrl={akashicServerUrl}
-                        playlogServerUrl={publicPlaylogServerUrl}
-                    >
+                    <AkashicProvider playlogServerUrl={publicPlaylogServerUrl}>
                         <AuthProvider user={user}>
                             <ThemeProvider theme={theme}>
                                 <CssBaseline />
