@@ -12,6 +12,8 @@ import {
     CardContent,
     Container,
     FormControlLabel,
+    List,
+    ListItem,
     Stack,
     Switch,
     TextField,
@@ -76,6 +78,8 @@ export function GameForm({
     const [iconFileError, setIconFileError] = useState<string>();
     const [descriptionError, setDescriptionError] = useState<string>();
     const [serverError, setServerError] = useState<string>();
+    const [unsupportedExternals, setUnsupportedExternals] =
+        useState<string[]>();
 
     function handleInputTitle(event: ChangeEvent<HTMLInputElement>) {
         if (event.target.value) {
@@ -87,10 +91,31 @@ export function GameForm({
     async function handleUploadGameFile(event: ChangeEvent<HTMLInputElement>) {
         if (event.target.files && event.target.files[0]) {
             setGameFileError(undefined);
+            setUnsupportedExternals(undefined);
             const file = event.target.files[0];
             setGameFile(file);
             try {
                 const zip = await JSZip.loadAsync(await file.arrayBuffer());
+                const gameJsonFile = zip.file("game.json");
+                if (gameJsonFile) {
+                    try {
+                        const gameJson = JSON.parse(
+                            await gameJsonFile.async("text"),
+                        );
+                        const externalKeys = Object.keys(
+                            gameJson?.environment?.external ?? {},
+                        ).sort();
+                        const unsupportedExternalKeys = externalKeys.filter(
+                            (key: string) =>
+                                key !== "send" && key !== "coeLimited",
+                        );
+                        if (unsupportedExternalKeys.length > 0) {
+                            setUnsupportedExternals(unsupportedExternalKeys);
+                        }
+                    } catch (err) {
+                        console.warn("failed to parse game.json", err);
+                    }
+                }
                 const licenseFile = zip.file("library_license.txt");
                 if (licenseFile) {
                     const text = await licenseFile.async("text");
@@ -333,6 +358,43 @@ export function GameForm({
                                         sx={{ mt: 1 }}
                                     >
                                         {gameFileError}
+                                    </Alert>
+                                ) : null}
+                                {unsupportedExternals ? (
+                                    <Alert
+                                        variant="outlined"
+                                        severity="warning"
+                                        sx={{ mt: 1 }}
+                                    >
+                                        <Typography variant="body2">
+                                            以下のプラグインは動作しないのでご注意ください
+                                        </Typography>
+                                        <List
+                                            dense
+                                            sx={{
+                                                listStyleType: "disc",
+                                                pl: 2,
+                                            }}
+                                        >
+                                            {unsupportedExternals.map(
+                                                (external) => (
+                                                    <ListItem
+                                                        sx={{
+                                                            fontSize:
+                                                                theme.typography
+                                                                    .body2
+                                                                    .fontSize,
+                                                            display:
+                                                                "list-item",
+                                                            fontFamily:
+                                                                "monospace",
+                                                        }}
+                                                    >
+                                                        "{external}"
+                                                    </ListItem>
+                                                ),
+                                            )}
+                                        </List>
                                     </Alert>
                                 ) : null}
                             </Box>
