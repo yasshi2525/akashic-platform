@@ -10,11 +10,13 @@ import {
     Card,
     CardContent,
     Container,
+    Divider,
     Snackbar,
     Stack,
     Typography,
     useTheme,
 } from "@mui/material";
+import { ContentCopy, OpenInNew } from "@mui/icons-material";
 import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
 import { GameInfo, User } from "@/lib/types";
 import { useAkashic } from "@/lib/client/useAkashic";
@@ -97,6 +99,10 @@ export function PlayView({
     );
     const [extendError, setExtendError] = useState<string>();
     const [extendLoading, setExtendLoading] = useState(false);
+    const [inviteUrl, setInviteUrl] = useState<string>();
+    const [inviteCopyStatus, setInviteCopyStatus] = useState<
+        "success" | "error"
+    >();
 
     function formatRemaining(ms: number | undefined) {
         if (ms == null) {
@@ -175,6 +181,14 @@ export function PlayView({
         };
     }, [expiresAt]);
 
+    useEffect(() => {
+        if (typeof window === "undefined") {
+            return;
+        }
+        const currentUrl = new URL(window.location.href);
+        setInviteUrl(`${currentUrl.origin}${currentUrl.pathname}`);
+    }, [playId]);
+
     async function handleExtend() {
         if (extendLoading) {
             return;
@@ -201,6 +215,19 @@ export function PlayView({
         }
     }
 
+    async function handleCopyInvite() {
+        if (!inviteUrl) {
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(inviteUrl);
+            setInviteCopyStatus("success");
+        } catch (err) {
+            console.warn("failed to copy invite url", err);
+            setInviteCopyStatus("error");
+        }
+    }
+
     return (
         <>
             <Container
@@ -220,7 +247,6 @@ export function PlayView({
             {requestPlayerInfo ? (
                 <PlayPlayerInfoResolver request={requestPlayerInfo} />
             ) : null}
-            {isGameMaster ? <PlayCloseDialog playId={playId} /> : null}
             {playEndReason ? (
                 <PlayEndNotification reason={playEndReason} />
             ) : null}
@@ -249,14 +275,32 @@ export function PlayView({
                     <Alert severity="warning">{toMessage(warning)}</Alert>
                 </Snackbar>
             ) : null}
+            {inviteCopyStatus ? (
+                <Snackbar
+                    open={!!inviteCopyStatus}
+                    anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                    autoHideDuration={2500}
+                    onClose={() => setInviteCopyStatus(undefined)}
+                >
+                    <Alert
+                        severity={
+                            inviteCopyStatus === "success" ? "success" : "error"
+                        }
+                    >
+                        {inviteCopyStatus === "success"
+                            ? "招待リンクをコピーしました。"
+                            : "クリップボードへのコピーに失敗しました。"}
+                    </Alert>
+                </Snackbar>
+            ) : null}
             <Container maxWidth="md" sx={{ mt: 2 }}>
                 <Stack spacing={2}>
                     <Card>
                         <CardContent>
-                            <Stack spacing={2}>
+                            <Stack spacing={1} divider={<Divider />}>
                                 <Stack
                                     direction={{ xs: "column", sm: "row" }}
-                                    spacing={2}
+                                    spacing={1}
                                     alignItems={{
                                         xs: "flex-start",
                                         sm: "center",
@@ -272,7 +316,12 @@ export function PlayView({
                                             spacing={1}
                                             alignItems="center"
                                         >
-                                            <Typography variant="body2">
+                                            <Typography
+                                                variant="body2"
+                                                color={
+                                                    theme.palette.text.secondary
+                                                }
+                                            >
                                                 部屋主
                                             </Typography>
                                             <UserInline
@@ -286,12 +335,24 @@ export function PlayView({
                                                 openInNewWindow
                                             />
                                         </Stack>
-                                        <Typography
-                                            variant="body2"
-                                            color={theme.palette.text.secondary}
-                                        >
-                                            部屋作成: {formatCreatedAt()}
-                                        </Typography>
+                                        <Stack direction="row">
+                                            <Typography
+                                                variant="body2"
+                                                color={
+                                                    theme.palette.text.secondary
+                                                }
+                                            >
+                                                作成
+                                            </Typography>
+                                            <Typography
+                                                variant="body2"
+                                                color={
+                                                    theme.palette.text.secondary
+                                                }
+                                            >
+                                                {formatCreatedAt()}
+                                            </Typography>
+                                        </Stack>
                                     </Stack>
                                     <Stack
                                         direction={{ xs: "column", sm: "row" }}
@@ -301,10 +362,19 @@ export function PlayView({
                                             sm: "center",
                                         }}
                                     >
-                                        <Typography variant="body1">
-                                            プレイ可能 残り時間:{" "}
-                                            {formatRemaining(remainingMs)}
-                                        </Typography>
+                                        <Stack direction="row" spacing={1}>
+                                            <Typography
+                                                variant="body1"
+                                                color={
+                                                    theme.palette.text.secondary
+                                                }
+                                            >
+                                                終了まで
+                                            </Typography>
+                                            <Typography variant="body1">
+                                                {formatRemaining(remainingMs)}
+                                            </Typography>
+                                        </Stack>
                                         <Button
                                             variant="contained"
                                             onClick={handleExtend}
@@ -323,6 +393,63 @@ export function PlayView({
                                     <Alert severity="warning">
                                         {extendError}
                                     </Alert>
+                                ) : null}
+                                <Stack spacing={1}>
+                                    <Typography variant="body1">
+                                        招待リンク
+                                    </Typography>
+                                    <Stack
+                                        direction="row"
+                                        spacing={1}
+                                        alignItems="center"
+                                    >
+                                        <Typography
+                                            variant="body1"
+                                            sx={{
+                                                p: 1,
+                                                color: theme.palette.text
+                                                    .secondary,
+                                                borderStyle: "solid",
+                                                borderWidth: 1,
+                                                borderRadius: 2,
+                                                borderColor:
+                                                    theme.palette.divider,
+                                                backgroundColor:
+                                                    theme.palette.background
+                                                        .default,
+                                                cursor: "pointer",
+                                                flexGrow: 1,
+                                            }}
+                                            onClick={handleCopyInvite}
+                                        >
+                                            {inviteUrl ?? "リンクを準備中..."}
+                                        </Typography>
+                                        <Button
+                                            startIcon={<ContentCopy />}
+                                            variant="outlined"
+                                            onClick={handleCopyInvite}
+                                            disabled={!inviteUrl}
+                                            sx={{
+                                                borderColor:
+                                                    theme.palette.primary.light,
+                                                color: theme.palette.primary
+                                                    .light,
+                                            }}
+                                        >
+                                            コピー
+                                        </Button>
+                                    </Stack>
+                                    <Typography
+                                        variant="body2"
+                                        color={theme.palette.text.secondary}
+                                    >
+                                        この部屋に招待したい人に上のリンクを共有してください。
+                                    </Typography>
+                                </Stack>
+                                {isGameMaster ? (
+                                    <Stack sx={{ justifyContent: "center" }}>
+                                        <PlayCloseDialog playId={playId} />
+                                    </Stack>
                                 ) : null}
                             </Stack>
                         </CardContent>
@@ -408,6 +535,7 @@ export function PlayView({
                                         href={`/game/${game.id}#feedback`}
                                         target="_blank"
                                         variant="outlined"
+                                        endIcon={<OpenInNew />}
                                         sx={{
                                             borderColor:
                                                 theme.palette.primary.light,

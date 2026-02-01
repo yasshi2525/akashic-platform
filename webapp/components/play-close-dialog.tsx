@@ -58,7 +58,7 @@ export function PlayCloseDialog({ playId }: { playId: string }) {
                 variant="outlined"
                 color="error"
                 onClick={handleClick}
-                sx={{ display: "block", margin: "auto" }}
+                sx={{ margin: "auto" }}
             >
                 部屋を閉じる
             </Button>
