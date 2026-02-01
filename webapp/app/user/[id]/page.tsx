@@ -124,7 +124,7 @@ function UserNameSubmitButton() {
     const { pending } = useFormStatus();
     return (
         <Button type="submit" variant="contained" disabled={pending}>
-            変更を保存する
+            変更
         </Button>
     );
 }
