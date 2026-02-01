@@ -85,7 +85,7 @@ function AuthorizedMenu({ user, anchorEl, handleClose }: AuthorizedMenuProps) {
                 >
                     <FormatListBulleted />
                     <Typography variant="body1" sx={{ ml: 1 }}>
-                        自分が立てた部屋一覧
+                        自分が作った部屋
                     </Typography>
                 </Button>
             </MenuItem>

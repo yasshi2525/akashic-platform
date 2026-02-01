@@ -12,7 +12,7 @@ export default function MyPlayListPage() {
 
     return (
         <PlayList
-            title="自分が立てた部屋"
+            title="自分が作った部屋"
             description="自分が部屋主として作成したプレイ一覧"
             gameMasterId={user.id}
         />

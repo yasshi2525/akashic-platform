@@ -311,7 +311,7 @@ export default function UserPage() {
                                     color: theme.palette.primary.light,
                                 }}
                             >
-                                部屋を立てる
+                                部屋を作る
                             </Button>
                             {isOwner ? (
                                 <Button
