@@ -55,16 +55,16 @@ export class AkashicContainer {
                 // NOTE: untrusted のときこの値が使用される。 akashic-cli-serve の値としている。
                 trustedChildOrigin: /.*/,
             });
+            const resizeObserver = this._createResizeObserver(
+                param.parent,
+                view,
+            );
             view.registerExternalPlugin(
                 new CoeLimitedPlugin({
                     onRequest: param.onRequestPlayerInfo,
                 }),
             );
             const content = this._createContent(param);
-            const resizeObserver = this._createResizeObserver(
-                param.parent,
-                content,
-            );
             view.addContent(content);
             this._current = {
                 view,
@@ -126,15 +126,18 @@ export class AkashicContainer {
         return content;
     }
 
-    _createResizeObserver(target: HTMLDivElement, content: GameContent) {
+    _createResizeObserver(target: HTMLDivElement, view: AkashicGameView) {
         const observer = new ResizeObserver((entries) => {
             for (const e of entries.filter((e) => e.target === target)) {
-                content.setContentArea({
-                    x: 0,
-                    y: 0,
-                    width: e.contentRect.width,
-                    height: e.contentRect.height,
-                });
+                view.setViewSize(e.contentRect.width, e.contentRect.height);
+                for (const content of Object.values(view._contents)) {
+                    content.setContentArea({
+                        x: 0,
+                        y: 0,
+                        width: e.contentRect.width,
+                        height: e.contentRect.height,
+                    });
+                }
             }
         });
         observer.observe(target);
