@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@yasshi2525/persist-schema";
 import { GUEST_NAME } from "../types";
 import { getAuth } from "./auth";
-import { publicContentBaseUrl } from "./akashic";
+import { publicBaseUrl } from "./akashic";
 
 export type FeedbackFormState = {
     ok: boolean;
@@ -92,7 +92,7 @@ export async function postFeedbackAction(
                 userId: game.publisherId,
                 unread: true,
                 type: "FEEDBACKED",
-                iconURL: `${publicContentBaseUrl}/${game.versions[0].id}/${game.versions[0].icon}`,
+                iconURL: `${publicBaseUrl}/api/game/${gameId}/icon`,
                 body: `"${game.title}" に新しいフィードバックが届きました。`,
                 link: `/game/${gameId}#post-${post.id}`,
             },
@@ -192,7 +192,7 @@ export async function postFeedbackReplyAction(
                 userId: post.authorId,
                 unread: true,
                 type: "FEEDBACK_REPLIED",
-                iconURL: `${publicContentBaseUrl}/${post.game.versions[0].id}/${post.game.versions[0].icon}`,
+                iconURL: `${publicBaseUrl}/api/game/${post.game.id}/icon`,
                 body: `"${post.game.title}" のフィードバックに返信がありました。`,
                 link: `/game/${post.game.id}#post-${post.id}`,
             },

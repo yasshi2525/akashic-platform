@@ -1,8 +1,5 @@
 # Akashic Platform
 
-> [!CAUTION]
-> このプロジェクトは実装中です。まだ動かないよ
-
 [dwango](https://dwango.co.jp/) 提供の [Akashic Engine](https://akashic-games.github.io/) のマルチプレイモードに準拠したゲームをプレイ可能にする Web サービス実装です。
 
 - 用語
