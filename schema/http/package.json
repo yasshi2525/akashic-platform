@@ -1,9 +1,10 @@
 {
   "name": "@yasshi2525/http-schema",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": "true",
   "description": "http schema (Open API)",
   "files": [
+    "CHANGELOG.md",
     "dist"
   ],
   "type": "module",

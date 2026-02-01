@@ -1,10 +1,11 @@
 {
   "name": "@yasshi2525/amflow-client-event-schema",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "AMFlow event schema (client side)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
+    "CHANGELOG.md",
     "dist"
   ],
   "keywords": [],
@@ -19,6 +20,6 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@yasshi2525/amflow-event-schema": "^0.1.0"
+    "@yasshi2525/amflow-event-schema": "^1.0.0"
   }
 }

@@ -1,11 +1,12 @@
 {
   "name": "@yasshi2525/amflow-event-schema",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "AMFlow event schema",
   "private": true,
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
+    "CHANGELOG.md",
     "dist"
   ],
   "author": "yasshi2525",
