@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import {
     Alert,
     Avatar,
     Box,
+    Button,
     Card,
     CardContent,
     Container,
@@ -15,6 +17,7 @@ import { FeedbackPost, GameInfo, User } from "@/lib/types";
 import { FeedbackPanel } from "./feedback-panel";
 import { CreditPanel } from "./credit-panel";
 import { UserInline } from "./user-inline";
+import { PlayCreateDialog } from "./play-create-dialog";
 
 export function GameDetailClient({
     gameInfo,
@@ -32,6 +35,15 @@ export function GameDetailClient({
     error?: string;
 }) {
     const theme = useTheme();
+    const [createDialogOpen, setCreateDialogOpen] = useState(false);
+
+    function handleOpenCreateDialog() {
+        setCreateDialogOpen(true);
+    }
+
+    function handleCloseCreateDialog() {
+        setCreateDialogOpen(false);
+    }
 
     if (error || !gameInfo) {
         return (
@@ -103,6 +115,18 @@ export function GameDetailClient({
                                 >
                                     {gameInfo.description}
                                 </Typography>
+                                <Button
+                                    variant="outlined"
+                                    onClick={handleOpenCreateDialog}
+                                    sx={{
+                                        borderColor:
+                                            theme.palette.primary.light,
+                                        color: theme.palette.primary.light,
+                                        alignSelf: "flex-start",
+                                    }}
+                                >
+                                    部屋を作る
+                                </Button>
                                 <CreditPanel
                                     credit={gameInfo.credit}
                                     contentId={gameInfo.contentId}
@@ -125,6 +149,12 @@ export function GameDetailClient({
                     onRefresh={onRefresh}
                 />
             </Box>
+            <PlayCreateDialog
+                open={createDialogOpen}
+                onClose={handleCloseCreateDialog}
+                game={gameInfo}
+                user={user}
+            />
         </Container>
     );
 }

@@ -1,19 +1,32 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Button, Container, Stack, useTheme } from "@mui/material";
 import { GameInfo } from "@/lib/types";
 import { useAuth } from "@/lib/client/useAuth";
 import { SignInAlert } from "./sign-in-alert";
 import { UserGameListSection } from "./user-game-list-section";
+import { PlayCreateDialog } from "./play-create-dialog";
 
 export function GameEditor() {
     const theme = useTheme();
     const [user] = useAuth();
+    const [selectedGame, setSelectedGame] = useState<GameInfo>();
+    const [dialogOpen, setDialogOpen] = useState(false);
 
     if (!user || user.authType === "guest") {
         const message = `投稿したゲームを編集するにはサインインが必要です。`;
         return <SignInAlert message={message} />;
+    }
+
+    function handleOpenDialog(game: GameInfo) {
+        setSelectedGame(game);
+        setDialogOpen(true);
+    }
+
+    function handleCloseDialog() {
+        setDialogOpen(false);
     }
 
     return (
@@ -44,6 +57,16 @@ export function GameEditor() {
                             詳細
                         </Button>
                         <Button
+                            variant="outlined"
+                            onClick={() => handleOpenDialog(game)}
+                            sx={{
+                                borderColor: theme.palette.primary.light,
+                                color: theme.palette.primary.light,
+                            }}
+                        >
+                            部屋を作る
+                        </Button>
+                        <Button
                             variant="contained"
                             size="large"
                             component={Link}
@@ -53,6 +76,12 @@ export function GameEditor() {
                         </Button>
                     </Stack>
                 )}
+            />
+            <PlayCreateDialog
+                open={dialogOpen}
+                onClose={handleCloseDialog}
+                game={selectedGame}
+                user={user}
             />
         </Container>
     );
