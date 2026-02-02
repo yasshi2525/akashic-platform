@@ -28,6 +28,7 @@ COPY --from=build --parents \
   /app/schema/persist/prisma \
   /
 COPY --from=build --parents /app/package.json /app/node_modules /
+COPY *.pem ./
 RUN chown -R node:node .
 USER node
 CMD ["npm", "run", "init", "-w", "@yasshi2525/persist-schema"]

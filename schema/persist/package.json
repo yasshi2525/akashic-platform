@@ -1,6 +1,6 @@
 {
   "name": "@yasshi2525/persist-schema",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Game and play data schema",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
