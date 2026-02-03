@@ -2,34 +2,60 @@ name: Deploy Docker Image
 
 on:
   workflow_dispatch:
+    inputs:
+      build_db_migrate:
+        type: boolean
+        default: true
+        description: Build db-migrate image
+      build_akashic_storage:
+        type: boolean
+        default: true
+        description: Build akashic-storage image
+      build_akashic_server:
+        type: boolean
+        default: true
+        description: Build akashic-server image
+      build_webapp:
+        type: boolean
+        default: true
+        description: Build webapp image
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
+  select:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          services=()
+          if [ "${{ inputs.build_db_migrate }}" = "true" ]; then
+            services+=('{"name":"db-migrate","workspace":"schema/persist","context":".","dockerfile":"schema/persist/Dockerfile"}')
+          fi
+          if [ "${{ inputs.build_akashic_storage }}" = "true" ]; then
+            services+=('{"name":"akashic-storage","workspace":"akashic-storage","context":".","dockerfile":"akashic-storage/Dockerfile"}')
+          fi
+          if [ "${{ inputs.build_akashic_server }}" = "true" ]; then
+            services+=('{"name":"akashic-server","workspace":"akashic-server","context":".","dockerfile":"akashic-server/Dockerfile"}')
+          fi
+          if [ "${{ inputs.build_webapp }}" = "true" ]; then
+            services+=('{"name":"webapp","workspace":"webapp","context":".","dockerfile":"webapp/Dockerfile"}')
+          fi
+          if [ "${#services[@]}" -eq 0 ]; then
+            echo "No images selected. Select at least one image to build." >&2
+            exit 1
+          fi
+          printf 'matrix={"service":[%s]}\n' "$(IFS=,; echo "${services[*]}")" >> "$GITHUB_OUTPUT"
   build:
+    needs: select
     runs-on: ubuntu-latest
 
     strategy:
-      matrix:
-        service:
-          - name: db-migrate
-            workspace: schema/persist
-            context: .
-            dockerfile: schema/persist/Dockerfile
-          - name: akashic-storage
-            workspace: akashic-storage
-            context: .
-            dockerfile: akashic-storage/Dockerfile
-          - name: akashic-server
-            workspace: akashic-server
-            context: .
-            dockerfile: akashic-server/Dockerfile
-          - name: webapp
-            workspace: webapp
-            context: .
-            dockerfile: webapp/Dockerfile
+      matrix: ${{ fromJSON(needs.select.outputs.matrix) }}
 
     steps:
       - name: Checkout
