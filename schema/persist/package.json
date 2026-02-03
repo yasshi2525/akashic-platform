@@ -1,6 +1,6 @@
 {
   "name": "@yasshi2525/persist-schema",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Game and play data schema",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -12,6 +12,8 @@
   "scripts": {
     "init": "prisma db push",
     "reset": "prisma db push --force-reset && npm run build",
+    "migrate": "prisma migrate deploy",
+    "migrate:dev": "prisma migrate dev",
     "build": "prisma generate && tsc"
   },
   "author": "yasshi2525",

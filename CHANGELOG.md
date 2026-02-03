@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.0.3
+
+- Bug Fix
+  - Twitter でサインインできない問題を修正
+
 ## 1.0.2
 
 - Misc
