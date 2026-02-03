@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.0.5
+
+- Misc
+  - `./akashic-storage`
+    - `GlideClientConfiguration.inflightRequestsLimit` を変更できるように修正
+
 ## 1.0.4
 
 - Bug Fix

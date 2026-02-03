@@ -71,6 +71,7 @@ services:
       VALKEY_PORT: 6379
       VALKEY_NO_TLS: true
       STORAGE_ADMIN_TOKEN: ${STORAGE_ADMIN_TOKEN:-local-storage-admin-token}
+      INFLIGHT_REQUEST_LIMIT: 1000
     depends_on:
       - valkey
 

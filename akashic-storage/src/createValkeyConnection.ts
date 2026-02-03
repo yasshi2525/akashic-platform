@@ -13,4 +13,7 @@ export const createValkeyConnection = async (
             },
         ],
         useTLS: !noTls,
+        inflightRequestsLimit: parseInt(
+            process.env.INFLIGHT_REQUEST_LIMIT ?? "1000",
+        ),
     });
