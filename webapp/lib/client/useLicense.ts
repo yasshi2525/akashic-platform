@@ -1,7 +1,7 @@
 "use client";
 
 import useSWR from "swr";
-import { publicContentBaseUrl } from "../server/akashic";
+import { useAkashic } from "./useAkashic";
 
 const fetcher = async (url: string): Promise<string | undefined> => {
     const res = await fetch(url);
@@ -12,6 +12,7 @@ const fetcher = async (url: string): Promise<string | undefined> => {
 };
 
 export function useLicense(contentId: number) {
+    const { publicContentBaseUrl } = useAkashic();
     const { data, error, isLoading } = useSWR(
         `${publicContentBaseUrl}/${contentId}/library_license.txt`,
         fetcher,
