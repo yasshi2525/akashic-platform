@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 1.0.2
+
+- Misc
+  - `./akashic-server`
+  - `./webapp`
+    - `*.pem` をカレントディレクトリに配置するよう修正
+
 ## 1.0.1
 
 - Misc

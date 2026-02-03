@@ -26,7 +26,7 @@ ENV PORT=3000
 COPY --from=build /app/webapp/.next/standalone .
 COPY --from=build /app/webapp/public webapp/public
 COPY --from=build /app/webapp/.next/static webapp/.next/static
-COPY *.pem ./
+COPY *.pem ./webapp
 RUN chown -R node:node .
 EXPOSE ${PORT}
 USER node

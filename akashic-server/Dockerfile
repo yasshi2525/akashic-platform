@@ -28,7 +28,7 @@ COPY --from=build --parents /app/schema/amflow/client/package.json /app/schema/a
 COPY --from=build --parents /app/playlogClient-like/package.json /app/playlogClient-like/dist /
 COPY --from=build --parents /app/akashic-server/package.json /app/akashic-server/dist /
 COPY --from=build --parents /app/package.json /app/node_modules /
-COPY *.pem ./
+COPY *.pem ./akashic-server
 RUN chown -R node:node .
 EXPOSE ${PORT}
 USER node
