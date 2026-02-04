@@ -38,6 +38,14 @@ export function SiteFooter() {
                         © 2026 みんなでゲーム! All rights reserved.
                     </Typography>
                     <Stack direction="row" sx={{ justifyContent: "center" }}>
+                        <Link href="/terms" color="inherit" variant="body2">
+                            利用規約
+                        </Link>
+                        <Typography variant="body2"> / </Typography>
+                        <Link href="/privacy" color="inherit" variant="body2">
+                            プライバシーポリシー
+                        </Link>
+                        <Typography variant="body2"> | </Typography>
                         <Typography variant="body2">
                             問い合わせ: やっしー
                         </Typography>
