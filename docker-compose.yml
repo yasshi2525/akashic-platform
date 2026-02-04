@@ -8,6 +8,7 @@ services:
       --cluster-config-file nodes.conf
       --cluster-node-timeout 5000
       --appendonly yes
+      --save ""
       --cluster-announce-hostname valkey-1
       --cluster-announce-port 7001
       --cluster-announce-bus-port 17001
@@ -28,6 +29,7 @@ services:
       --cluster-config-file nodes.conf
       --cluster-node-timeout 5000
       --appendonly yes
+      --save ""
       --cluster-announce-hostname valkey-2
       --cluster-announce-port 7002
       --cluster-announce-bus-port 17002
@@ -48,6 +50,7 @@ services:
       --cluster-config-file nodes.conf
       --cluster-node-timeout 5000
       --appendonly yes
+      --save ""
       --cluster-announce-hostname valkey-3
       --cluster-announce-port 7003
       --cluster-announce-bus-port 17003
@@ -72,7 +75,7 @@ services:
     command: |
       /bin/sh -c '
         set +e
-        valkey-cli --cluster check valkey-1:7001 || \
+        valkey-cli --cluster check valkey-1:7001 | grep "[ERR]" && \
         valkey-cli --cluster create valkey-1:7001 valkey-2:7002 valkey-3:7003 --cluster-replicas 0 --cluster-yes
         set -e
       '
