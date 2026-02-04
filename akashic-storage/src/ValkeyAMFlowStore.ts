@@ -1,4 +1,9 @@
-import { GlideClient, GlideString, ObjectType } from "@valkey/valkey-glide";
+import {
+    ClusterScanCursor,
+    GlideClusterClient,
+    GlideString,
+    ObjectType,
+} from "@valkey/valkey-glide";
 import type {
     GetStartPointOptions,
     GetTickListOptions,
@@ -28,16 +33,17 @@ import {
 import { AMFlowStoreBase } from "./AMFlowStoreBase";
 
 interface ValkeyAMFlowStoreParameterObject {
-    valkey: GlideClient;
+    valkey: GlideClusterClient;
     playId: string;
 }
 
 export class ValkeyAMFlowStore extends AMFlowStoreBase {
-    _valkey: GlideClient;
+    _valkey: GlideClusterClient;
     _latestTickFrame: number;
     _nextUnfilteredEventId: number;
     _nextSnapshotId: number;
     _isDestroyed: boolean;
+    _hashPlayId: string;
 
     constructor(param: ValkeyAMFlowStoreParameterObject) {
         super(param.playId);
@@ -46,11 +52,12 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         this._nextUnfilteredEventId = 1;
         this._nextSnapshotId = 1;
         this._isDestroyed = false;
+        this._hashPlayId = `{${this.playId}}`;
     }
 
     async authenticate(token: string) {
         const permissionType = await this._valkey.get(
-            genKey(ValkeyKey.Token, this.playId, token),
+            genKey(ValkeyKey.Token, this._hashPlayId, token),
         );
         if (!permissionType) {
             throw new BadRequestError("invalid token");
@@ -101,7 +108,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
                     tick,
                     eventId: eventId,
                     event: await this._valkey.get(
-                        genKey(ValkeyKey.Event, this.playId, eventId),
+                        genKey(ValkeyKey.Event, this._hashPlayId, eventId),
                     ),
                 })),
         );
@@ -148,7 +155,11 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
             ],
         );
         await this._valkey.set(
-            genKey(ValkeyKey.StartPoint, this.playId, this._nextSnapshotId),
+            genKey(
+                ValkeyKey.StartPoint,
+                this._hashPlayId,
+                this._nextSnapshotId,
+            ),
             JSON.stringify(startPoint),
         );
         this._nextSnapshotId++;
@@ -219,7 +230,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
             return;
         }
         const tokens = await this.getAllKeys(
-            genKey(ValkeyKey.Token, this.playId, "*"),
+            genKey(ValkeyKey.Token, this._hashPlayId, "*"),
         );
         const ufEvents = await this.getAllKeys(
             genKey(ValkeyZSetKey.UnfilteredEvent, this.playId),
@@ -230,10 +241,10 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
             ObjectType.ZSET,
         );
         const events = await this.getAllKeys(
-            genKey(ValkeyKey.Event, this.playId, "*"),
+            genKey(ValkeyKey.Event, this._hashPlayId, "*"),
         );
         const startpoints = await this.getAllKeys(
-            genKey(ValkeyKey.StartPoint, this.playId, "*"),
+            genKey(ValkeyKey.StartPoint, this._hashPlayId, "*"),
         );
         const startpointsByFrame = await this.getAllKeys(
             genKey(ValkeyZSetKey.StartPointByFrame, this.playId),
@@ -267,7 +278,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
     async createPlayToken(permissionType: PermissionType) {
         const token = this._createPlayToken();
         await this._valkey.set(
-            genKey(ValkeyKey.Token, this.playId, token),
+            genKey(ValkeyKey.Token, this._hashPlayId, token),
             permissionType,
         );
         return token;
@@ -429,7 +440,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
             events.map(
                 async ({ event, id }) =>
                     await this._valkey.set(
-                        genKey(ValkeyKey.Event, this.playId, parseInt(id)),
+                        genKey(ValkeyKey.Event, this._hashPlayId, parseInt(id)),
                         JSON.stringify(event),
                     ),
             ),
@@ -456,7 +467,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
 
     async _restoreStartPoint(id: number) {
         const startpoint = await this._valkey.get(
-            genKey(ValkeyKey.StartPoint, this.playId, id),
+            genKey(ValkeyKey.StartPoint, this._hashPlayId, id),
         );
         if (startpoint == null) {
             console.warn(
@@ -478,15 +489,15 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
 
     async getAllKeys(match: string, type: ObjectType = ObjectType.STRING) {
         const keys: GlideString[] = [];
-        let cursor = "0";
-        do {
+        let cursor = new ClusterScanCursor();
+        while (!cursor.isFinished()) {
             const res = await this._valkey.scan(cursor, {
                 match,
                 type,
             });
-            cursor = res[0].toString();
+            cursor = res[0];
             keys.push(...res[1]);
-        } while (cursor !== "0");
+        }
         return keys;
     }
 }

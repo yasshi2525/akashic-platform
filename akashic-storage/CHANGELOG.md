@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.0.2
+
+- Misc
+  - Valkey Cluster mode の元で動作するよう修正
+
 ## 1.0.1
 
 - Misc

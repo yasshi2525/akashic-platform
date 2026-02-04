@@ -1,11 +1,11 @@
-import { GlideClient } from "@valkey/valkey-glide";
+import { GlideClusterClient } from "@valkey/valkey-glide";
 
 export const createValkeyConnection = async (
     host: string,
     port: number,
     noTls: boolean,
 ) =>
-    GlideClient.createClient({
+    GlideClusterClient.createClient({
         addresses: [
             {
                 host,
@@ -16,4 +16,5 @@ export const createValkeyConnection = async (
         inflightRequestsLimit: parseInt(
             process.env.INFLIGHT_REQUEST_LIMIT ?? "1000",
         ),
+        readFrom: "preferReplica",
     });

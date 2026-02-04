@@ -1,8 +1,82 @@
 services:
-  valkey:
+  valkey-1:
     image: valkey/valkey:8
+    command: >
+      valkey-server
+      --port 7001
+      --cluster-enabled yes
+      --cluster-config-file nodes.conf
+      --cluster-node-timeout 5000
+      --appendonly yes
+      --cluster-announce-hostname valkey-1
+      --cluster-announce-port 7001
+      --cluster-announce-bus-port 17001
     ports:
-      - 6379:6379
+      - "7001:7001"
+    healthcheck:
+      test: ["CMD", "valkey-cli", "-p", "7001", "PING"]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+
+  valkey-2:
+    image: valkey/valkey:8
+    command: >
+      valkey-server
+      --port 7002
+      --cluster-enabled yes
+      --cluster-config-file nodes.conf
+      --cluster-node-timeout 5000
+      --appendonly yes
+      --cluster-announce-hostname valkey-2
+      --cluster-announce-port 7002
+      --cluster-announce-bus-port 17002
+    ports:
+      - "7002:7002"
+    healthcheck:
+      test: ["CMD", "valkey-cli", "-p", "7002", "PING"]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+
+  valkey-3:
+    image: valkey/valkey:8
+    command: >
+      valkey-server
+      --port 7003
+      --cluster-enabled yes
+      --cluster-config-file nodes.conf
+      --cluster-node-timeout 5000
+      --appendonly yes
+      --cluster-announce-hostname valkey-3
+      --cluster-announce-port 7003
+      --cluster-announce-bus-port 17003
+    ports:
+      - "7003:7003"
+    healthcheck:
+      test: ["CMD", "valkey-cli", "-p", "7003", "PING"]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+
+  valkey-setup:
+    image: valkey/valkey:8
+    depends_on:
+      valkey-1:
+        condition: service_healthy
+      valkey-2:
+        condition: service_healthy
+      valkey-3:
+        condition: service_healthy
+    # entrypoint: ["/bin/sh", "-lc"]
+    command: |
+      /bin/sh -c '
+        set +e
+        valkey-cli --cluster check valkey-1:7001 || \
+        valkey-cli --cluster create valkey-1:7001 valkey-2:7002 valkey-3:7003 --cluster-replicas 0 --cluster-yes
+        set -e
+      '
+    restart: no
 
   postgres:
     image: postgres
@@ -67,13 +141,14 @@ services:
       PUBLIC_PORT: 3031
       ADMIN_PORT: 3033
       CLIENT_ORIGIN: http://localhost:3000
-      VALKEY_HOST: valkey
-      VALKEY_PORT: 6379
+      VALKEY_HOST: valkey-1
+      VALKEY_PORT: 7001
       VALKEY_NO_TLS: true
       STORAGE_ADMIN_TOKEN: ${STORAGE_ADMIN_TOKEN:-local-storage-admin-token}
       INFLIGHT_REQUEST_LIMIT: 1000
     depends_on:
-      - valkey
+      valkey-setup:
+        condition: service_completed_successfully
 
   akashic-server:
     build:

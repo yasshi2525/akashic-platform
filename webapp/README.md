@@ -43,7 +43,3 @@
 > [!NOTE]
 >
 > 現状、ゲーム更新時、当該プレイをすべて削除しています。
-
-process.env を client が参照していないか
-
-useLicense

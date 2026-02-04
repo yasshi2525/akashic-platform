@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.0.6
+
+- Misc
+  - `./akashic-storage`
+    - Amazon ElastiCache に接続できるよう修正
+
 ## 1.0.5
 
 - Misc

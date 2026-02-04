@@ -1,5 +1,5 @@
 import type { Socket } from "socket.io";
-import type { GlideClient } from "@valkey/valkey-glide";
+import type { GlideClusterClient } from "@valkey/valkey-glide";
 import {
     InvalidStatusError,
     PlayEndReason,
@@ -9,11 +9,11 @@ import { ValkeyAMFlowStore } from "./ValkeyAMFlowStore";
 import { AMFlowServer } from "./AMFlowServer";
 
 interface AMFlowServerManagerParameterObject {
-    valkey: GlideClient;
+    valkey: GlideClusterClient;
 }
 
 export class AMFlowServerManager {
-    _valkey: GlideClient;
+    _valkey: GlideClusterClient;
     _servers: Map<string, AMFlowServer>;
     _clients: Set<Socket>;
 
