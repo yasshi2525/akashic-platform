@@ -3,7 +3,10 @@
 ## 1.0.7
 
 - Bug Fix
-  - Docker Compose で起動停止を繰り返すと Valkey Cluster の起動が不安定になる問題を修正
+  - `./webapp`
+    - DOMアクセスするコンテンツがニコ生と同等の動作をするよう修正
+  - other
+    - Docker Compose で起動停止を繰り返すと Valkey Cluster の起動が不安定になる問題を修正
 
 ## 1.0.6
 

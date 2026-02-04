@@ -98,6 +98,7 @@ export class AkashicContainer {
                 playlogServerUrl: param.playlogServerUrl,
             },
             contentUrl: `/api/content/${param.contentId}`,
+            runInIframe: true,
         });
         content.addSkippingListener({
             onSkip: (isSkipping) => {
@@ -115,6 +116,8 @@ export class AkashicContainer {
         });
         content.addContentLoadListener({
             onLoad: () => {
+                content._element!.getContentWindow()!.document.body.children[0].id =
+                    "container";
                 const amflowcontent = content.getGameDriver()!._platform
                     .amflow as AMFlowClient;
                 amflowcontent.onPlayEnd((reason) => param.onPlayEnd(reason));
