@@ -9,12 +9,10 @@ import {
     Typography,
     useTheme,
 } from "@mui/material";
-import { useAuth } from "@/lib/client/useAuth";
 import { UserMenu } from "./user-menu";
 
 export function SiteHeader() {
     const theme = useTheme();
-    const [user] = useAuth();
 
     return (
         <AppBar
@@ -38,7 +36,16 @@ export function SiteHeader() {
                                 gap: 2,
                             }}
                         >
-                            <Typography variant="h4" component="span">
+                            <Typography
+                                variant="h4"
+                                component="span"
+                                sx={{
+                                    fontSize: {
+                                        xs: theme.typography.h5.fontSize,
+                                        sm: theme.typography.h4.fontSize,
+                                    },
+                                }}
+                            >
                                 みんなでゲーム!
                             </Typography>
                             <Typography

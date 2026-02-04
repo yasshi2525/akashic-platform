@@ -23,9 +23,13 @@ export function SiteFooter() {
         >
             <Container maxWidth="xl">
                 <Stack
-                    direction="row"
-                    spacing={1}
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={{
+                        xs: 0,
+                        sm: 1,
+                    }}
                     sx={{
+                        textAlign: "center",
                         justifyContent: "center",
                         color: theme.palette.text.secondary,
                     }}
@@ -33,26 +37,28 @@ export function SiteFooter() {
                     <Typography variant="body2">
                         © 2026 みんなでゲーム! All rights reserved.
                     </Typography>
-                    <Typography variant="body2">
-                        問い合わせ: やっしー
-                    </Typography>
-                    <Link
-                        href="https://x.com/yasshi2525"
-                        target="_blank"
-                        color="inherit"
-                        variant="body2"
-                    >
-                        X
-                    </Link>
-                    <Typography variant="body2">, </Typography>
-                    <Link
-                        href="https://github.com/yasshi2525/akashic-platform"
-                        target="_blank"
-                        color="inherit"
-                        variant="body2"
-                    >
-                        GitHub
-                    </Link>
+                    <Stack direction="row" sx={{ justifyContent: "center" }}>
+                        <Typography variant="body2">
+                            問い合わせ: やっしー
+                        </Typography>
+                        <Link
+                            href="https://x.com/yasshi2525"
+                            target="_blank"
+                            color="inherit"
+                            variant="body2"
+                        >
+                            X
+                        </Link>
+                        <Typography variant="body2">, </Typography>
+                        <Link
+                            href="https://github.com/yasshi2525/akashic-platform"
+                            target="_blank"
+                            color="inherit"
+                            variant="body2"
+                        >
+                            GitHub
+                        </Link>
+                    </Stack>
                 </Stack>
             </Container>
         </Box>
