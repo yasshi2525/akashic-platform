@@ -15,6 +15,7 @@ import {
     TableHead,
     TableRow,
     Typography,
+    useMediaQuery,
     useTheme,
 } from "@mui/material";
 import { GameInfo } from "@/lib/types";
@@ -94,7 +95,11 @@ function GameTableCells({
                     {game.playCount} 回
                 </Typography>
             </TableCell>
-            <TableCell>{renderActions?.(game)}</TableCell>
+            <TableCell>
+                <Stack direction={{ xs: "column", lg: "row" }} gap={1}>
+                    {renderActions?.(game)}
+                </Stack>
+            </TableCell>
         </TableRow>
     ));
 }
@@ -115,6 +120,106 @@ export function GameListTable({
     renderActions?: (game: GameInfo) => ReactNode;
 }) {
     const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+    if (isMobile) {
+        return (
+            <Stack spacing={2}>
+                {isLoading ? (
+                    <Skeleton variant="rounded" width="100%" height={120} />
+                ) : list == null || isEmpty ? (
+                    <Typography
+                        variant="body1"
+                        color={theme.palette.text.secondary}
+                        align="center"
+                    >
+                        ゲームが見つかりませんでした
+                    </Typography>
+                ) : (
+                    <Stack spacing={2}>
+                        {list.map((game) => (
+                            <Paper
+                                key={game.contentId}
+                                sx={{ padding: 2 }}
+                                variant="outlined"
+                            >
+                                <Stack spacing={1.5}>
+                                    <Stack direction="row" spacing={2}>
+                                        <Avatar
+                                            variant="square"
+                                            src={game.iconURL}
+                                            sx={{
+                                                width: 72,
+                                                height: 72,
+                                            }}
+                                        />
+                                        <Stack spacing={0.5}>
+                                            <Typography variant="body1">
+                                                {game.title}
+                                            </Typography>
+                                            <Typography
+                                                variant="body2"
+                                                sx={{
+                                                    color: theme.palette.text
+                                                        .secondary,
+                                                }}
+                                            >
+                                                {game.description}
+                                            </Typography>
+                                        </Stack>
+                                    </Stack>
+                                    <Stack
+                                        direction="row"
+                                        spacing={2}
+                                        justifyContent="space-between"
+                                    >
+                                        <Typography
+                                            variant="body2"
+                                            sx={{
+                                                color: theme.palette.text
+                                                    .secondary,
+                                            }}
+                                        >
+                                            投稿日:{" "}
+                                            {format(
+                                                game.createdAt,
+                                                "yyyy/MM/dd",
+                                            )}
+                                        </Typography>
+                                        <Typography
+                                            variant="body2"
+                                            sx={{
+                                                color: theme.palette.text
+                                                    .secondary,
+                                            }}
+                                        >
+                                            プレイ数: {game.playCount} 回
+                                        </Typography>
+                                    </Stack>
+                                    {renderActions ? (
+                                        <Stack direction="row" spacing={1}>
+                                            {renderActions(game)}
+                                        </Stack>
+                                    ) : null}
+                                </Stack>
+                            </Paper>
+                        ))}
+                    </Stack>
+                )}
+                {!isLoading && list != null && !isEmpty && !isEnd ? (
+                    <Button
+                        onClick={onLoadMore}
+                        sx={{
+                            backgroundColor: theme.palette.background.paper,
+                        }}
+                        size="large"
+                    >
+                        もっと読む
+                    </Button>
+                ) : null}
+            </Stack>
+        );
+    }
 
     return (
         <TableContainer component={Paper}>

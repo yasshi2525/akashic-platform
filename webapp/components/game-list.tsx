@@ -14,6 +14,7 @@ import {
     TableHead,
     TableRow,
     Typography,
+    useMediaQuery,
     useTheme,
 } from "@mui/material";
 import { CheckBox } from "@mui/icons-material";
@@ -153,12 +154,140 @@ export function GameList({
     setGameTitle: (title?: string) => void;
 }) {
     const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
     const [debouncedKeyword] = useDebounce(keyword, 500);
     const { isLoading, list, page, setPage, isEmpty, isEnd } =
         useGameList(debouncedKeyword);
 
+    function handleClick(id: number, title: string) {
+        if (id === selected) {
+            setSelected(undefined);
+            setGameTitle(undefined);
+        } else {
+            setSelected(id);
+            setGameTitle(title);
+        }
+    }
+
     function handleClickMore() {
         setPage(page + 1);
+    }
+
+    if (isMobile) {
+        return (
+            <Stack spacing={2}>
+                {isLoading ? (
+                    <Skeleton variant="rounded" width="100%" height={120} />
+                ) : list == null || isEmpty ? (
+                    <Typography
+                        variant="body1"
+                        color={theme.palette.text.secondary}
+                        align="center"
+                    >
+                        ゲームが見つかりませんでした
+                    </Typography>
+                ) : (
+                    <Stack spacing={2}>
+                        {list.flat().map((game) => (
+                            <Paper
+                                key={game.contentId}
+                                sx={{
+                                    padding: 2,
+                                    cursor: "pointer",
+                                    bgcolor:
+                                        selected === game.contentId
+                                            ? theme.palette.action.selected
+                                            : "inherit",
+                                }}
+                                variant="outlined"
+                                onClick={() =>
+                                    handleClick(game.contentId, game.title)
+                                }
+                            >
+                                <Stack spacing={1.5}>
+                                    <Stack direction="row" spacing={2}>
+                                        <Avatar
+                                            variant="square"
+                                            src={game.iconURL}
+                                            sx={{
+                                                width: 72,
+                                                height: 72,
+                                            }}
+                                        />
+                                        <Stack spacing={0.5}>
+                                            <Stack
+                                                direction="row"
+                                                spacing={1}
+                                                alignItems="center"
+                                            >
+                                                <Typography variant="body1">
+                                                    {game.title}
+                                                </Typography>
+                                                {!game.streaming ? (
+                                                    <Typography
+                                                        variant="body2"
+                                                        color="error"
+                                                    >
+                                                        実況不可
+                                                    </Typography>
+                                                ) : null}
+                                                {selected === game.contentId ? (
+                                                    <CheckBox fontSize="small" />
+                                                ) : null}
+                                            </Stack>
+                                            <Typography
+                                                variant="body2"
+                                                sx={{
+                                                    color: theme.palette.text
+                                                        .secondary,
+                                                }}
+                                            >
+                                                {game.description}
+                                            </Typography>
+                                        </Stack>
+                                    </Stack>
+                                    <Stack
+                                        direction="row"
+                                        spacing={2}
+                                        justifyContent="space-between"
+                                    >
+                                        <UserInline
+                                            user={{
+                                                id: game.publisher.id,
+                                                name: game.publisher.name,
+                                                image: game.publisher.image,
+                                            }}
+                                            textVariant="body2"
+                                            avatarSize={20}
+                                        />
+                                        <Typography
+                                            variant="body2"
+                                            sx={{
+                                                color: theme.palette.text
+                                                    .secondary,
+                                            }}
+                                        >
+                                            プレイ数: {game.playCount} 回
+                                        </Typography>
+                                    </Stack>
+                                </Stack>
+                            </Paper>
+                        ))}
+                    </Stack>
+                )}
+                {!isLoading && list != null && !isEmpty && !isEnd ? (
+                    <Button
+                        onClick={handleClickMore}
+                        sx={{
+                            backgroundColor: theme.palette.background.paper,
+                        }}
+                        size="large"
+                    >
+                        もっと読む
+                    </Button>
+                ) : null}
+            </Stack>
+        );
     }
 
     return (
