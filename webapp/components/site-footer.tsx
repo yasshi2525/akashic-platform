@@ -23,10 +23,10 @@ export function SiteFooter() {
         >
             <Container maxWidth="xl">
                 <Stack
-                    direction={{ xs: "column", sm: "row" }}
+                    direction={{ xs: "column", md: "row" }}
                     spacing={{
                         xs: 0,
-                        sm: 1,
+                        md: 1,
                     }}
                     sx={{
                         textAlign: "center",
@@ -37,7 +37,11 @@ export function SiteFooter() {
                     <Typography variant="body2">
                         © 2026 みんなでゲーム! All rights reserved.
                     </Typography>
-                    <Stack direction="row" sx={{ justifyContent: "center" }}>
+                    <Stack
+                        direction="row"
+                        sx={{ justifyContent: "center" }}
+                        spacing={1}
+                    >
                         <Link href="/terms" color="inherit" variant="body2">
                             利用規約
                         </Link>
