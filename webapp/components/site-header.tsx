@@ -42,7 +42,7 @@ export function SiteHeader() {
                                 sx={{
                                     fontSize: {
                                         xs: theme.typography.h5.fontSize,
-                                        sm: theme.typography.h4.fontSize,
+                                        md: theme.typography.h4.fontSize,
                                     },
                                 }}
                             >

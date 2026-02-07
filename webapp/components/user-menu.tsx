@@ -2,6 +2,7 @@
 
 import { MouseEvent, useState } from "react";
 import { signOut } from "next-auth/react";
+import Link from "next/link";
 import {
     Button,
     IconButton,
@@ -15,6 +16,7 @@ import {
     AddCircle,
     AccountCircle,
     FormatListBulleted,
+    Help,
     ListAlt,
     Logout,
     Settings,
@@ -147,6 +149,9 @@ export function UserMenu() {
     return (
         <Stack direction="row" gap={1} alignItems="center">
             <UserLabel user={user} />
+            <IconButton aria-label="help" component={Link} href="/help">
+                <Help fontSize="large" />
+            </IconButton>
             <NotificationBell />
             <IconButton aria-label="settings" onClick={handleClick}>
                 <Settings fontSize="large" />
