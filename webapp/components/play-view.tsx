@@ -21,6 +21,7 @@ import {
 import {
     ContentCopy,
     OpenInNew,
+    PhotoCamera,
     VolumeOff,
     VolumeUp,
 } from "@mui/icons-material";
@@ -115,6 +116,9 @@ export function PlayView({
     const [volumePercent, setVolumePercent] = useState(100);
     const [isMuted, setIsMuted] = useState(false);
     const [prevVolumePercent, setPrevVolumePercent] = useState(100);
+    const [screenshotStatus, setScreenshotStatus] = useState<
+        "shared" | "downloaded" | "error" | "cancel"
+    >();
 
     function formatRemaining(ms: number | undefined) {
         if (ms == null) {
@@ -268,6 +272,60 @@ export function PlayView({
         container.setMasterVolume(0);
     }
 
+    async function handleScreenshot() {
+        const canvas = container.getGameContentCanvas();
+        if (!canvas) {
+            setScreenshotStatus("error");
+            return;
+        }
+        const blob = await new Promise<Blob | null>((resolve) => {
+            canvas.toBlob(resolve, "image/png");
+        });
+        if (!blob) {
+            setScreenshotStatus("error");
+            return;
+        }
+        const filename = `akashic-${playId}-${format(
+            new Date(),
+            "yyyyMMdd-HHmmss",
+        )}.png`;
+        const file = new File([blob], filename, { type: "image/png" });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({
+                    files: [file],
+                    title: `${game.title}のスクリーンショット`,
+                });
+                setScreenshotStatus("shared");
+                return;
+            } catch (err) {
+                if ((err as { name?: string }).name === "AbortError") {
+                    setScreenshotStatus("cancel");
+                    return;
+                }
+                console.warn("failed to share screenshot", err);
+            }
+        }
+
+        try {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            a.rel = "noopener";
+            a.target = "_blank";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 0);
+            setScreenshotStatus("downloaded");
+        } catch (err) {
+            console.warn("failed to download screenshot", err);
+            setScreenshotStatus("error");
+        }
+    }
+
     return (
         <>
             <Container
@@ -333,6 +391,32 @@ export function PlayView({
                     </Alert>
                 </Snackbar>
             ) : null}
+            {screenshotStatus ? (
+                <Snackbar
+                    open={!!screenshotStatus}
+                    anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                    autoHideDuration={2500}
+                    onClose={() => setScreenshotStatus(undefined)}
+                >
+                    <Alert
+                        severity={
+                            screenshotStatus === "error"
+                                ? "error"
+                                : screenshotStatus === "cancel"
+                                  ? "warning"
+                                  : "success"
+                        }
+                    >
+                        {screenshotStatus === "shared"
+                            ? "スクリーンショットを共有しました。"
+                            : screenshotStatus === "downloaded"
+                              ? "スクリーンショットを保存しました。"
+                              : screenshotStatus === "cancel"
+                                ? "共有をキャンセルしました。"
+                                : "スクリーンショットの保存に失敗しました。"}
+                    </Alert>
+                </Snackbar>
+            ) : null}
             <Container maxWidth="md" sx={{ mt: 2 }}>
                 <Stack spacing={2}>
                     <Card>
@@ -395,6 +479,7 @@ export function PlayView({
                                         </Stack>
                                     </Stack>
                                     <Stack
+                                        spacing={1}
                                         alignItems={{
                                             xs: "flex-start",
                                             sm: "center",
@@ -402,34 +487,51 @@ export function PlayView({
                                     >
                                         <Stack
                                             direction="row"
-                                            spacing={1}
+                                            spacing={2}
                                             alignItems="center"
                                             sx={{
                                                 width: "100%",
-                                                pr: 1,
                                             }}
                                         >
-                                            <IconButton
-                                                onClick={handleToggleMute}
-                                                aria-label={
-                                                    isMuted ||
-                                                    volumePercent === 0
-                                                        ? "ミュート解除"
-                                                        : "ミュート"
-                                                }
+                                            <Stack
+                                                direction="row"
+                                                alignItems="center"
+                                                spacing={1}
+                                                sx={{ mr: 1 }}
                                             >
-                                                {isMuted ||
-                                                volumePercent === 0 ? (
-                                                    <VolumeOff fontSize="large" />
-                                                ) : (
-                                                    <VolumeUp fontSize="large" />
-                                                )}
+                                                <IconButton
+                                                    onClick={handleToggleMute}
+                                                    aria-label={
+                                                        isMuted ||
+                                                        volumePercent === 0
+                                                            ? "ミュート解除"
+                                                            : "ミュート"
+                                                    }
+                                                >
+                                                    {isMuted ||
+                                                    volumePercent === 0 ? (
+                                                        <VolumeOff fontSize="large" />
+                                                    ) : (
+                                                        <VolumeUp fontSize="large" />
+                                                    )}
+                                                </IconButton>
+                                                <Slider
+                                                    value={volumePercent}
+                                                    onChange={
+                                                        handleVolumeChange
+                                                    }
+                                                    aria-label="音量"
+                                                    sx={{
+                                                        minWidth: "100px",
+                                                    }}
+                                                />
+                                            </Stack>
+                                            <IconButton
+                                                area-label="スクリーンショット"
+                                                onClick={handleScreenshot}
+                                            >
+                                                <PhotoCamera fontSize="large" />
                                             </IconButton>
-                                            <Slider
-                                                value={volumePercent}
-                                                onChange={handleVolumeChange}
-                                                aria-label="音量"
-                                            />
                                         </Stack>
                                         <Stack
                                             alignItems="center"

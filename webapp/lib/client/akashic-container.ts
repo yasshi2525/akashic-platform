@@ -94,6 +94,15 @@ export class AkashicContainer {
         }
     }
 
+    getGameContentCanvas(): HTMLCanvasElement | undefined {
+        return (
+            this._current?.content._element
+                ?.getContentWindow()
+                ?.document.getElementById("container")
+                ?.querySelector("canvas") ?? undefined
+        );
+    }
+
     _createContent(param: AkashicContainerCreateParameterObject) {
         const content = new GameContent({
             player: {

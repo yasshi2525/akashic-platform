@@ -2,6 +2,10 @@
 
 ## 1.1.0
 
+- Feature
+  - `./webapp`
+    - プレイ画面のスクリーンショット共有機能を追加
+
 - Misc
   - other
     - Docker Compose で起動停止を繰り返すと Valkey Cluster の起動が不安定になる問題を修正
