@@ -8,7 +8,6 @@ services:
       --cluster-config-file nodes.conf
       --cluster-node-timeout 5000
       --appendonly yes
-      --save ""
       --cluster-announce-hostname valkey-1
       --cluster-announce-port 7001
       --cluster-announce-bus-port 17001
@@ -19,6 +18,9 @@ services:
       interval: 2s
       timeout: 2s
       retries: 10
+    networks:
+      apnet:
+        ipv4_address: 172.30.0.11
 
   valkey-2:
     image: valkey/valkey:8
@@ -29,7 +31,6 @@ services:
       --cluster-config-file nodes.conf
       --cluster-node-timeout 5000
       --appendonly yes
-      --save ""
       --cluster-announce-hostname valkey-2
       --cluster-announce-port 7002
       --cluster-announce-bus-port 17002
@@ -40,6 +41,9 @@ services:
       interval: 2s
       timeout: 2s
       retries: 10
+    networks:
+      apnet:
+        ipv4_address: 172.30.0.12
 
   valkey-3:
     image: valkey/valkey:8
@@ -50,7 +54,6 @@ services:
       --cluster-config-file nodes.conf
       --cluster-node-timeout 5000
       --appendonly yes
-      --save ""
       --cluster-announce-hostname valkey-3
       --cluster-announce-port 7003
       --cluster-announce-bus-port 17003
@@ -61,6 +64,9 @@ services:
       interval: 2s
       timeout: 2s
       retries: 10
+    networks:
+      apnet:
+        ipv4_address: 172.30.0.13
 
   valkey-setup:
     image: valkey/valkey:8
@@ -77,12 +83,12 @@ services:
         valkey-cli --cluster check valkey-1:7001 | grep "[ERR]"
         if [ $? -eq 0 ]; then
           valkey-cli --cluster create valkey-1:7001 valkey-2:7002 valkey-3:7003 --cluster-replicas 0 --cluster-yes
-        else
-          valkey-cli --cluster rebalance valkey-1:7001 --cluster-yes
         fi
         set -e
       '
     restart: no
+    networks:
+      - apnet
 
   postgres:
     image: postgres
@@ -97,6 +103,8 @@ services:
       interval: 5s
       timeout: 4s
       retries: 10
+    networks:
+      - apnet
 
   minio:
     image: minio/minio
@@ -112,6 +120,8 @@ services:
       interval: 5s
       timeout: 4s
       retries: 10
+    networks:
+      - apnet
 
   minio-setup:
     image: minio/mc
@@ -123,6 +133,8 @@ services:
       "mc alias set local http://minio:9000 minioadmin minioadmin
       && mc mb -p local/akashic-content || true
       && mc anonymous set public local/akashic-content"
+    networks:
+      - apnet
 
   db-migrate:
     build:
@@ -134,6 +146,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - apnet
 
   akashic-storage:
     build:
@@ -155,6 +169,8 @@ services:
     depends_on:
       valkey-setup:
         condition: service_completed_successfully
+    networks:
+      - apnet
 
   akashic-server:
     build:
@@ -173,6 +189,8 @@ services:
     depends_on:
       db-migrate:
         condition: service_completed_successfully
+    networks:
+      - apnet
 
   webapp:
     build:
@@ -205,3 +223,13 @@ services:
     depends_on:
       db-migrate:
         condition: service_completed_successfully
+    networks:
+      - apnet
+
+networks:
+  apnet:
+    driver: bridge
+    ipam:
+     driver: default
+     config:
+       - subnet: 172.30.0.0/24
