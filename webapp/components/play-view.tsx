@@ -24,6 +24,7 @@ import {
     PhotoCamera,
     VolumeOff,
     VolumeUp,
+    X,
 } from "@mui/icons-material";
 import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
 import { GameInfo, User } from "@/lib/types";
@@ -119,6 +120,7 @@ export function PlayView({
     const [screenshotStatus, setScreenshotStatus] = useState<
         "shared" | "downloaded" | "error" | "cancel"
     >();
+    const [xShareStatus, setXShareStatus] = useState<"shared" | "error">();
 
     function formatRemaining(ms: number | undefined) {
         if (ms == null) {
@@ -326,6 +328,27 @@ export function PlayView({
         }
     }
 
+    async function handleShareToX() {
+        try {
+            if (typeof window !== "undefined") {
+                const params = new URLSearchParams([
+                    [
+                        "text",
+                        `今ここでゲームプレイ中!一緒に遊ぼう!\n${playName}`,
+                    ],
+                    ["url", inviteUrl ?? window.location.href],
+                    ["hashtags", ["みんなでゲーム", game.title].join(",")],
+                ]);
+                const intentUrl = `https://x.com/intent/tweet?${params.toString()}`;
+                window.open(intentUrl, "_blank", "noopener,noreferrer");
+            }
+            setXShareStatus("error");
+        } catch (err) {
+            console.warn("failed to open X intent", err);
+            setXShareStatus("error");
+        }
+    }
+
     return (
         <>
             <Container
@@ -417,6 +440,24 @@ export function PlayView({
                     </Alert>
                 </Snackbar>
             ) : null}
+            {xShareStatus ? (
+                <Snackbar
+                    open={!!xShareStatus}
+                    anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                    autoHideDuration={3000}
+                    onClose={() => setXShareStatus(undefined)}
+                >
+                    <Alert
+                        severity={
+                            xShareStatus === "error" ? "error" : "success"
+                        }
+                    >
+                        {xShareStatus === "shared"
+                            ? "Xに投稿しました。"
+                            : "Xへの投稿に失敗しました。"}
+                    </Alert>
+                </Snackbar>
+            ) : null}
             <Container maxWidth="md" sx={{ mt: 2 }}>
                 <Stack spacing={2}>
                     <Card>
@@ -487,7 +528,6 @@ export function PlayView({
                                     >
                                         <Stack
                                             direction="row"
-                                            spacing={2}
                                             alignItems="center"
                                             sx={{
                                                 width: "100%",
@@ -497,7 +537,7 @@ export function PlayView({
                                                 direction="row"
                                                 alignItems="center"
                                                 spacing={1}
-                                                sx={{ mr: 1 }}
+                                                sx={{ mr: 3 }}
                                             >
                                                 <IconButton
                                                     onClick={handleToggleMute}
@@ -527,10 +567,16 @@ export function PlayView({
                                                 />
                                             </Stack>
                                             <IconButton
-                                                area-label="スクリーンショット"
+                                                aria-label="スクリーンショット"
                                                 onClick={handleScreenshot}
                                             >
                                                 <PhotoCamera fontSize="large" />
+                                            </IconButton>
+                                            <IconButton
+                                                aria-label="Xに投稿"
+                                                onClick={handleShareToX}
+                                            >
+                                                <X fontSize="large" />
                                             </IconButton>
                                         </Stack>
                                         <Stack
