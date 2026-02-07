@@ -158,7 +158,7 @@ export function GameList({
     setGameTitle: (title?: string) => void;
 }) {
     const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+    const isTable = useMediaQuery(theme.breakpoints.up("md"));
     const [debouncedKeyword] = useDebounce(keyword, 500);
     const { isLoading, list, page, setPage, isEmpty, isEnd } =
         useGameList(debouncedKeyword);
@@ -177,7 +177,7 @@ export function GameList({
         setPage(page + 1);
     }
 
-    if (isMobile) {
+    if (!isTable) {
         return (
             <Stack spacing={2}>
                 {isLoading ? (
@@ -303,7 +303,14 @@ export function GameList({
                     <TableRow>
                         <TableCell>ゲーム名</TableCell>
                         <TableCell>制作者</TableCell>
-                        <TableCell>プレイ数</TableCell>
+                        <TableCell
+                            sx={{
+                                width: "max-content",
+                                whiteSpace: "nowrap",
+                            }}
+                        >
+                            プレイ数
+                        </TableCell>
                         <TableCell></TableCell>
                     </TableRow>
                 </TableHead>

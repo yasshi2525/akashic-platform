@@ -43,8 +43,8 @@ export function GameEditor() {
             <UserGameListSection
                 userId={user.id}
                 title="投稿したゲーム"
-                renderActions={(game: GameInfo) => (
-                    <>
+                renderActions={(game: GameInfo, isTable: boolean) => (
+                    <Stack direction={isTable ? "column" : "row"} spacing={1}>
                         <Button
                             variant="outlined"
                             component={Link}
@@ -74,7 +74,7 @@ export function GameEditor() {
                         >
                             編集する
                         </Button>
-                    </>
+                    </Stack>
                 )}
             />
             <PlayCreateDialog

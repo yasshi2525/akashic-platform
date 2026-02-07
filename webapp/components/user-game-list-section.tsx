@@ -23,7 +23,7 @@ export function UserGameListSection({
 }: {
     userId: string;
     title?: string;
-    renderActions?: (game: GameInfo) => ReactNode;
+    renderActions?: (game: GameInfo, isTable: boolean) => ReactNode;
 }) {
     const [keyword, setKeyword] = useState("");
     const [debouncedKeyword] = useDebounce(keyword, 500);

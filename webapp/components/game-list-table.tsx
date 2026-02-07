@@ -52,7 +52,7 @@ function GameTableCells({
     renderActions,
 }: {
     list: GameInfo[];
-    renderActions?: (game: GameInfo) => ReactNode;
+    renderActions?: (game: GameInfo, isTable: boolean) => ReactNode;
 }) {
     const theme = useTheme();
 
@@ -94,14 +94,25 @@ function GameTableCells({
             <TableCell>
                 <Typography
                     variant="body2"
-                    sx={{ color: theme.palette.text.secondary }}
+                    sx={{
+                        color: theme.palette.text.secondary,
+                        width: "max-content",
+                    }}
                 >
                     {game.playCount} 回
                 </Typography>
             </TableCell>
-            <TableCell>
-                <Stack direction={{ xs: "column", lg: "row" }} gap={1}>
-                    {renderActions?.(game)}
+            <TableCell
+                sx={{
+                    whiteSpace: "nowrap",
+                }}
+            >
+                <Stack
+                    direction={{ xs: "column", lg: "row" }}
+                    gap={1}
+                    sx={{ width: "max-content" }}
+                >
+                    {renderActions?.(game, true)}
                 </Stack>
             </TableCell>
         </TableRow>
@@ -121,12 +132,12 @@ export function GameListTable({
     isEmpty: boolean;
     isEnd: boolean;
     onLoadMore: () => void;
-    renderActions?: (game: GameInfo) => ReactNode;
+    renderActions?: (game: GameInfo, isTable: boolean) => ReactNode;
 }) {
     const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+    const isTable = useMediaQuery(theme.breakpoints.up("md"));
 
-    if (isMobile) {
+    if (!isTable) {
         return (
             <Stack spacing={2}>
                 {isLoading ? (
@@ -203,8 +214,12 @@ export function GameListTable({
                                         </Typography>
                                     </Stack>
                                     {renderActions ? (
-                                        <Stack direction="row" spacing={1}>
-                                            {renderActions(game)}
+                                        <Stack
+                                            direction="row"
+                                            spacing={1}
+                                            sx={{ width: "max-content" }}
+                                        >
+                                            {renderActions(game, false)}
                                         </Stack>
                                     ) : null}
                                 </Stack>
@@ -234,7 +249,14 @@ export function GameListTable({
                     <TableRow>
                         <TableCell>ゲーム名</TableCell>
                         <TableCell>投稿日</TableCell>
-                        <TableCell>プレイ数</TableCell>
+                        <TableCell
+                            sx={{
+                                width: "max-content",
+                                whiteSpace: "nowrap",
+                            }}
+                        >
+                            プレイ数
+                        </TableCell>
                         <TableCell></TableCell>
                     </TableRow>
                 </TableHead>

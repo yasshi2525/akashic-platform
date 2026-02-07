@@ -290,43 +290,42 @@ export default function UserPage() {
                 <UserGameListSection
                     userId={id}
                     title="投稿したゲーム"
-                    renderActions={(game: GameInfo) => (
-                        <>
-                            <Stack direction="row" spacing={1}>
+                    renderActions={(game: GameInfo, isTable: boolean) => (
+                        <Stack
+                            direction={isTable ? "column" : "row"}
+                            spacing={1}
+                        >
+                            <Button
+                                variant="outlined"
+                                component={Link}
+                                href={`/game/${game.id}`}
+                                sx={{
+                                    borderColor: theme.palette.primary.light,
+                                    color: theme.palette.primary.light,
+                                }}
+                            >
+                                詳細
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                onClick={() => handleOpenDialog(game)}
+                                sx={{
+                                    borderColor: theme.palette.primary.light,
+                                    color: theme.palette.primary.light,
+                                }}
+                            >
+                                部屋を作る
+                            </Button>
+                            {isOwner ? (
                                 <Button
-                                    variant="outlined"
+                                    variant="contained"
                                     component={Link}
-                                    href={`/game/${game.id}`}
-                                    sx={{
-                                        borderColor:
-                                            theme.palette.primary.light,
-                                        color: theme.palette.primary.light,
-                                    }}
+                                    href={`/game/${game.id}/edit`}
                                 >
-                                    詳細
+                                    編集
                                 </Button>
-                                <Button
-                                    variant="outlined"
-                                    onClick={() => handleOpenDialog(game)}
-                                    sx={{
-                                        borderColor:
-                                            theme.palette.primary.light,
-                                        color: theme.palette.primary.light,
-                                    }}
-                                >
-                                    部屋を作る
-                                </Button>
-                                {isOwner ? (
-                                    <Button
-                                        variant="contained"
-                                        component={Link}
-                                        href={`/game/${game.id}/edit`}
-                                    >
-                                        編集
-                                    </Button>
-                                ) : null}
-                            </Stack>
-                        </>
+                            ) : null}
+                        </Stack>
                     )}
                 />
 
