@@ -11,12 +11,19 @@ import {
     CardContent,
     Container,
     Divider,
+    IconButton,
+    Slider,
     Snackbar,
     Stack,
     Typography,
     useTheme,
 } from "@mui/material";
-import { ContentCopy, OpenInNew } from "@mui/icons-material";
+import {
+    ContentCopy,
+    OpenInNew,
+    VolumeOff,
+    VolumeUp,
+} from "@mui/icons-material";
 import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
 import { GameInfo, User } from "@/lib/types";
 import { useAkashic } from "@/lib/client/useAkashic";
@@ -31,6 +38,8 @@ import { UserInline } from "./user-inline";
 
 const warnings = ["EVENT_ON_SKIPPING"] as const;
 type WarningType = (typeof warnings)[number];
+
+const MASTER_VOLUME_MAX = 0.4;
 
 const toMessage = (typ?: WarningType) => {
     if (!typ) {
@@ -103,6 +112,9 @@ export function PlayView({
     const [inviteCopyStatus, setInviteCopyStatus] = useState<
         "success" | "error"
     >();
+    const [volumePercent, setVolumePercent] = useState(100);
+    const [isMuted, setIsMuted] = useState(false);
+    const [prevVolumePercent, setPrevVolumePercent] = useState(100);
 
     function formatRemaining(ms: number | undefined) {
         if (ms == null) {
@@ -153,6 +165,7 @@ export function PlayView({
             playId,
             playToken,
             playlogServerUrl,
+            initialMasterVolume: MASTER_VOLUME_MAX,
             onSkip: setSkipping,
             onError: setError,
             onPlayEnd: setPlayEndReason,
@@ -226,6 +239,33 @@ export function PlayView({
             console.warn("failed to copy invite url", err);
             setInviteCopyStatus("error");
         }
+    }
+
+    function handleVolumeChange(_event: Event, value: number | number[]) {
+        const nextPercent = Array.isArray(value) ? value[0] : value;
+        setVolumePercent(nextPercent);
+        setIsMuted(nextPercent === 0);
+        if (nextPercent > 0) {
+            setPrevVolumePercent(nextPercent);
+        }
+        const nextVolume = (nextPercent / 100) * MASTER_VOLUME_MAX;
+        container.setMasterVolume(nextVolume);
+    }
+
+    function handleToggleMute() {
+        if (isMuted || volumePercent === 0) {
+            const restoredPercent =
+                prevVolumePercent > 0 ? prevVolumePercent : 100;
+            setVolumePercent(restoredPercent);
+            setIsMuted(false);
+            const nextVolume = (restoredPercent / 100) * MASTER_VOLUME_MAX;
+            container.setMasterVolume(nextVolume);
+            return;
+        }
+        setPrevVolumePercent(volumePercent);
+        setVolumePercent(0);
+        setIsMuted(true);
+        container.setMasterVolume(0);
     }
 
     return (
@@ -355,38 +395,76 @@ export function PlayView({
                                         </Stack>
                                     </Stack>
                                     <Stack
-                                        direction={{ xs: "column", sm: "row" }}
-                                        spacing={2}
                                         alignItems={{
                                             xs: "flex-start",
                                             sm: "center",
                                         }}
                                     >
-                                        <Stack direction="row" spacing={1}>
-                                            <Typography
-                                                variant="body1"
-                                                color={
-                                                    theme.palette.text.secondary
+                                        <Stack
+                                            direction="row"
+                                            spacing={1}
+                                            alignItems="center"
+                                            sx={{
+                                                width: "100%",
+                                                pr: 1,
+                                            }}
+                                        >
+                                            <IconButton
+                                                onClick={handleToggleMute}
+                                                aria-label={
+                                                    isMuted ||
+                                                    volumePercent === 0
+                                                        ? "ミュート解除"
+                                                        : "ミュート"
                                                 }
                                             >
-                                                終了まで
-                                            </Typography>
-                                            <Typography variant="body1">
-                                                {formatRemaining(remainingMs)}
-                                            </Typography>
+                                                {isMuted ||
+                                                volumePercent === 0 ? (
+                                                    <VolumeOff fontSize="large" />
+                                                ) : (
+                                                    <VolumeUp fontSize="large" />
+                                                )}
+                                            </IconButton>
+                                            <Slider
+                                                value={volumePercent}
+                                                onChange={handleVolumeChange}
+                                                aria-label="音量"
+                                            />
                                         </Stack>
-                                        <Button
-                                            variant="contained"
-                                            onClick={handleExtend}
-                                            disabled={
-                                                remainingMs == null ||
-                                                remainingMs >
-                                                    EXTEND_WINDOW_MS ||
-                                                extendLoading
-                                            }
+                                        <Stack
+                                            alignItems="center"
+                                            direction="row"
+                                            gap={1}
                                         >
-                                            30分延長する
-                                        </Button>
+                                            <Stack direction="row" spacing={2}>
+                                                <Typography
+                                                    variant="body1"
+                                                    color={
+                                                        theme.palette.text
+                                                            .secondary
+                                                    }
+                                                >
+                                                    終了まで
+                                                </Typography>
+                                                <Typography variant="body1">
+                                                    {formatRemaining(
+                                                        remainingMs,
+                                                    )}
+                                                </Typography>
+                                            </Stack>
+                                            <Button
+                                                variant="contained"
+                                                onClick={handleExtend}
+                                                disabled={
+                                                    remainingMs == null ||
+                                                    remainingMs >
+                                                        EXTEND_WINDOW_MS ||
+                                                    extendLoading
+                                                }
+                                            >
+                                                30分延長する
+                                            </Button>
+                                        </Stack>
                                     </Stack>
                                 </Stack>
                                 {extendError ? (

@@ -22,6 +22,7 @@ interface AkashicContainerCreateParameterObject {
     playId: string;
     playToken: string;
     playlogServerUrl: string;
+    initialMasterVolume?: number;
     onSkip: (skip: boolean) => void;
     onError: (errMsg: string) => void;
     onPlayEnd: (reason: PlayEndReason) => void;
@@ -35,6 +36,7 @@ export class AkashicContainer {
     _current?: {
         view: AkashicGameView;
         resizeObserver: ResizeObserver;
+        content: GameContent;
     };
     _creationQueue: AkashicContainerCreateParameterObject[];
 
@@ -69,6 +71,7 @@ export class AkashicContainer {
             this._current = {
                 view,
                 resizeObserver,
+                content,
             };
         }
     }
@@ -82,6 +85,12 @@ export class AkashicContainer {
             if (next) {
                 this.create(next);
             }
+        }
+    }
+
+    setMasterVolume(volume: number) {
+        if (this._current) {
+            this._current.content.setMasterVolume(volume);
         }
     }
 
@@ -116,6 +125,9 @@ export class AkashicContainer {
         });
         content.addContentLoadListener({
             onLoad: () => {
+                if (param.initialMasterVolume != null) {
+                    content.setMasterVolume(param.initialMasterVolume);
+                }
                 content._element!.getContentWindow()!.document.body.children[0].id =
                     "container";
                 const amflowcontent = content.getGameDriver()!._platform
