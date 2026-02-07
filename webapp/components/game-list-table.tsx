@@ -72,7 +72,11 @@ function GameTableCells({
                         <Typography variant="body1">{game.title}</Typography>
                         <Typography
                             variant="body2"
-                            sx={{ color: theme.palette.text.secondary }}
+                            sx={{
+                                color: theme.palette.text.secondary,
+                                overflowWrap: "anywhere",
+                                wordBreak: "break-word",
+                            }}
                         >
                             {game.description}
                         </Typography>
@@ -162,6 +166,8 @@ export function GameListTable({
                                                 sx={{
                                                     color: theme.palette.text
                                                         .secondary,
+                                                    overflowWrap: "anywhere",
+                                                    wordBreak: "break-word",
                                                 }}
                                             >
                                                 {game.description}
