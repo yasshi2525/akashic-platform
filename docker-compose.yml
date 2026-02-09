@@ -214,6 +214,7 @@ services:
       NEXTAUTH_URL: http://localhost:3000
       AUTH_TRUST_HOST: true
       S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_ENDPOINT: http://localhost:9000
       S3_BUCKET: akashic-content
       S3_KEY_PREFIX: cdn/
       S3_REGION: us-east-1

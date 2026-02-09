@@ -25,24 +25,38 @@ export interface GameForm {
 }
 
 let s3Client: S3Client | undefined;
+let s3PublicClient: S3Client | undefined;
 export const s3KeyPrefix = process.env.S3_KEY_PREFIX ?? "";
+
+function buildS3Client(endpoint?: string) {
+    return new S3Client({
+        region: process.env.S3_REGION ?? "us-east-1",
+        endpoint,
+        forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true",
+        credentials:
+            process.env.S3_ACCESS_KEY && process.env.S3_SECRET_KEY
+                ? {
+                      accessKeyId: process.env.S3_ACCESS_KEY,
+                      secretAccessKey: process.env.S3_SECRET_KEY,
+                  }
+                : undefined,
+    });
+}
 
 export function getS3Client() {
     if (!s3Client) {
-        s3Client = new S3Client({
-            region: process.env.S3_REGION ?? "us-east-1",
-            endpoint: process.env.S3_ENDPOINT,
-            forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true",
-            credentials:
-                process.env.S3_ACCESS_KEY && process.env.S3_SECRET_KEY
-                    ? {
-                          accessKeyId: process.env.S3_ACCESS_KEY,
-                          secretAccessKey: process.env.S3_SECRET_KEY,
-                      }
-                    : undefined,
-        });
+        s3Client = buildS3Client(process.env.S3_ENDPOINT);
     }
     return s3Client;
+}
+
+export function getS3PublicClient() {
+    if (!s3PublicClient) {
+        s3PublicClient = buildS3Client(
+            process.env.S3_PUBLIC_ENDPOINT ?? process.env.S3_ENDPOINT,
+        );
+    }
+    return s3PublicClient;
 }
 
 export function getBucket() {

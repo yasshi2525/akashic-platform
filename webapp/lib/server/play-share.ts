@@ -5,10 +5,10 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { prisma } from "@yasshi2525/persist-schema";
 import { publicContentBaseUrl } from "./akashic";
-import { getBucket, getS3Client, s3KeyPrefix } from "./content-utils";
+import { getBucket, getS3PublicClient, s3KeyPrefix } from "./content-utils";
 
 const SHARE_PREFIX = "play-share";
-const SHARE_UPLOAD_EXPIRES_SECONDS = Number.parseInt(
+const SHARE_UPLOAD_EXPIRES_SECONDS = parseInt(
     process.env.S3_SHARE_UPLOAD_EXPIRES_SECONDS ?? "60",
 );
 
@@ -60,7 +60,7 @@ export async function createPlayShareUploadUrl({
         return { ok: false, reason: "InvalidParams" };
     }
     try {
-        const parsedPlayId = Number.parseInt(playId);
+        const parsedPlayId = parseInt(playId);
         const play = await prisma.play.findUnique({
             where: { id: parsedPlayId },
             select: { id: true },
@@ -76,7 +76,7 @@ export async function createPlayShareUploadUrl({
             Key: `${s3KeyPrefix}${key}`,
             ContentType: resolvedContentType,
         });
-        const uploadUrl = await getSignedUrl(getS3Client(), command, {
+        const uploadUrl = await getSignedUrl(getS3PublicClient(), command, {
             expiresIn: SHARE_UPLOAD_EXPIRES_SECONDS,
         });
         const uploadHeaders = {
