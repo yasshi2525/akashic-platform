@@ -113,7 +113,7 @@ export class AkashicContainer {
                 playId: param.playId,
                 playToken: param.playToken,
                 executionMode: ExecutionMode.Passive,
-                playlogServerUrl: param.playlogServerUrl,
+                playlogServerUrl: `${param.playlogServerUrl}/socket.io`,
             },
             contentUrl: `/api/content/${param.contentId}`,
             runInIframe: true,

@@ -18,13 +18,16 @@ import { AMFlowServerManager } from "./AMFlowServerManager";
     const allowOrigins = [process.env.CLIENT_ORIGIN].filter(
         (str) => str,
     ) as string[];
+    const basePath = process.env.BASE_PATH ?? "/";
     const http = new HttpServer({
+        basePath,
         amfManager,
         playManager,
         allowOrigins,
         adminApiToken: process.env.STORAGE_ADMIN_TOKEN ?? "",
     });
     new SocketServer({
+        basePath,
         http: http.getPublicHttp(),
         amfManager,
         allowOrigins,

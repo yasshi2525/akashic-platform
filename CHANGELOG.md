@@ -10,6 +10,14 @@
 - Misc
   - `./webapp`
     - ゲーム一覧レイアウトの改善
+    - Socket.IO 接続先 URL 変更にともなう接続先変更
+  - `./akashic-storage`
+    - ルートパス以外でもリクエストを受け付ける `BASE_PATH` を追加
+    - Socket.IO 接続受付先を `BASE_PATH/socket.io` に変更
+  - `./akashic-server`
+    - Socket.IO 接続先 URL 変更にともなう接続先変更
+  - `./playlogClient-like`
+    - Socket.IO 接続先がルートパスでない場合も接続できるよう改善
   - other
     - Docker Compose で起動停止を繰り返すと Valkey Cluster の起動が不安定になる問題を修正
 

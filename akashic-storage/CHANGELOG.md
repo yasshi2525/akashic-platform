@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.0.3
+
+- Misc
+  - ルートパス以外でもリクエストを受け付ける `BASE_PATH` を追加
+  - Socket.IO 接続受付先を `BASE_PATH/socket.io` に変更
+
 ## 1.0.2
 
 - Misc

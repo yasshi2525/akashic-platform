@@ -182,13 +182,16 @@ export class Runner {
     }
 
     _openSession(playId: number, playToken: string) {
-        const session = (this._session = Session(this._param.storagePublicUrl, {
-            socketType: ProtocolType.WebSocket,
-            validationData: {
-                playId: playId.toString(),
-                token: playToken,
+        const session = (this._session = Session(
+            `${this._param.storagePublicUrl}/socket.io`,
+            {
+                socketType: ProtocolType.WebSocket,
+                validationData: {
+                    playId: playId.toString(),
+                    token: playToken,
+                },
             },
-        }));
+        ));
         session.on("error", (err) => {
             console.error("error on session", err);
         });

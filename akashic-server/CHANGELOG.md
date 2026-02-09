@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.1.0
+
+- Misc
+  - `akashic-storage` の Socket.IO 接続先 URL 変更にともなう接続先変更
+
 ## 1.0.2
 
 - Misc

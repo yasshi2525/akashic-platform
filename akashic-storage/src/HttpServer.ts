@@ -9,6 +9,7 @@ import { AMFlowServerManager } from "./AMFlowServerManager";
 import { PlayManager } from "./PlayManager";
 
 interface HttpServerParameterObject {
+    basePath: string;
     amfManager: AMFlowServerManager;
     playManager: PlayManager;
     /**
@@ -19,6 +20,7 @@ interface HttpServerParameterObject {
 }
 
 export class HttpServer {
+    _basePath: string;
     _amfManager: AMFlowServerManager;
     _playManager: PlayManager;
     _publicHttp: Server;
@@ -26,6 +28,7 @@ export class HttpServer {
     _adminApiToken: string;
 
     constructor(param: HttpServerParameterObject) {
+        this._basePath = param.basePath;
         this._amfManager = param.amfManager;
         this._playManager = param.playManager;
         if (!param.adminApiToken) {
@@ -39,10 +42,14 @@ export class HttpServer {
 
     listen(publicPort: number, adminPort: number) {
         this._publicHttp.listen(publicPort, () => {
-            console.log(`start to listen public port ${publicPort}`);
+            console.log(
+                `start to listen public port ${publicPort} at ${this._basePath}`,
+            );
         });
         this._adminHttp.listen(adminPort, () => {
-            console.log(`start to listen admin port ${adminPort}`);
+            console.log(
+                `start to listen admin port ${adminPort} at ${this._basePath}`,
+            );
         });
     }
 
@@ -69,6 +76,8 @@ export class HttpServer {
                 }),
             );
         }
+        const publicRouter = express.Router();
+        publicApp.use(this._basePath, publicRouter);
 
         const adminApp = express();
         adminApp.use(express.json());
@@ -81,11 +90,13 @@ export class HttpServer {
             }
             next();
         });
+        const adminRouter = express.Router();
+        adminApp.use(this._basePath, adminRouter);
 
         const publicHttp = createServer(publicApp);
         const adminHttp = createServer(adminApp);
 
-        adminApp.get("/start", async (req, res) => {
+        adminRouter.get("/start", async (req, res) => {
             const playId = req.query.playId;
             if (!playId?.toString()) {
                 res.status(400).send("no playId was specified.");
@@ -102,7 +113,7 @@ export class HttpServer {
             }
         });
 
-        publicApp.get("/join", async (req, res) => {
+        publicRouter.get("/join", async (req, res) => {
             const playId = req.query.playId;
             if (!playId?.toString()) {
                 res.status(400).send("no playId was specified.");
@@ -120,7 +131,7 @@ export class HttpServer {
             }
         });
 
-        publicApp.get("/participants", (req, res) => {
+        publicRouter.get("/participants", (req, res) => {
             const playId = req.query.playId;
             if (!playId?.toString()) {
                 res.status(400).send("no playId was specified.");
@@ -138,7 +149,7 @@ export class HttpServer {
             }
         });
 
-        adminApp.get("/end", async (req, res) => {
+        adminRouter.get("/end", async (req, res) => {
             const playId = req.query.playId;
             const reason = req.query.reason;
             if (!playId?.toString()) {
@@ -159,7 +170,7 @@ export class HttpServer {
             }
         });
 
-        publicApp.post("/extend", (req, res) => {
+        publicRouter.post("/extend", (req, res) => {
             const { playId, expiresAt, remainingMs, extendMs } = req.body as {
                 playId?: string;
             } & Partial<PlayExtendPayload>;

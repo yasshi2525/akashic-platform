@@ -161,6 +161,7 @@ services:
       PUBLIC_PORT: 3031
       ADMIN_PORT: 3033
       CLIENT_ORIGIN: http://localhost:3000
+      BASE_PATH: /playlog
       VALKEY_HOST: valkey-1
       VALKEY_PORT: 7001
       VALKEY_NO_TLS: true
@@ -181,8 +182,8 @@ services:
     user: 1000:1000
     environment:
       PORT: 3032
-      STORAGE_PUBLIC_URL: http://akashic-storage:3031
-      STORAGE_ADMIN_URL: http://akashic-storage:3033
+      STORAGE_PUBLIC_URL: http://akashic-storage:3031/playlog
+      STORAGE_ADMIN_URL: http://akashic-storage:3033/playlog
       STORAGE_ADMIN_TOKEN: ${STORAGE_ADMIN_TOKEN:-local-storage-admin-token}
       SERVER_API_TOKEN: ${SERVER_API_TOKEN:-local-server-api-token}
       DATABASE_URL: postgres://ap-user:${POSTGRES_PASSWORD:-postgres}@postgres:5432/akashic
@@ -205,8 +206,8 @@ services:
       INTERNAL_BASE_URL: http://webapp:3000
       PUBLIC_CONTENT_BASE_URL: http://localhost:9000/akashic-content
       INTERNAL_CONTENT_BASE_URL: http://minio:9000/akashic-content
-      PUBLIC_STORAGE_URL: http://localhost:3031
-      INTERNAL_STORAGE_URL: http://akashic-storage:3031
+      PUBLIC_STORAGE_URL: http://localhost:3031/playlog
+      INTERNAL_STORAGE_URL: http://akashic-storage:3031/playlog
       SERVER_URL: http://akashic-server:3032
       SERVER_API_TOKEN: ${SERVER_API_TOKEN:-local-server-api-token}
       DATABASE_URL: postgres://ap-user:${POSTGRES_PASSWORD:-postgres}@postgres:5432/akashic

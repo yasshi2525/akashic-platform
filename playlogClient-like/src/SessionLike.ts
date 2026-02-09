@@ -1,4 +1,4 @@
-import { io, Socket, SocketOptions } from "socket.io-client";
+import { io, ManagerOptions, Socket, SocketOptions } from "socket.io-client";
 import { ProtocolType } from "./akashic-gameview";
 import { AMFlowClient } from "./AMFlowClient";
 
@@ -27,7 +27,7 @@ export interface SessionOptions {
 }
 
 export class SessionLike {
-    _url: string;
+    _url: URL;
     _validationData: PlayInfo;
     _socketOptions: SocketOptions | null | undefined;
     _errorListeners: ((err: Error) => void)[] = [];
@@ -40,7 +40,7 @@ export class SessionLike {
                 `unsupported socket type value = ${opts.socketType}`,
             );
         }
-        this._url = url;
+        this._url = new URL(url);
         this._validationData = opts.validationData;
         this._socketOptions = opts.socketOpts;
         this._socket = null;
@@ -52,9 +52,11 @@ export class SessionLike {
             cb(new Error("socket was already connetcted."));
             return;
         }
-        this._socket = this._socketOptions
-            ? io(this._url, this._socketOptions)
-            : io(this._url);
+        const opts: Partial<ManagerOptions & SocketOptions> = {
+            path: this._url.pathname,
+            ...this._socketOptions,
+        };
+        this._socket = io(this._url.origin, opts);
         this._socket.io.on("open", () => {
             cb(null);
         });
