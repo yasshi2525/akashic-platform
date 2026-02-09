@@ -6,6 +6,7 @@ import {
     PutObjectCommand,
     S3Client,
 } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import JSZip, { JSZipObject } from "jszip";
 import { GameConfiguration } from "@akashic/game-configuration";
 import { prisma } from "@yasshi2525/persist-schema";
@@ -27,6 +28,9 @@ export interface GameForm {
 let s3Client: S3Client | undefined;
 let s3PublicClient: S3Client | undefined;
 export const s3KeyPrefix = process.env.S3_KEY_PREFIX ?? "";
+const CONTENT_UPLOAD_EXPIRES_SECONDS = parseInt(
+    process.env.S3_CONTENT_UPLOAD_EXPIRES_SECONDS ?? "60",
+);
 
 function buildS3Client(endpoint?: string) {
     return new S3Client({
@@ -155,13 +159,11 @@ async function extractFile(contentId: number, file: JSZipObject) {
     if (file.dir) {
         return;
     }
-    await getS3Client().send(
-        new PutObjectCommand({
-            Bucket: getBucket(),
-            Key: `${s3KeyPrefix}${contentId}/${file.name}`,
-            Body: await file.async("nodebuffer"),
-        }),
-    );
+    const key = `${s3KeyPrefix}${contentId}/${file.name}`;
+    await uploadBySignedUrl({
+        key,
+        body: await file.async("nodebuffer"),
+    });
 }
 
 export async function deployGameZip(contentId: number, gameZip: JSZip) {
@@ -177,13 +179,46 @@ export async function deployIconFile(
     iconPath: string,
     iconFile: File,
 ) {
-    await getS3Client().send(
-        new PutObjectCommand({
-            Bucket: getBucket(),
-            Key: `${s3KeyPrefix}${contentId}/${iconPath}`,
-            Body: await iconFile.bytes(),
-        }),
-    );
+    const key = `${s3KeyPrefix}${contentId}/${iconPath}`;
+    const contentType = iconFile.type || "application/octet-stream";
+    await uploadBySignedUrl({
+        key,
+        body: await iconFile.bytes(),
+        contentType,
+    });
+}
+
+async function uploadBySignedUrl({
+    key,
+    body,
+    contentType,
+}: {
+    key: string;
+    body: Uint8Array;
+    contentType?: string;
+}) {
+    const command = new PutObjectCommand({
+        Bucket: getBucket(),
+        Key: key,
+        ContentType: contentType,
+    });
+    const uploadUrl = await getSignedUrl(getS3Client(), command, {
+        expiresIn: CONTENT_UPLOAD_EXPIRES_SECONDS,
+    });
+    const headers: Record<string, string> = {};
+    if (contentType) {
+        headers["Content-Type"] = contentType;
+    }
+    const res = await fetch(uploadUrl, {
+        method: "PUT",
+        headers,
+        body: body as BodyInit,
+    });
+    if (!res.ok) {
+        throw new Error(
+            `failed to upload to s3 (key = "${key}", status = "${res.status}")`,
+        );
+    }
 }
 
 export async function deleteContentDir(contentId: number) {
