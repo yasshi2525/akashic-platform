@@ -32,6 +32,7 @@ import { useAkashic } from "@/lib/client/useAkashic";
 import { ResolvingPlayerInfoRequest } from "@/lib/client/akashic-plugins/coe-limited-plugin";
 import { AkashicContainer } from "@/lib/client/akashic-container";
 import { extendPlay } from "@/lib/server/play-extend";
+import { uploadPlayShareScreenshot } from "@/lib/server/play-share";
 import { PlayCloseDialog } from "./play-close-dialog";
 import { PlayEndNotification } from "./play-end-notification";
 import { PlayPlayerInfoResolver } from "./play-player-info-resolver";
@@ -121,6 +122,7 @@ export function PlayView({
         "shared" | "downloaded" | "error" | "cancel"
     >();
     const [xShareStatus, setXShareStatus] = useState<"shared" | "error">();
+    const [isXSharing, setIsXSharing] = useState(false);
 
     function formatRemaining(ms: number | undefined) {
         if (ms == null) {
@@ -274,25 +276,36 @@ export function PlayView({
         container.setMasterVolume(0);
     }
 
-    async function handleScreenshot() {
+    async function createScreenshotFile() {
         const canvas = container.getGameContentCanvas();
         if (!canvas) {
-            setScreenshotStatus("error");
-            return;
+            return null;
         }
         const blob = await new Promise<Blob | null>((resolve) => {
             canvas.toBlob(resolve, "image/png");
         });
         if (!blob) {
-            setScreenshotStatus("error");
-            return;
+            return null;
         }
         const filename = `akashic-${playId}-${format(
             new Date(),
             "yyyyMMdd-HHmmss",
         )}.png`;
         const file = new File([blob], filename, { type: "image/png" });
+        return {
+            filename,
+            blob,
+            file,
+        };
+    }
 
+    async function handleScreenshot() {
+        const res = await createScreenshotFile();
+        if (!res) {
+            setScreenshotStatus("error");
+            return;
+        }
+        const { file, blob, filename } = res;
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
             try {
                 await navigator.share({
@@ -329,23 +342,50 @@ export function PlayView({
     }
 
     async function handleShareToX() {
+        if (isXSharing) {
+            return;
+        }
+        setIsXSharing(true);
+        setXShareStatus(undefined);
         try {
+            const fileRes = await createScreenshotFile();
+            if (!fileRes) {
+                setXShareStatus("error");
+                return;
+            }
+            const formData = new FormData();
+            formData.append("playId", playId);
+            formData.append("image", fileRes.file);
+            const res = await uploadPlayShareScreenshot(formData);
+            if (!res.ok) {
+                setXShareStatus("error");
+                return;
+            }
             if (typeof window !== "undefined") {
+                const shareUrl = new URL(
+                    `/play/${playId}`,
+                    window.location.origin,
+                );
+                shareUrl.searchParams.set("shareId", res.shareId);
                 const params = new URLSearchParams([
                     [
                         "text",
-                        `今ここでゲームプレイ中!一緒に遊ぼう!\n${playName}`,
+                        `ただいまゲームプレイ中！一緒に遊ぼう！\n${playName ?? ""}`,
                     ],
-                    ["url", inviteUrl ?? window.location.href],
+                    ["url", shareUrl.toString()],
                     ["hashtags", ["みんなでゲーム", game.title].join(",")],
                 ]);
                 const intentUrl = `https://x.com/intent/tweet?${params.toString()}`;
                 window.open(intentUrl, "_blank", "noopener,noreferrer");
+                setXShareStatus("shared");
+            } else {
+                setXShareStatus("error");
             }
-            setXShareStatus("error");
         } catch (err) {
             console.warn("failed to open X intent", err);
             setXShareStatus("error");
+        } finally {
+            setIsXSharing(false);
         }
     }
 
@@ -575,6 +615,7 @@ export function PlayView({
                                             <IconButton
                                                 aria-label="Xに投稿"
                                                 onClick={handleShareToX}
+                                                disabled={isXSharing}
                                             >
                                                 <X fontSize="large" />
                                             </IconButton>
