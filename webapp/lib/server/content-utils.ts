@@ -25,6 +25,7 @@ export interface GameForm {
 }
 
 let s3Client: S3Client | undefined;
+export const s3KeyPrefix = process.env.S3_KEY_PREFIX ?? "";
 
 export function getS3Client() {
     if (!s3Client) {
@@ -106,7 +107,7 @@ export async function throwIfInvalidContentDir(contentId: number) {
     const res = await getS3Client().send(
         new ListObjectsV2Command({
             Bucket: getBucket(),
-            Prefix: `${contentId}/`,
+            Prefix: `${s3KeyPrefix}${contentId}/`,
             MaxKeys: 1,
         }),
     );
@@ -143,7 +144,7 @@ async function extractFile(contentId: number, file: JSZipObject) {
     await getS3Client().send(
         new PutObjectCommand({
             Bucket: getBucket(),
-            Key: `${contentId}/${file.name}`,
+            Key: `${s3KeyPrefix}${contentId}/${file.name}`,
             Body: await file.async("nodebuffer"),
         }),
     );
@@ -165,7 +166,7 @@ export async function deployIconFile(
     await getS3Client().send(
         new PutObjectCommand({
             Bucket: getBucket(),
-            Key: `${contentId}/${iconPath}`,
+            Key: `${s3KeyPrefix}${contentId}/${iconPath}`,
             Body: await iconFile.bytes(),
         }),
     );
@@ -177,7 +178,7 @@ export async function deleteContentDir(contentId: number) {
         const res = await getS3Client().send(
             new ListObjectsV2Command({
                 Bucket: getBucket(),
-                Prefix: `${contentId}/`,
+                Prefix: `${s3KeyPrefix}${contentId}/`,
                 ContinuationToken: continuationToken,
             }),
         );

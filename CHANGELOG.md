@@ -11,6 +11,7 @@
   - `./webapp`
     - ゲーム一覧レイアウトの改善
     - Socket.IO 接続先 URL 変更にともなう接続先変更
+    - S3 Bucket 格納先のキープレフィックス `S3_KEY_PREFIX` を追加
   - `./akashic-storage`
     - ルートパス以外でもリクエストを受け付ける `BASE_PATH` を追加
     - Socket.IO 接続受付先を `BASE_PATH/socket.io` に変更

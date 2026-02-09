@@ -204,8 +204,8 @@ services:
       PORT: 3000
       PUBLIC_BASE_URL: http://localhost:3000
       INTERNAL_BASE_URL: http://webapp:3000
-      PUBLIC_CONTENT_BASE_URL: http://localhost:9000/akashic-content
-      INTERNAL_CONTENT_BASE_URL: http://minio:9000/akashic-content
+      PUBLIC_CONTENT_BASE_URL: http://localhost:9000/akashic-content/cdn
+      INTERNAL_CONTENT_BASE_URL: http://minio:9000/akashic-content/cdn
       PUBLIC_STORAGE_URL: http://localhost:3031/playlog
       INTERNAL_STORAGE_URL: http://akashic-storage:3031/playlog
       SERVER_URL: http://akashic-server:3032
@@ -215,6 +215,7 @@ services:
       AUTH_TRUST_HOST: true
       S3_ENDPOINT: http://minio:9000
       S3_BUCKET: akashic-content
+      S3_KEY_PREFIX: cdn/
       S3_REGION: us-east-1
       S3_FORCE_PATH_STYLE: true
       S3_ACCESS_KEY: minioadmin

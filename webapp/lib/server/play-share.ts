@@ -4,7 +4,7 @@ import { randomBytes } from "crypto";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { prisma } from "@yasshi2525/persist-schema";
 import { publicContentBaseUrl } from "./akashic";
-import { getBucket, getS3Client } from "./content-utils";
+import { getBucket, getS3Client, s3KeyPrefix } from "./content-utils";
 
 const SHARE_PREFIX = "play-share";
 
@@ -55,7 +55,7 @@ export async function uploadPlayShareScreenshot(
         await getS3Client().send(
             new PutObjectCommand({
                 Bucket: getBucket(),
-                Key: key,
+                Key: `${s3KeyPrefix}${key}`,
                 Body: body,
                 ContentType: file.type || "image/png",
             }),
