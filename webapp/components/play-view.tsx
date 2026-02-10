@@ -32,7 +32,7 @@ import { useAkashic } from "@/lib/client/useAkashic";
 import { ResolvingPlayerInfoRequest } from "@/lib/client/akashic-plugins/coe-limited-plugin";
 import { AkashicContainer } from "@/lib/client/akashic-container";
 import { extendPlay } from "@/lib/server/play-extend";
-import { createPlayShareUploadUrl } from "@/lib/server/play-share";
+import { uploadPlayShareScreenshot } from "@/lib/server/play-share";
 import { PlayCloseDialog } from "./play-close-dialog";
 import { PlayEndNotification } from "./play-end-notification";
 import { PlayPlayerInfoResolver } from "./play-player-info-resolver";
@@ -353,23 +353,11 @@ export function PlayView({
                 setXShareStatus("error");
                 return;
             }
-            const initRes = await createPlayShareUploadUrl({
-                playId,
-                contentType: fileRes.file.type || "image/png",
-            });
-            if (!initRes.ok) {
-                setXShareStatus("error");
-                return;
-            }
-            const uploadRes = await fetch(initRes.uploadUrl, {
-                method: "PUT",
-                headers: initRes.uploadHeaders,
-                body: fileRes.file,
-            });
-            if (!uploadRes.ok) {
-                console.warn("failed to upload share screenshot", {
-                    status: uploadRes.status,
-                });
+            const formData = new FormData();
+            formData.append("playId", playId);
+            formData.append("image", fileRes.file);
+            const res = await uploadPlayShareScreenshot(formData);
+            if (!res.ok) {
                 setXShareStatus("error");
                 return;
             }
@@ -378,7 +366,7 @@ export function PlayView({
                     `/play/${playId}`,
                     window.location.origin,
                 );
-                shareUrl.searchParams.set("shareId", initRes.shareId);
+                shareUrl.searchParams.set("shareId", res.shareId);
                 const params = new URLSearchParams([
                     [
                         "text",
