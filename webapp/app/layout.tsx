@@ -8,9 +8,15 @@ import {
     publicContentBaseUrl,
     publicPlaylogServerUrl,
 } from "@/lib/server/akashic";
+import {
+    customFooterLabel,
+    customFooterImagePath,
+    customFooterImageWidth,
+} from "@/lib/server/custom-footer";
 import { theme } from "@/lib/client/theme";
 import { AkashicProvider } from "@/components/akashic-provider";
 import { AuthProvider } from "@/components/auth-provider";
+import { CustomFooterProvider } from "@/components/custom-footer-provider";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ToastMessage } from "@/components/toast-message";
@@ -44,26 +50,35 @@ export default async function RootLayout({
                         playlogServerUrl={publicPlaylogServerUrl}
                         publicContentBaseUrl={publicContentBaseUrl}
                     >
-                        <AuthProvider user={user}>
-                            <ThemeProvider theme={theme}>
-                                <CssBaseline />
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        minHeight: "100vh",
-                                        overflowY: "auto",
-                                    }}
-                                >
-                                    <SiteHeader />
-                                    <Box component="main" sx={{ flexGrow: 1 }}>
-                                        {children}
+                        <CustomFooterProvider
+                            customFooterLabel={customFooterLabel}
+                            customFooterImagePath={customFooterImagePath}
+                            customFooterImageWidth={customFooterImageWidth}
+                        >
+                            <AuthProvider user={user}>
+                                <ThemeProvider theme={theme}>
+                                    <CssBaseline />
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            minHeight: "100vh",
+                                            overflowY: "auto",
+                                        }}
+                                    >
+                                        <SiteHeader />
+                                        <Box
+                                            component="main"
+                                            sx={{ flexGrow: 1 }}
+                                        >
+                                            {children}
+                                        </Box>
+                                        <SiteFooter />
+                                        <ToastMessage />
                                     </Box>
-                                    <SiteFooter />
-                                    <ToastMessage />
-                                </Box>
-                            </ThemeProvider>
-                        </AuthProvider>
+                                </ThemeProvider>
+                            </AuthProvider>
+                        </CustomFooterProvider>
                     </AkashicProvider>
                 </AppRouterCacheProvider>
             </body>
