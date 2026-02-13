@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.1.4
+
+- Misc
+  - `./webapp`
+    - カスタムフッター追加
+
 ## 1.1.3
 
 - Misc
