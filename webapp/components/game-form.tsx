@@ -180,6 +180,11 @@ export function GameForm({
                         `(サポート: ${supportedAkashicModes.map((m) => `"${m}"`).join()})`,
                 );
                 break;
+            case "Shutdown":
+                setServerError(
+                    "現在メンテナンス中のため、コンテンツの投稿・更新はできません。",
+                );
+                break;
             case "InternalError":
             default:
                 setServerError(

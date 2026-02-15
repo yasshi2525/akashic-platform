@@ -65,6 +65,10 @@ Web API 仕様: https://yasshi2525.github.io/akashic-platform/
 プレイ時の実行時情報の保存と配信機能。
 `akashic serve` のメモリ効率が悪いため独自に実装します。
 
+### manager-server
+
+`webapp` のシャットダウン切替 API に対して、署名付きリクエストを中継する管理用サーバー。
+
 ## インストール方法・使い方
 
 ### Docker Compose (推奨)

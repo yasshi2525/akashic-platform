@@ -43,3 +43,24 @@
 > [!NOTE]
 >
 > 現状、ゲーム更新時、当該プレイをすべて削除しています。
+
+### メンテナンス（シャットダウン）モード
+
+`/api/internal/shutdown` でメンテナンスモードを切り替えできます。ON 時は次の操作を拒否します。
+
+- 部屋作成
+- 部屋延長
+- コンテンツ投稿
+- コンテンツ更新
+
+この endpoint は HMAC 検証必須です。`SHUTDOWN_HMAC_SECRET` を設定してください。
+
+- Method: `POST`
+- Headers:
+  - `x-shutdown-timestamp`: エポックミリ秒
+  - `x-shutdown-id`: リプレイ防止用の一意ID
+  - `x-shutdown-signature`: `hex(hmac_sha256(secret, "${timestamp}.${rawBody}"))`
+- Body:
+  - `{"enabled": true|false, "reason"?: "..." }`
+
+状態確認は `GET /api/internal/shutdown` で取得できます。

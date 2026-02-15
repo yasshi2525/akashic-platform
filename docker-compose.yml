@@ -228,6 +228,23 @@ services:
     networks:
       - apnet
 
+  manager-server:
+    build:
+      context: .
+      dockerfile: manager-server/Dockerfile
+    ports:
+      - 3100:3100
+    user: 1000:1000
+    environment:
+      MANAGER_PORT: 3100
+      WEBAPP_SHUTDOWN_URL: http://webapp:3000/api/internal/shutdown
+      SHUTDOWN_HMAC_SECRET: ${SHUTDOWN_HMAC_SECRET:-local-shutdown-hmac-secret}
+    depends_on:
+      webapp:
+        condition: service_started
+    networks:
+      - apnet
+
 networks:
   apnet:
     driver: bridge
