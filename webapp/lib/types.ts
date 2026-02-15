@@ -130,6 +130,7 @@ const contentErrReasons = [
     "InvalidGameJson",
     "UnsupportedVersion",
     "UnsupportedMode",
+    "Shutdown",
     "InternalError",
 ] as const;
 export type ContentErrorType = (typeof contentErrReasons)[number];

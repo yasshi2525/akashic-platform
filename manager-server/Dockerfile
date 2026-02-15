@@ -14,21 +14,18 @@ COPY akashic-server/package.json akashic-server/package.json
 COPY akashic-storage/package.json akashic-storage/package.json
 COPY webapp/package.json webapp/package.json
 COPY manager-server/package.json manager-server/package.json
-RUN npm ci -w @yasshi2525/webapp
+RUN npm ci -w manager-server
 
 COPY . .
-RUN npm run setup -w @yasshi2525/webapp \
-  && npm run build -w @yasshi2525/webapp
+RUN npm run build -w manager-server
 
 FROM node:${NODE_VERSION}-alpine
 WORKDIR /app
 ENV NODE_ENV=production
-ENV PORT=3000
-COPY --from=build /app/webapp/.next/standalone .
-COPY --from=build /app/webapp/public webapp/public
-COPY --from=build /app/webapp/.next/static webapp/.next/static
-COPY *.pem ./webapp
+ENV MANAGER_PORT=3100
+COPY --from=build --parents /app/manager-server/package.json /app/manager-server/dist /
+COPY --from=build --parents /app/package.json /app/node_modules /
 RUN chown -R node:node .
-EXPOSE ${PORT}
+EXPOSE ${MANAGER_PORT}
 USER node
-CMD ["node", "webapp/server.js"]
+CMD ["npm", "run", "start", "-w", "manager-server"]
