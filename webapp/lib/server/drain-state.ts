@@ -1,4 +1,4 @@
-type ShutdownState = {
+type DrainState = {
     enabled: boolean;
     reason?: string;
     updatedAt: number;
@@ -6,22 +6,21 @@ type ShutdownState = {
 };
 
 declare global {
-    // eslint-disable-next-line no-var
-    var __webappShutdownState: ShutdownState | undefined;
+    var __webappDrainState: DrainState | undefined;
 }
 
-function getStore(): ShutdownState {
-    if (!globalThis.__webappShutdownState) {
-        globalThis.__webappShutdownState = {
+function getStore(): DrainState {
+    if (!globalThis.__webappDrainState) {
+        globalThis.__webappDrainState = {
             enabled: false,
             updatedAt: Date.now(),
             requestIds: new Map<string, number>(),
         };
     }
-    return globalThis.__webappShutdownState;
+    return globalThis.__webappDrainState;
 }
 
-export function getShutdownState() {
+export function getDrainState() {
     const store = getStore();
     return {
         enabled: store.enabled,
@@ -30,7 +29,7 @@ export function getShutdownState() {
     };
 }
 
-export function setShutdownState({
+export function setDrainState({
     enabled,
     reason,
 }: {

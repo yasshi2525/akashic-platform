@@ -225,9 +225,9 @@ export function PlayView({
                 setExpiresAt(json.expiresAt);
                 setRemainingMs(json.remainingMs);
                 setExtendError("延長は残り10分以下から可能です。");
-            } else if (json.reason === "Shutdown") {
+            } else if (json.reason === "Drain") {
                 setExtendError(
-                    "現在メンテナンス中のため、部屋の延長はできません。",
+                    "現在臨時メンテナンス中のため、延長できません。残り時間をもって終了します。",
                 );
             } else {
                 setExtendError("延長に失敗しました。");

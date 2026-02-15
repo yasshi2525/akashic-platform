@@ -1,11 +1,11 @@
 "use server";
 
 import { akashicServerUrl, withAkashicServerAuth } from "./akashic";
-import { isWriteBlocked } from "./shutdown-state";
+import { isWriteBlocked } from "./drain-state";
 
 const errReasons = [
     "InvalidParams",
-    "Shutdown",
+    "Drain",
     "InternalError",
     "NotFound",
 ] as const;
@@ -33,7 +33,7 @@ export async function extendPlay({
     if (isWriteBlocked()) {
         return {
             ok: false,
-            reason: "Shutdown",
+            reason: "Drain",
         };
     }
     if (!playId) {

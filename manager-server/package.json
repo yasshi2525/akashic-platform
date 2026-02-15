@@ -1,21 +1,28 @@
 {
-  "name": "manager-server",
+  "name": "@yasshi2525/manager-server",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
-  "description": "Shutdown trigger relay server for webapp",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "description": "manager server for service maintenance",
+  "files": [
+    "CHANGELOG.md",
+    "dist/**/*.js",
+    "dist/**/*.d.ts"
+  ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "start": "node --env-file-if-exists=.env dist/server.js",
-    "start:build": "npm run build && npm run start",
-    "format": "prettier --write \"src/**/*.ts\" \"*.md\"",
-    "format:check": "prettier --check \"src/**/*.ts\" \"*.md\""
+    "build": "tsc",
+    "run": "node --env-file-if-exists=.env dist/index.js"
   },
   "author": "yasshi2525",
   "license": "MIT",
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/node": "^24.3.1",
     "prettier": "^3.7.4",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
   }
 }

@@ -28,4 +28,4 @@ COPY --from=build --parents /app/package.json /app/node_modules /
 RUN chown -R node:node .
 EXPOSE ${MANAGER_PORT}
 USER node
-CMD ["npm", "run", "start", "-w", "manager-server"]
+CMD ["npm", "run", "run", "-w", "@yasshi2525/manager-server"]

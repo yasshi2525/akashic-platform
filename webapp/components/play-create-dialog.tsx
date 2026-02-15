@@ -66,9 +66,9 @@ export function PlayCreateDialog({
                         "内部エラーが発生しました。入力内容を確認してもう一度投稿してください。",
                     );
                     break;
-                case "Shutdown":
+                case "Drain":
                     setError(
-                        "現在メンテナンス中のため、部屋を作成できません。",
+                        "現在臨時メンテナンス中のため、部屋を作成できません。1時間ほど時間をおいてください。",
                     );
                     break;
                 case "InternalError":

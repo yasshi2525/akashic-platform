@@ -130,7 +130,7 @@ const contentErrReasons = [
     "InvalidGameJson",
     "UnsupportedVersion",
     "UnsupportedMode",
-    "Shutdown",
+    "Drain",
     "InternalError",
 ] as const;
 export type ContentErrorType = (typeof contentErrReasons)[number];
@@ -145,6 +145,7 @@ export type ContentResponse =
 const deleteGameErrReasons = [
     "InvalidParams",
     "NotFound",
+    "Drain",
     "InternalError",
 ] as const;
 export type DeleteGameErrorType = (typeof deleteGameErrReasons)[number];

@@ -14,7 +14,7 @@ import {
     deleteContentDir,
     throwIfInvalidContentDir,
 } from "./content-utils";
-import { isWriteBlocked } from "./shutdown-state";
+import { isWriteBlocked } from "./drain-state";
 
 interface NewGameForm extends GameForm {
     publisherId: string;
@@ -63,7 +63,7 @@ export async function registerContent(
     if (isWriteBlocked()) {
         return {
             ok: false,
-            reason: "Shutdown",
+            reason: "Drain",
         };
     }
     const validationErrParam = validateParam(param);

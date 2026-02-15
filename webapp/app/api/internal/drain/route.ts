@@ -1,10 +1,10 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import {
-    getShutdownState,
+    getDrainState,
     registerRequestId,
-    setShutdownState,
-} from "@/lib/server/shutdown-state";
+    setDrainState,
+} from "@/lib/server/drain-state";
 
 const MAX_SKEW_MS = 60 * 1000;
 const REQUEST_ID_TTL_MS = 5 * 60 * 1000;
@@ -21,7 +21,7 @@ function noStoreJson(body: unknown, status = 200) {
 export async function GET() {
     return noStoreJson({
         ok: true,
-        ...getShutdownState(),
+        ...getDrainState(),
     });
 }
 
@@ -48,7 +48,7 @@ function verifySignature({
 }
 
 export async function POST(req: NextRequest) {
-    const secret = process.env.SHUTDOWN_HMAC_SECRET;
+    const secret = process.env.HMAC_SECRET;
     if (!secret) {
         return noStoreJson(
             {
@@ -59,9 +59,9 @@ export async function POST(req: NextRequest) {
         );
     }
 
-    const timestamp = req.headers.get("x-shutdown-timestamp");
-    const signature = req.headers.get("x-shutdown-signature");
-    const requestId = req.headers.get("x-shutdown-id");
+    const timestamp = req.headers.get("x-drain-timestamp");
+    const signature = req.headers.get("x-drain-signature");
+    const requestId = req.headers.get("x-drain-id");
     if (!timestamp || !signature || !requestId) {
         return noStoreJson(
             {
@@ -145,12 +145,12 @@ export async function POST(req: NextRequest) {
         );
     }
 
-    setShutdownState({
+    setDrainState({
         enabled: body.enabled,
         reason: body.reason,
     });
     return noStoreJson({
         ok: true,
-        ...getShutdownState(),
+        ...getDrainState(),
     });
 }

@@ -3,24 +3,20 @@
 import { useEffect, useState } from "react";
 import { Alert, Box } from "@mui/material";
 
-type ShutdownStatus = {
+type DrainStatus = {
     enabled: boolean;
     reason?: string;
     updatedAt: number;
 };
 
-export function ShutdownBanner({
-    initialState,
-}: {
-    initialState: ShutdownStatus;
-}) {
+export function DrainBanner({ initialState }: { initialState: DrainStatus }) {
     const [state, setState] = useState(initialState);
 
     useEffect(() => {
         let cancelled = false;
         const load = async () => {
             try {
-                const res = await fetch("/api/internal/shutdown", {
+                const res = await fetch("/api/internal/drain", {
                     method: "GET",
                     cache: "no-store",
                 });
@@ -61,7 +57,7 @@ export function ShutdownBanner({
     return (
         <Box sx={{ px: 2, pt: 2 }}>
             <Alert severity="warning" variant="filled">
-                メンテナンス中です。部屋の作成・延長、コンテンツ投稿・更新を停止しています。
+                現在臨時メンテナンス中です。部屋の作成・延長、コンテンツ投稿・更新を停止しています。1時間ほど時間をおいてください。
                 {state.reason ? ` (${state.reason})` : ""}
             </Alert>
         </Box>

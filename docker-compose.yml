@@ -213,6 +213,7 @@ services:
       DATABASE_URL: postgres://ap-user:${POSTGRES_PASSWORD:-postgres}@postgres:5432/akashic
       NEXTAUTH_URL: http://localhost:3000
       AUTH_TRUST_HOST: true
+      HMAC_SECRET: ${HMAC_SECRET:-local-hmac-secret}
       S3_ENDPOINT: http://minio:9000
       S3_BUCKET: akashic-content
       S3_KEY_PREFIX: cdn/
@@ -237,8 +238,8 @@ services:
     user: 1000:1000
     environment:
       MANAGER_PORT: 3100
-      WEBAPP_SHUTDOWN_URL: http://webapp:3000/api/internal/shutdown
-      SHUTDOWN_HMAC_SECRET: ${SHUTDOWN_HMAC_SECRET:-local-shutdown-hmac-secret}
+      WEBAPP_URL: http://webapp:3000
+      HMAC_SECRET: ${HMAC_SECRET:-local-hmac-secret}
     depends_on:
       webapp:
         condition: service_started

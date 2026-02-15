@@ -1,37 +1,17 @@
 # manager-server
 
-`webapp` の `/api/internal/shutdown` に対して、HMAC 署名付きで shutdown 指示を中継する管理用 HTTP サーバーです。
+サービスのメンテナンス機能を制御するサーバーです。
+常時起動させておく必要はありません。
 
-## 環境変数
+## ドレイン
 
-- `MANAGER_PORT` (default: `3100`)
-- `WEBAPP_SHUTDOWN_URL` (default: `http://127.0.0.1:3000/api/internal/shutdown`)
-- `SHUTDOWN_HMAC_SECRET` (required)
+エンドポイント: `/drain`
 
-## 起動
+稼働中の機能を抑止することで、サーバーを停止してもユーザー影響がない状態にさせる機能です。
+ドレイン中は下記の操作を受け付けません。
 
-```bash
-npm run -w manager-server build
-npm run -w manager-server start
-```
-
-## トリガ API
-
-### `POST /shutdown`
-
-request:
-
-```json
-{
-  "enabled": true,
-  "reason": "deploy"
-}
-```
-
-example:
-
-```bash
-curl -X POST http://127.0.0.1:3100/shutdown \
-  -H 'content-type: application/json' \
-  -d '{"enabled":true,"reason":"deploy"}'
-```
+- 部屋作成
+- 部屋延長
+- コンテンツ投稿
+- コンテンツ更新
+- ゲーム削除

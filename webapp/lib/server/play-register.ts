@@ -8,7 +8,7 @@ import {
     internalContentBaseUrl,
     withAkashicServerAuth,
 } from "./akashic";
-import { isWriteBlocked } from "./shutdown-state";
+import { isWriteBlocked } from "./drain-state";
 
 interface PlayForm {
     gameMasterId: string;
@@ -17,7 +17,7 @@ interface PlayForm {
     playName: string;
 }
 
-const errReasons = ["InvalidParams", "Shutdown", "InternalError"] as const;
+const errReasons = ["InvalidParams", "Drain", "InternalError"] as const;
 export type RegisterPlayErrorType = (typeof errReasons)[number];
 type RegisterPlayResponse =
     | { ok: true; playId: number }
@@ -32,7 +32,7 @@ export async function registerPlay({
     if (isWriteBlocked()) {
         return {
             ok: false,
-            reason: "Shutdown",
+            reason: "Drain",
         };
     }
     if (!gameMasterId || contentId == null) {
