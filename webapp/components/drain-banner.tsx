@@ -11,9 +11,9 @@ export function DrainBanner({ initialState }: { initialState: DrainStatus }) {
     }
 
     return (
-        <Box sx={{ px: 2, pt: 2 }}>
-            <Alert severity="warning" variant="filled">
-                現在臨時メンテナンス中です。部屋の作成・延長、コンテンツ投稿・更新を停止しています。1時間ほど時間をおいてください。
+        <Box maxWidth="md" alignSelf="center" sx={{ px: 2, pt: 2 }}>
+            <Alert severity="warning" variant="outlined">
+                現在臨時メンテナンス中です。部屋の作成・延長、コンテンツ投稿を停止しています。
                 {state.reason ? ` (${state.reason})` : ""}
             </Alert>
         </Box>

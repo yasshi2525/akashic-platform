@@ -89,16 +89,12 @@ export class HttpServer {
             res.json({ ok: true });
         });
 
-        app.post("/drain", async (req: Request, res: Response) => {
-            const body = req.body as DrainRequest;
-            if (body.enabled == null || body.reason != null) {
-                res.status(400).json({ ok: false, reason: "InvalidBody" });
-                return;
-            }
+        app.get("/drain", async (req: Request, res: Response) => {
+            const reason = req.query.reason?.toString();
             try {
                 const result = await postDrainToWebapp({
-                    enabled: body.enabled,
-                    reason: body.reason,
+                    enabled: true,
+                    reason,
                 });
                 res.status(result.status).json({
                     ok: result.status === 200,

@@ -23,18 +23,17 @@ export const openapi = {
             },
         },
         "/drain": {
-            post: {
+            get: {
                 summary: "Forward a signed drain request to webapp",
-                requestBody: {
-                    required: true,
-                    content: {
-                        "application/json": {
-                            schema: {
-                                $ref: "#/components/schemas/DrainRequest",
-                            },
-                        },
+                parameters: [
+                    {
+                        name: "reason",
+                        description: "notice for users",
+                        in: "query",
+                        required: false,
+                        schema: { type: "string" },
                     },
-                },
+                ],
                 responses: {
                     "200": {
                         description: "Forwarded and applied",
