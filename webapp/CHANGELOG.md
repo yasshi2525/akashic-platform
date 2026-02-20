@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.2.0
+
+- Feature
+  - ドレイン機能追加
+
 ## 1.1.4
 
 - Misc

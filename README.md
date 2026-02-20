@@ -65,6 +65,10 @@ Web API 仕様: https://yasshi2525.github.io/akashic-platform/
 プレイ時の実行時情報の保存と配信機能。
 `akashic serve` のメモリ効率が悪いため独自に実装します。
 
+### manager-server
+
+サービスメンテナンス機能を制御する管理サーバー。
+
 ## インストール方法・使い方
 
 ### Docker Compose (推奨)
@@ -119,7 +123,7 @@ npm install
 
 #### セットアップ
 
-##### schema/persist, akashic-storage, akashic-server
+##### schema/persist, akashic-storage, akashic-server, manager-server
 
 `.env.example` の記述を参考に `.env` を配置してください。
 
@@ -145,7 +149,13 @@ npm run run -w ./akashic-server
 npm run dev -w ./webapp
 ```
 
-設定変更は `./schema/persist`, `./akashic-storage`, `./akashic-server`, `./webapp` 配下に `.env` を置くことでできます。 `.env.example` を参考にしてください。
+必要に応じて管理サーバーを起動させてください。
+
+```sh
+npm run run -w ./manager-server
+```
+
+設定変更は `./schema/persist`, `./akashic-storage`, `./akashic-server`, `./webapp`, `./manager-server` 配下に `.env` を置くことでできます。 `.env.example` を参考にしてください。
 
 `http://localhost:3000` にアクセスするとゲームで遊ぶことができます。
 

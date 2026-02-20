@@ -49,6 +49,16 @@ const specs = [
             "openapi-admin.js",
         ),
     },
+    {
+        name: "manager-server",
+        modulePath: path.join(
+            rootDir,
+            "manager-server",
+            "dist",
+            "http",
+            "openapi.js",
+        ),
+    },
 ];
 
 await mkdir(outDir, { recursive: true });

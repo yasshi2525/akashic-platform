@@ -13,6 +13,7 @@ COPY agvw-like/package.json agvw-like/package.json
 COPY akashic-server/package.json akashic-server/package.json
 COPY akashic-storage/package.json akashic-storage/package.json
 COPY webapp/package.json webapp/package.json
+COPY manager-server/package.json manager-server/package.json
 RUN npm ci -w @yasshi2525/akashic-server
 
 COPY . .

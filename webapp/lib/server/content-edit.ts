@@ -18,6 +18,7 @@ import {
     getS3Client,
 } from "./content-utils";
 import { endPlay } from "./play-end";
+import { isWriteBlocked } from "./drain-state";
 
 interface EditGameForm extends Partial<GameForm> {
     gameId: number;
@@ -166,6 +167,12 @@ async function endCurrentPlay(contentId: number) {
 export async function editContent(
     param: EditGameForm,
 ): Promise<ContentResponse> {
+    if (isWriteBlocked()) {
+        return {
+            ok: false,
+            reason: "Drain",
+        };
+    }
     const validationErrParam = await validateParam(param);
     if (validationErrParam) {
         return validationErrParam;

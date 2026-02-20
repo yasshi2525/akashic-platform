@@ -42,6 +42,11 @@ export function GameDeleteDialog({
                 case "NotFound":
                     setError("このゲームが見つかりませんでした。");
                     break;
+                case "Drain":
+                    setError(
+                        "現在臨時メンテナンス中のため、コンテンツを削除できません。1時間ほど時間をおいてください。",
+                    );
+                    break;
                 case "InternalError":
                 default:
                     setError(

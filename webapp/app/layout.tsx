@@ -8,6 +8,7 @@ import {
     publicContentBaseUrl,
     publicPlaylogServerUrl,
 } from "@/lib/server/akashic";
+import { getDrainState } from "@/lib/server/drain-state";
 import {
     customFooterLabel,
     customFooterImagePath,
@@ -20,6 +21,7 @@ import { CustomFooterProvider } from "@/components/custom-footer-provider";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ToastMessage } from "@/components/toast-message";
+import { DrainBanner } from "@/components/drain-banner";
 
 const geistSans = Geist({
     subsets: ["latin"],
@@ -39,6 +41,7 @@ export default async function RootLayout({
     children,
 }: Readonly<{ children: ReactNode }>) {
     const user = await getAuth();
+    const drainState = getDrainState();
     return (
         <html
             lang="ja"
@@ -67,6 +70,9 @@ export default async function RootLayout({
                                         }}
                                     >
                                         <SiteHeader />
+                                        <DrainBanner
+                                            initialState={drainState}
+                                        />
                                         <Box
                                             component="main"
                                             sx={{ flexGrow: 1 }}

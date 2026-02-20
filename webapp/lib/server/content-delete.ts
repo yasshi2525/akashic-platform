@@ -4,6 +4,7 @@ import { prisma } from "@yasshi2525/persist-schema";
 import { DeleteGameResponse } from "../types";
 import { deleteContentDir } from "./content-utils";
 import { endPlay } from "./play-end";
+import { isWriteBlocked } from "./drain-state";
 
 interface DeleteGameForm {
     gameId: number;
@@ -84,6 +85,12 @@ async function endCurrentPlays(contentIds: number[]) {
 export async function deleteGame(
     param: DeleteGameForm,
 ): Promise<DeleteGameResponse> {
+    if (isWriteBlocked()) {
+        return {
+            ok: false,
+            reason: "Drain",
+        };
+    }
     const validation = await validateParam(param);
     if ("ok" in validation) {
         return validation;

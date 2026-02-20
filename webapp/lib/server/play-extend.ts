@@ -1,8 +1,14 @@
 "use server";
 
 import { akashicServerUrl, withAkashicServerAuth } from "./akashic";
+import { isWriteBlocked } from "./drain-state";
 
-const errReasons = ["InvalidParams", "InternalError", "NotFound"] as const;
+const errReasons = [
+    "InvalidParams",
+    "Drain",
+    "InternalError",
+    "NotFound",
+] as const;
 export type ExtendPlayErrorType = (typeof errReasons)[number];
 
 export type ExtendPlayResponse =
@@ -24,6 +30,12 @@ export async function extendPlay({
 }: {
     playId: string;
 }): Promise<ExtendPlayResponse> {
+    if (isWriteBlocked()) {
+        return {
+            ok: false,
+            reason: "Drain",
+        };
+    }
     if (!playId) {
         return {
             ok: false,
