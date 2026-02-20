@@ -19,6 +19,10 @@ on:
         type: boolean
         default: true
         description: Build webapp image
+      build_manager_server:
+        type: boolean
+        default: true
+        description: Build manager-server image
 
 permissions:
   id-token: write
@@ -44,6 +48,9 @@ jobs:
           fi
           if [ "${{ inputs.build_webapp }}" = "true" ]; then
             services+=('{"name":"webapp","workspace":"webapp","context":".","dockerfile":"webapp/Dockerfile"}')
+          fi
+          if [ "${{ inputs.build_manager_server }}" = "true" ]; then
+            services+=('{"name":"manager-server","workspace":"manager-server","context":".","dockerfile":"manager-server/Dockerfile"}')
           fi
           if [ "${#services[@]}" -eq 0 ]; then
             echo "No images selected. Select at least one image to build." >&2
