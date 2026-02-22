@@ -1,5 +1,6 @@
 .env
 .env.local
+/public/image/private
 
 # generating by scripts
 /public/akashic

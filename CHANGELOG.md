@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.2.1
+
+- Misc
+  - `./webapp`
+    - カスタムフッターレイアウト改善
+
 ## 1.2.0
 
 - Feature

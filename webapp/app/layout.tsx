@@ -13,6 +13,7 @@ import {
     customFooterLabel,
     customFooterImagePath,
     customFooterImageWidth,
+    customFooterHref,
 } from "@/lib/server/custom-footer";
 import { theme } from "@/lib/client/theme";
 import { AkashicProvider } from "@/components/akashic-provider";
@@ -54,6 +55,7 @@ export default async function RootLayout({
                         publicContentBaseUrl={publicContentBaseUrl}
                     >
                         <CustomFooterProvider
+                            customFooterHref={customFooterHref}
                             customFooterLabel={customFooterLabel}
                             customFooterImagePath={customFooterImagePath}
                             customFooterImageWidth={customFooterImageWidth}
