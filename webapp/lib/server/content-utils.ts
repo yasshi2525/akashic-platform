@@ -1,5 +1,6 @@
 import * as path from "node:path";
 import * as process from "node:process";
+import { randomBytes } from "node:crypto";
 import {
     DeleteObjectsCommand,
     ListObjectsV2Command,
@@ -100,7 +101,9 @@ export async function validateGameZip(
 }
 
 export function toIconPath(iconFile: File) {
-    return "icon" + path.extname(iconFile.name);
+    return (
+        "icon" + randomBytes(3).toString("hex") + path.extname(iconFile.name)
+    );
 }
 
 export async function throwIfInvalidContentDir(contentId: number) {
