@@ -39,6 +39,7 @@ export function PlayContainer() {
             isGameMaster={data.isGameMaster}
             contentWidth={data.contentWidth}
             contentHeight={data.contentHeight}
+            contentExternal={data.contentExternal}
             createdAt={data.createdAt}
             remainingMs={data.remainingMs}
             expiresAt={data.expiresAt}

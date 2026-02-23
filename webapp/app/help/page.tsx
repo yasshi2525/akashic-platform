@@ -246,8 +246,8 @@ export default function HelpPage() {
                             <code>"multi"</code>
                         </ListItem>
                         <ListItem disableGutters sx={{ display: "list-item" }}>
-                            <code>environment.external</code>: "coeLimited"
-                            のみ対応。
+                            <code>environment.external</code>: "coe" および
+                            "coeLimited" に対応。
                             <br />
                             <code>
                                 @akashic-extension/instance-storage

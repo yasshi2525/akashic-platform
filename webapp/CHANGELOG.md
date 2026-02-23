@@ -2,6 +2,9 @@
 
 ## 1.2.2
 
+- Feature
+  - [`@akashic-extension/coe`](https://github.com/akashic-games/coe) を使用するゲームの実行に対応
+
 - Bug Fix
   - `S3_KEY_PREFIX` 指定時、ゲーム更新（アイコン更新なし）に失敗する問題を修正
 

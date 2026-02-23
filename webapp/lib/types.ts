@@ -118,6 +118,7 @@ export interface UserProfile {
     provider?: string;
 }
 
+export const supportedExternalPlugins = ["send", "coe", "coeLimited"];
 export const supportedAkashicVersions = ["3"];
 export const supportedAkashicModes: NicoliveSupportedModes[] = [
     "multi",
@@ -180,6 +181,7 @@ export type PlayResponse =
               };
               width: number;
               height: number;
+              external: string[];
               createdAt: Date;
               remainingMs: number;
               expiresAt: number;

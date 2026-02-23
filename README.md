@@ -20,7 +20,13 @@
 - 実行可能なゲーム
   - `environment.sandbox-runtime`: `"3"`
   - `environment.nicolive.supportedModes`: `"multi_admission"` または `"multi"`
-  - `environment.external`: `"coeLimited"` のみ対応。 `@akashic-extension/instance-storage` は機能しない点に注意
+  - `environment.external`:
+    - 対応
+      - `"coeLimited"`
+      - `"coe"`
+      - `"send"`
+    - 未対応
+      - `@akashic-extension/instance-storage`
 
 ## 構成図
 
