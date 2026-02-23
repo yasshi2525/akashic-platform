@@ -71,6 +71,7 @@ export function PlayView({
     isGameMaster,
     contentWidth,
     contentHeight,
+    contentExternal,
     createdAt,
     remainingMs: initialRemainingMs,
     expiresAt: initialExpiresAt,
@@ -89,6 +90,7 @@ export function PlayView({
     isGameMaster: boolean;
     contentWidth: number;
     contentHeight: number;
+    contentExternal: string[];
     createdAt: Date;
     remainingMs: number;
     expiresAt: number;
@@ -174,6 +176,8 @@ export function PlayView({
             playToken,
             playlogServerUrl,
             initialMasterVolume: MASTER_VOLUME_MAX,
+            isGameMaster,
+            external: contentExternal,
             onSkip: setSkipping,
             onError: setError,
             onPlayEnd: setPlayEndReason,

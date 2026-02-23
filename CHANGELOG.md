@@ -2,9 +2,19 @@
 
 ## 1.2.2
 
+- Feature
+  - `./webapp`
+    - [`@akashic-extension/coe`](https://github.com/akashic-games/coe) を使用するゲームの実行に対応
+
+- Bug Fix
+  - `./webapp`
+    - `S3_KEY_PREFIX` 指定時、ゲーム更新（アイコン更新なし）に失敗する問題を修正
+
 - Misc
   - `./webapp`
     - ゲームアイコンが更新される度にURLがユニークになるよう修正 (#14)
+  - `./agvw-like`
+    - `GameContent` の `argument` を `any` に修正
 
 ## 1.2.1
 

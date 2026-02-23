@@ -1,25 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GameConfiguration } from "@akashic/game-configuration";
 import {
     engineUrls,
     internalBaseUrl,
     internalContentBaseUrl,
 } from "@/lib/server/akashic";
-
-async function getExternal(contentId: string) {
-    try {
-        const gameJson = (await (
-            await fetch(`${internalContentBaseUrl}/${contentId}/game.json`)
-        ).json()) as GameConfiguration;
-        return Object.keys(gameJson.environment?.external ?? {});
-    } catch (err) {
-        console.warn(
-            `failed to fetch external from game.json (contentId = "${contentId}")`,
-            err,
-        );
-        return [];
-    }
-}
+import { fetchContentExternal } from "@/lib/server/content-get-external";
 
 export async function GET(
     req: NextRequest,
@@ -32,6 +17,8 @@ export async function GET(
         asset_base_url: `${internalContentBaseUrl}/${contentId}`,
         untrusted: false,
         content_id: contentId,
-        external: await getExternal(contentId),
+        external: await fetchContentExternal(
+            `${internalContentBaseUrl}/${contentId}/game.json`,
+        ),
     });
 }

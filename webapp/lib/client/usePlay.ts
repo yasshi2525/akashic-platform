@@ -38,6 +38,7 @@ export function usePlay(playId: string) {
                   isGameMaster: !!user && user.id === data.gameMaster.id,
                   contentWidth: data.width,
                   contentHeight: data.height,
+                  contentExternal: data.external,
                   createdAt: data.createdAt,
                   remainingMs: data.remainingMs,
                   expiresAt: data.expiresAt,

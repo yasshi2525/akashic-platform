@@ -10,14 +10,18 @@ import {
     withAkashicServerAuth,
 } from "@/lib/server/akashic";
 import { fetchLicense } from "@/lib/server/game-info";
+import { getContentExternal } from "@/lib/server/content-get-external";
 
-async function fetchViewSize(contentId: number) {
-    const res = (await (
+async function fetchGameJson(contentId: number) {
+    return (await (
         await fetch(`${internalContentBaseUrl}/${contentId}/game.json`)
     ).json()) as GameConfiguration;
+}
+
+function getViewSize(gameJson: GameConfiguration) {
     return {
-        width: res.width ?? 1280,
-        height: res.height ?? 720,
+        width: gameJson.width ?? 1280,
+        height: gameJson.height ?? 720,
     };
 }
 
@@ -118,6 +122,7 @@ export async function GET(
             remainingMs: number;
             expiresAt: number;
         };
+        const gameJson = await fetchGameJson(play.contentId);
         return NextResponse.json({
             ok: true,
             data: {
@@ -150,7 +155,8 @@ export async function GET(
                 createdAt: play.createdAt,
                 expiresAt,
                 remainingMs,
-                ...(await fetchViewSize(play.contentId)),
+                external: await getContentExternal(gameJson),
+                ...getViewSize(gameJson),
             },
         });
     } catch (err) {

@@ -14,6 +14,8 @@ import {
     CoeLimitedPlugin,
     ResolvingPlayerInfoRequest,
 } from "./akashic-plugins/coe-limited-plugin";
+import { CoePlugin } from "./akashic-plugins/coe-plugin";
+import { SendPlugin } from "./akashic-plugins/send-plugin";
 
 interface AkashicContainerCreateParameterObject {
     parent: HTMLDivElement;
@@ -23,6 +25,8 @@ interface AkashicContainerCreateParameterObject {
     playToken: string;
     playlogServerUrl: string;
     initialMasterVolume?: number;
+    isGameMaster: boolean;
+    external: string[];
     onSkip: (skip: boolean) => void;
     onError: (errMsg: string) => void;
     onPlayEnd: (reason: PlayEndReason) => void;
@@ -61,6 +65,8 @@ export class AkashicContainer {
                 param.parent,
                 view,
             );
+            view.registerExternalPlugin(new SendPlugin());
+            view.registerExternalPlugin(new CoePlugin());
             view.registerExternalPlugin(
                 new CoeLimitedPlugin({
                     onRequest: param.onRequestPlayerInfo,
@@ -117,6 +123,7 @@ export class AkashicContainer {
             },
             contentUrl: `/api/content/${param.contentId}`,
             runInIframe: true,
+            argument: this._createContentArgument(param),
         });
         content.addSkippingListener({
             onSkip: (isSkipping) => {
@@ -166,5 +173,23 @@ export class AkashicContainer {
         });
         observer.observe(target);
         return observer;
+    }
+
+    _createContentArgument(param: AkashicContainerCreateParameterObject) {
+        if (param.external.includes("coe")) {
+            return {
+                coe: {
+                    permission: {
+                        advance: false,
+                        advanceRequest: param.isGameMaster,
+                        aggregation: false,
+                    },
+                    roles: param.isGameMaster ? ["broadcaster"] : [],
+                    debugMode: false,
+                },
+            };
+        } else {
+            return undefined;
+        }
     }
 }

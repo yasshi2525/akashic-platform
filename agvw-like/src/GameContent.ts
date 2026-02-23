@@ -77,7 +77,7 @@ interface GameContentParameterObject extends ContentParameterObject {
     playConfig: PlayConfig;
     untrustedFrameUrl?: string;
     untrustedFrameTargetOrigin?: string;
-    argument?: GameContentArgument;
+    argument?: any;
     pause?: boolean;
     initialEvents?: Event[];
     untrusted?: boolean;
@@ -106,12 +106,6 @@ interface SkippingListener {
 type DroppedListener = (ev: { type: number; reason: number }) => void;
 
 type ClickableAreasListener = (areas: Rect[] | null) => void;
-
-interface GameContentArgument {
-    agv: {
-        disableDropEventInReplay: boolean;
-    } | null;
-}
 
 export class GameContent extends Content {
     _skippingListeners: ObjectList<SkippingListener>;
@@ -149,7 +143,7 @@ export class GameContent extends Content {
     _playConfig: PlayConfig;
     _untrustedFrameUrl: string | undefined;
     _untrustedFrameTargetOrigin: string | undefined;
-    _argument: GameContentArgument | undefined;
+    _argument: any;
     _pauseOnStart: boolean;
     _initialEvents: Event[] | undefined;
     _givenUntrusted: boolean | undefined;
@@ -857,7 +851,7 @@ export class GameContent extends Content {
         }
     }
 
-    _handleGameArgument(arg: GameContentArgument | undefined) {
+    _handleGameArgument(arg: any) {
         if (arg && arg.agv) {
             if (
                 arg.agv.disableDropEventInReplay &&

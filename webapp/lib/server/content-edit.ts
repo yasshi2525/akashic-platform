@@ -16,6 +16,7 @@ import {
     throwIfInvalidContentDir,
     getBucket,
     getS3Client,
+    s3KeyPrefix,
 } from "./content-utils";
 import { endPlay } from "./play-end";
 import { isWriteBlocked } from "./drain-state";
@@ -136,8 +137,8 @@ export async function copyIconFile(
     await getS3Client().send(
         new CopyObjectCommand({
             Bucket: bucket,
-            Key: `${toContentId}/${iconPath}`,
-            CopySource: `${bucket}/${fromContentId}/${iconPath}`,
+            Key: `${s3KeyPrefix}${toContentId}/${iconPath}`,
+            CopySource: `${bucket}/${s3KeyPrefix}${fromContentId}/${iconPath}`,
         }),
     );
 }

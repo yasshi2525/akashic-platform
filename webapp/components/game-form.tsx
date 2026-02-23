@@ -33,6 +33,7 @@ import {
     messages,
     supportedAkashicModes,
     supportedAkashicVersions,
+    supportedExternalPlugins,
 } from "@/lib/types";
 import { registerContent } from "@/lib/server/content-register";
 import { editContent } from "@/lib/server/content-edit";
@@ -106,8 +107,7 @@ export function GameForm({
                             gameJson?.environment?.external ?? {},
                         ).sort();
                         const unsupportedExternalKeys = externalKeys.filter(
-                            (key: string) =>
-                                key !== "send" && key !== "coeLimited",
+                            (key) => !supportedExternalPlugins.includes(key),
                         );
                         if (unsupportedExternalKeys.length > 0) {
                             setUnsupportedExternals(unsupportedExternalKeys);
