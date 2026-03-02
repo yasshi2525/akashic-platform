@@ -46,7 +46,7 @@ export const setupAMFlowProxy = (
         bridge.send(BridgeAMFlowMessage.ReceiveTick, tick);
     };
     const eventHandler = (event: Event) => {
-        bridge.send(BridgeAMFlowMessage.ReceiveTick, event);
+        bridge.send(BridgeAMFlowMessage.ReceiveEvent, event);
     };
     const subscribeTick: RawMessageEventDataHandler = () => {
         amflow.onTick(tickHandler);

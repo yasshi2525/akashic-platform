@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.2.3
+
+- Bug Fix
+  - `./agvw-like`
+    - AMFlowProxy 作成時、イベントハンドラが登録されない問題を修正
+
 ## 1.2.2
 
 - Feature
