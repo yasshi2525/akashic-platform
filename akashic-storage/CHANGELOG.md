@@ -1,6 +1,11 @@
 # CHANGELOG
 
-## 1.0.3
+## 1.1.1
+
+- Bug Fix
+  - 同一tickに複数のEventがある場合、 `getTickList` が不適切な範囲のTick情報を返却する問題を修正
+
+## 1.1.0
 
 - Misc
   - ルートパス以外でもリクエストを受け付ける `BASE_PATH` を追加

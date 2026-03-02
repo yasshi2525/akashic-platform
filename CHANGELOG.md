@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.2.3
+
+- Bug Fix
+  - `./akashic-storage`
+    - 同一tickに複数のEventがある場合、TickListの取得結果に欠損が生じる問題を修正
+  - `./agvw-like`
+    - AMFlowProxy 作成時、イベントハンドラが登録されない問題を修正
+
 ## 1.2.2
 
 - Feature

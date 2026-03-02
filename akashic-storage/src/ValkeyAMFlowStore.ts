@@ -83,16 +83,24 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
                   genKey(ValkeyZSetKey.FilteredEvent, this.playId),
                   {
                       type: "byScore",
-                      start: from,
-                      end: to,
+                      start: {
+                          value: from,
+                      },
+                      end: {
+                          value: to,
+                      },
                   },
               )
             : await this._valkey.zrangeWithScores(
                   genKey(ValkeyZSetKey.UnfilteredEvent, this.playId),
                   {
                       type: "byScore",
-                      start: from,
-                      end: to,
+                      start: {
+                          value: from,
+                      },
+                      end: {
+                          value: to,
+                      },
                   },
               );
         if (scores.length === 0) {
@@ -290,20 +298,20 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         evList: { tick: number; event: Event }[],
     ) {
         const tickList: Tick[] = [];
-        let eIdx = 0;
-        for (let frame = from; frame <= to; frame++) {
-            let evs: Event[] = [];
-            for (; eIdx < evList.length; eIdx++) {
-                if (frame < evList[eIdx].tick) {
-                    break;
-                }
-                if (frame === evList[eIdx].tick) {
-                    evs.push(evList[eIdx].event);
-                }
-            }
-            const tick: Tick = evs.length === 0 ? [frame] : [frame, evs];
-            tickList.push(tick);
+        if (evList.length === 0) {
+            return tickList;
         }
+        let currentTick = evList[0].tick;
+        let evs: Event[] = [];
+        for (const { tick, event } of evList) {
+            if (tick !== currentTick) {
+                tickList.push([currentTick, evs]);
+                currentTick = tick;
+                evs = [];
+            }
+            evs.push(event);
+        }
+        tickList.push([currentTick, evs]);
         return tickList;
     }
 
