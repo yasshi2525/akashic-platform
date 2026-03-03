@@ -12,6 +12,7 @@ import {
     Card,
     CardActions,
     CardContent,
+    Chip,
     Container,
     Grid,
     InputAdornment,
@@ -85,6 +86,14 @@ function PlayGrid({ list }: { list: PlayInfo[] }) {
                             <Typography variant="h6" component="h2">
                                 {info.playName}
                             </Typography>
+                            {info.isLimited ? (
+                                <Chip
+                                    size="small"
+                                    label="限定"
+                                    color="warning"
+                                    sx={{ width: "fit-content", mb: 1 }}
+                                />
+                            ) : null}
                             <Typography
                                 variant="body2"
                                 color={theme.palette.text.secondary}

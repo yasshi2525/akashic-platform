@@ -48,6 +48,7 @@ export const PLAYLIST_LIMITS = 12;
 export interface PlayInfo {
     id: number;
     playName: string;
+    isLimited: boolean;
     game: { title: string; iconURL: string };
     gameMaster: {
         userId?: string;
@@ -163,6 +164,8 @@ export type GameResponse =
 const playErrReasons = [
     "InvalidParams",
     "ClosedPlay",
+    "JoinWordRequired",
+    "InvalidJoinWord",
     "InternalError",
 ] as const;
 export type PlayErrorType = (typeof playErrReasons)[number];
@@ -172,6 +175,8 @@ export type PlayResponse =
           data: {
               playToken: string;
               playName: string;
+              isLimited: boolean;
+              inviteHash?: string;
               game: GameInfo;
               gameMaster: {
                   id: string;

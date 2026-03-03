@@ -66,6 +66,8 @@ export function PlayView({
     playId,
     playToken,
     playName,
+    isLimited,
+    inviteHash,
     game,
     gameMaster,
     isGameMaster,
@@ -81,6 +83,8 @@ export function PlayView({
     playId: string;
     playToken: string;
     playName: string | null;
+    isLimited: boolean;
+    inviteHash?: string;
     game: GameInfo;
     gameMaster: {
         userId?: string;
@@ -210,9 +214,12 @@ export function PlayView({
         if (typeof window === "undefined") {
             return;
         }
-        const currentUrl = new URL(window.location.href);
-        setInviteUrl(`${currentUrl.origin}${currentUrl.pathname}`);
-    }, [playId]);
+        const invite = new URL(`/play/${playId}`, window.location.origin);
+        if (isLimited && inviteHash) {
+            invite.searchParams.set("inviteHash", inviteHash);
+        }
+        setInviteUrl(invite.toString());
+    }, [playId, inviteHash, isLimited]);
 
     async function handleExtend() {
         if (extendLoading) {
@@ -521,9 +528,44 @@ export function PlayView({
                                     justifyContent="space-between"
                                 >
                                     <Stack spacing={1}>
-                                        <Typography variant="h6">
-                                            {playName}
-                                        </Typography>
+                                        <Stack
+                                            direction="row"
+                                            spacing={1}
+                                            alignItems="center"
+                                        >
+                                            <Typography variant="h6">
+                                                {playName}
+                                            </Typography>
+                                            {isLimited ? (
+                                                <Typography
+                                                    variant="caption"
+                                                    sx={{
+                                                        px: 1,
+                                                        py: 0.5,
+                                                        borderRadius: 1,
+                                                        bgcolor:
+                                                            theme.palette
+                                                                .warning.light,
+                                                    }}
+                                                >
+                                                    限定
+                                                </Typography>
+                                            ) : (
+                                                <Typography
+                                                    variant="caption"
+                                                    sx={{
+                                                        px: 1,
+                                                        py: 0.5,
+                                                        borderRadius: 1,
+                                                        bgcolor:
+                                                            theme.palette.success
+                                                                .light,
+                                                    }}
+                                                >
+                                                    公開
+                                                </Typography>
+                                            )}
+                                        </Stack>
                                         <Stack
                                             direction="row"
                                             spacing={1}
@@ -718,7 +760,9 @@ export function PlayView({
                                         variant="body2"
                                         color={theme.palette.text.secondary}
                                     >
-                                        この部屋に招待したい人に上のリンクを共有してください。
+                                        {isLimited
+                                            ? "このリンクを知っている人は誰でも無条件で入室できます。共有先にご注意ください。"
+                                            : "この部屋に招待したい人に上のリンクを共有してください。"}
                                     </Typography>
                                 </Stack>
                                 {isGameMaster ? (
