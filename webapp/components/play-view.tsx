@@ -15,6 +15,7 @@ import {
     Slider,
     Snackbar,
     Stack,
+    Tooltip,
     Typography,
     useTheme,
 } from "@mui/material";
@@ -22,6 +23,8 @@ import {
     ContentCopy,
     OpenInNew,
     PhotoCamera,
+    Videocam,
+    VideocamOff,
     VolumeOff,
     VolumeUp,
     X,
@@ -61,6 +64,7 @@ const toMessage = (typ?: WarningType) => {
 // 同時に2インスタンス存在するとロードがとまり、破棄に必要なステップを踏めない
 const container = new AkashicContainer();
 const EXTEND_WINDOW_MS = 10 * 60 * 1000;
+const niconicoParentWorkUrl = process.env.NEXT_PUBLIC_NICONICO_PARENT_WORK_URL;
 
 export function PlayView({
     playId,
@@ -756,14 +760,76 @@ export function PlayView({
                                             >
                                                 {game.title}
                                             </Typography>
-                                            {!game.streaming ? (
-                                                <Typography
-                                                    variant="body2"
-                                                    color="error"
+                                            <Tooltip
+                                                arrow
+                                                enterTouchDelay={0}
+                                                leaveTouchDelay={5000}
+                                                disableInteractive={false}
+                                                title={
+                                                    game.streaming ? (
+                                                        <Stack spacing={0.75}>
+                                                            <Typography variant="body2">
+                                                                このゲームは、プレイ中の画面を実況配信したり動画投稿して問題ありません。
+                                                            </Typography>
+                                                            {niconicoParentWorkUrl ? (
+                                                                <Typography variant="body2">
+                                                                    ニコニコ動画・生放送では
+                                                                    <Link
+                                                                        href={
+                                                                            niconicoParentWorkUrl
+                                                                        }
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        style={{
+                                                                            color: "inherit",
+                                                                            textDecoration:
+                                                                                "underline",
+                                                                            marginLeft: 4,
+                                                                            marginRight: 4,
+                                                                        }}
+                                                                    >
+                                                                        親作品登録
+                                                                    </Link>
+                                                                    を推奨しています（任意）。登録いただくことでサーバー稼働維持に役立ちます。
+                                                                </Typography>
+                                                            ) : null}
+                                                        </Stack>
+                                                    ) : (
+                                                        <Typography variant="body2">
+                                                            このゲームは実況配信・動画投稿が許可されていません。
+                                                        </Typography>
+                                                    )
+                                                }
+                                            >
+                                                <Stack
+                                                    direction="row"
+                                                    spacing={0.5}
+                                                    alignItems="center"
+                                                    sx={{
+                                                        color: game.streaming
+                                                            ? "success.main"
+                                                            : "error.main",
+                                                        cursor: "help",
+                                                    }}
                                                 >
-                                                    実況不可
-                                                </Typography>
-                                            ) : null}
+                                                    {game.streaming ? (
+                                                        <Videocam
+                                                            fontSize="small"
+                                                            aria-label="配信可"
+                                                        />
+                                                    ) : (
+                                                        <VideocamOff
+                                                            fontSize="small"
+                                                            aria-label="配信不可"
+                                                        />
+                                                    )}
+                                                    <Typography variant="body2">
+                                                        {game.streaming
+                                                            ? "配信可"
+                                                            : "配信不可"}
+                                                    </Typography>
+                                                </Stack>
+                                            </Tooltip>
                                         </Stack>
                                         <Stack
                                             direction="row"
