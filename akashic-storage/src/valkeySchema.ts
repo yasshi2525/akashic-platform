@@ -53,17 +53,6 @@ export const ValkeyZSetKey = {
     StartPointByTimestamp: "amf:startpoints:timestamp",
 } as const satisfies Record<ZSetKeyNameType, ZSetKeyType>;
 
-/**
- * Play に紐付く固定の ZSet キー一覧を返す。
- * これらのキーは playId だけで一意に決まるため、実行時に追跡せず destroy 時に直接生成する。
- */
-export const fixedZSetKeys = (playId: string): string[] => [
-    genKey(ValkeyZSetKey.UnfilteredEvent, playId),
-    genKey(ValkeyZSetKey.FilteredEvent, playId),
-    genKey(ValkeyZSetKey.StartPointByFrame, playId),
-    genKey(ValkeyZSetKey.StartPointByTimestamp, playId),
-];
-
 const activePermission: Permission = {
     readTick: true,
     writeTick: true,

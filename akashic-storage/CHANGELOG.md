@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.1.2
+
+- Improve
+  - 部屋を削除するとき、 Valkey Server へ負荷やブロックをかけないクエリに変更
+  - 環境変数 `REQUEST_TIMEOUT` で `requestTimeout` を変更できるように修正
+
 ## 1.1.1
 
 - Bug Fix
