@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 1.2.4
+
+- Improve
+  - `./akashic-storage`
+    - 部屋を削除するとき、 Valkey Server へ負荷やブロックをかけないクエリに変更
+    - `GlideClusterClientConfiguration.requestTimeout` を変更できるように修正
+
 ## 1.2.3
 
 - Bug Fix
