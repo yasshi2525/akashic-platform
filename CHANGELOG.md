@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.3.1
+
+- Fix
+  - `./akashic-storage`
+    - Event 情報が異なるノードに振り分けられてしまう問題を修正 (#34)
+
 ## 1.3.0
 
 - Feature
