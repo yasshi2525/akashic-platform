@@ -99,6 +99,9 @@ model Play {
   gameMasterId String
   gmUserId     String?
   name         String
+  isLimited    Boolean @default(false)
+  joinWordHash String?
+  inviteHash   String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

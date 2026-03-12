@@ -1,5 +1,6 @@
 "use server";
 
+import { createHash, randomBytes } from "node:crypto";
 import { prisma } from "@yasshi2525/persist-schema";
 import { GUEST_NAME } from "../types";
 import {
@@ -15,6 +16,8 @@ interface PlayForm {
     gmUserId: string | undefined;
     contentId: number;
     playName: string;
+    isLimited: boolean;
+    joinWord?: string;
 }
 
 const errReasons = ["InvalidParams", "Drain", "InternalError"] as const;
@@ -28,6 +31,8 @@ export async function registerPlay({
     gmUserId,
     contentId,
     playName,
+    isLimited,
+    joinWord,
 }: PlayForm): Promise<RegisterPlayResponse> {
     if (isWriteBlocked()) {
         return {
@@ -36,6 +41,13 @@ export async function registerPlay({
         };
     }
     if (!gameMasterId || contentId == null) {
+        return {
+            ok: false,
+            reason: "InvalidParams",
+        };
+    }
+    const normalizedJoinWord = joinWord?.trim();
+    if (isLimited && !normalizedJoinWord) {
         return {
             ok: false,
             reason: "InvalidParams",
@@ -69,6 +81,16 @@ export async function registerPlay({
                 playName: !!playName
                     ? playName
                     : await fetchDefaultPlayName(contentId),
+                isLimited,
+                joinWordHash:
+                    isLimited && normalizedJoinWord
+                        ? createHash("sha256")
+                              .update(normalizedJoinWord)
+                              .digest("hex")
+                        : undefined,
+                inviteHash: isLimited
+                    ? randomBytes(24).toString("hex")
+                    : undefined,
             }),
         });
         if (res.status !== 200) {
