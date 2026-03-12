@@ -269,19 +269,21 @@ export function PlayList({
     title = "ゲームで遊ぶ",
     description = "現在プレイ中の部屋",
     isGuest,
+    guestId,
     gameMasterId,
 }: {
     title?: string;
     description?: string;
     isGuest: boolean;
+    guestId?: string;
     gameMasterId?: string;
 }) {
     const theme = useTheme();
     const [keyword, setKeyword] = useState("");
     const [debouncedKeyword] = useDebounce(keyword, 500);
     const { isLoading, list, page, setPage, isEmpty, isEnd } = usePlayList(
-        debouncedKeyword,
-        gameMasterId,
+        isGuest ? undefined : debouncedKeyword,
+        isGuest ? guestId : gameMasterId,
     );
 
     function handleSearch(event: ChangeEvent<HTMLInputElement>) {
@@ -293,14 +295,50 @@ export function PlayList({
     }
 
     if (isGuest) {
+        if (isLoading) {
+            return (
+                <Container maxWidth="lg" sx={{ py: 2 }}>
+                    <Loading />
+                </Container>
+            );
+        }
+        if (isEmpty || list == null) {
+            return (
+                <Container maxWidth="lg" sx={{ py: 2 }}>
+                    <Box>
+                        <Typography variant="h4" component="h1">
+                            {title}
+                        </Typography>
+                    </Box>
+                    <GuestInstruction />
+                </Container>
+            );
+        }
         return (
             <Container maxWidth="lg" sx={{ py: 2 }}>
-                <Box>
-                    <Typography variant="h4" component="h1">
-                        {title}
-                    </Typography>
-                </Box>
-                <GuestInstruction />
+                <Stack spacing={2} sx={{ mb: 2 }}>
+                    <Box>
+                        <Typography variant="h4" component="h1">
+                            {title}
+                        </Typography>
+                        <Typography
+                            variant="body2"
+                            sx={{ color: theme.palette.text.secondary }}
+                        >
+                            自分が作成した部屋
+                        </Typography>
+                    </Box>
+                    <Alert severity="info">
+                        サインインすると全ての部屋一覧が表示されます
+                    </Alert>
+                    <Box sx={{ maxWidth: 320 }}>
+                        <SignIn size="small" />
+                    </Box>
+                </Stack>
+                <PlayGrid list={list.flat()} />
+                {!isEnd ? (
+                    <LoadMore handleClickMore={handleClickMore} />
+                ) : null}
             </Container>
         );
     }
