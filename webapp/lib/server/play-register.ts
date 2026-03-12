@@ -17,11 +17,20 @@ interface PlayForm {
     playName: string;
 }
 
-const errReasons = ["InvalidParams", "Drain", "InternalError"] as const;
+const errReasons = [
+    "InvalidParams",
+    "Drain",
+    "GuestRoomLimitExceeded",
+    "InternalError",
+] as const;
 export type RegisterPlayErrorType = (typeof errReasons)[number];
 type RegisterPlayResponse =
     | { ok: true; playId: number }
     | { ok: false; reason: RegisterPlayErrorType };
+
+const GUEST_ROOM_LIMIT = parseInt(
+    process.env.GUEST_ROOM_LIMIT ?? "5",
+);
 
 export async function registerPlay({
     gameMasterId,
@@ -40,6 +49,20 @@ export async function registerPlay({
             ok: false,
             reason: "InvalidParams",
         };
+    }
+    if (!gmUserId) {
+        const guestPlayCount = await prisma.play.count({
+            where: {
+                gameMasterId,
+                gmUserId: null,
+            },
+        });
+        if (guestPlayCount >= GUEST_ROOM_LIMIT) {
+            return {
+                ok: false,
+                reason: "GuestRoomLimitExceeded",
+            };
+        }
     }
     try {
         const playerName =
