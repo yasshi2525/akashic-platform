@@ -6,6 +6,7 @@ import { useDebounce } from "use-debounce";
 import { formatDistance } from "date-fns";
 import { ja } from "date-fns/locale";
 import {
+    Alert,
     Avatar,
     Box,
     Button,
@@ -13,18 +14,31 @@ import {
     CardActions,
     CardContent,
     Container,
+    Divider,
     Grid,
     InputAdornment,
+    List,
+    ListItem,
+    ListItemIcon,
+    ListItemText,
     Skeleton,
     Stack,
     TextField,
     Typography,
     useTheme,
 } from "@mui/material";
-import { Add, Person, AccessTime, Search } from "@mui/icons-material";
+import {
+    Add,
+    Person,
+    AccessTime,
+    Search,
+    SportsEsports,
+    Link as LinkIcon,
+} from "@mui/icons-material";
 import { PlayInfo } from "@/lib/types";
 import { usePlayList } from "@/lib/client/usePlayList";
 import { UserInline } from "./user-inline";
+import { SignInDialog } from "./sign-in-dialog";
 
 function Loading() {
     return (
@@ -193,13 +207,70 @@ function LoadMore({ handleClickMore }: { handleClickMore: () => void }) {
     );
 }
 
+function GuestInstruction() {
+    return (
+        <Box
+            sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 3,
+                py: 6,
+                px: 2,
+            }}
+        >
+            <Typography variant="h5" component="h2" align="center">
+                ゲームに参加するには
+            </Typography>
+            <List sx={{ width: "100%", maxWidth: 480 }}>
+                <ListItem>
+                    <ListItemIcon>
+                        <SportsEsports color="primary" />
+                    </ListItemIcon>
+                    <ListItemText
+                        primary="部屋を作成してゲームを開始する"
+                        secondary={
+                            <Button
+                                component={Link}
+                                href="/new-play"
+                                variant="contained"
+                                size="small"
+                                startIcon={<Add />}
+                                sx={{ mt: 1 }}
+                            >
+                                新しい部屋を作る
+                            </Button>
+                        }
+                    />
+                </ListItem>
+                <ListItem>
+                    <ListItemIcon>
+                        <LinkIcon color="primary" />
+                    </ListItemIcon>
+                    <ListItemText
+                        primary="招待URLを開いて部屋に参加する"
+                        secondary="友だちから共有された招待リンクを開いてください"
+                    />
+                </ListItem>
+            </List>
+            <Divider sx={{ width: "100%", maxWidth: 480 }} />
+            <Alert severity="info" sx={{ width: "100%", maxWidth: 480 }}>
+                サインインすると部屋一覧が表示されます
+            </Alert>
+            <SignInDialog />
+        </Box>
+    );
+}
+
 export function PlayList({
     title = "ゲームで遊ぶ",
     description = "現在プレイ中の部屋",
+    guestId,
     gameMasterId,
 }: {
     title?: string;
     description?: string;
+    guestId?: string;
     gameMasterId?: string;
 }) {
     const theme = useTheme();
@@ -207,7 +278,7 @@ export function PlayList({
     const [debouncedKeyword] = useDebounce(keyword, 500);
     const { isLoading, list, page, setPage, isEmpty, isEnd } = usePlayList(
         debouncedKeyword,
-        gameMasterId,
+        guestId ?? gameMasterId,
     );
 
     function handleSearch(event: ChangeEvent<HTMLInputElement>) {
@@ -216,6 +287,50 @@ export function PlayList({
 
     function handleClickMore() {
         setPage(page + 1);
+    }
+
+    if (guestId !== undefined) {
+        if (isLoading) {
+            return (
+                <Container maxWidth="lg" sx={{ py: 2 }}>
+                    <Loading />
+                </Container>
+            );
+        }
+        if (isEmpty || list == null) {
+            return (
+                <Container maxWidth="lg" sx={{ py: 2 }}>
+                    <Box>
+                        <Typography variant="h4" component="h1">
+                            {title}
+                        </Typography>
+                    </Box>
+                    <GuestInstruction />
+                </Container>
+            );
+        }
+        return (
+            <Container maxWidth="lg" sx={{ py: 2 }}>
+                <Stack spacing={2} sx={{ mb: 2 }}>
+                    <Box>
+                        <Typography variant="h4" component="h1">
+                            {title}
+                        </Typography>
+                        <Typography
+                            variant="body2"
+                            sx={{ color: theme.palette.text.secondary }}
+                        >
+                            自分が作成した部屋
+                        </Typography>
+                    </Box>
+                    <Alert severity="info">
+                        サインインすると全ての部屋一覧が表示されます
+                    </Alert>
+                </Stack>
+                <PlayGrid list={list.flat()} />
+                {!isEnd ? <LoadMore handleClickMore={handleClickMore} /> : null}
+            </Container>
+        );
     }
 
     return (

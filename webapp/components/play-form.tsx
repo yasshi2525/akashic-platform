@@ -69,6 +69,11 @@ export function PlayForm() {
                             "現在臨時メンテナンス中のため、部屋を作成できません。1時間ほど時間をおいてください。",
                         );
                         break;
+                    case "GuestRoomLimitExceeded":
+                        setError(
+                            "ゲスト状態で作成できる部屋数の上限に達しました。",
+                        );
+                        break;
                     case "InternalError":
                     default:
                         setError(
