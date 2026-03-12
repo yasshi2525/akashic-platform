@@ -38,7 +38,7 @@ import {
 import { PlayInfo } from "@/lib/types";
 import { usePlayList } from "@/lib/client/usePlayList";
 import { UserInline } from "./user-inline";
-import { SignIn } from "./sign-in";
+import { SignInDialog } from "./sign-in-dialog";
 
 function Loading() {
     return (
@@ -208,7 +208,6 @@ function LoadMore({ handleClickMore }: { handleClickMore: () => void }) {
 }
 
 function GuestInstruction() {
-    const theme = useTheme();
     return (
         <Box
             sx={{
@@ -258,9 +257,7 @@ function GuestInstruction() {
             <Alert severity="info" sx={{ width: "100%", maxWidth: 480 }}>
                 サインインすると部屋一覧が表示されます
             </Alert>
-            <Box sx={{ width: "100%", maxWidth: 320 }}>
-                <SignIn />
-            </Box>
+            <SignInDialog />
         </Box>
     );
 }
@@ -268,13 +265,11 @@ function GuestInstruction() {
 export function PlayList({
     title = "ゲームで遊ぶ",
     description = "現在プレイ中の部屋",
-    isGuest,
     guestId,
     gameMasterId,
 }: {
     title?: string;
     description?: string;
-    isGuest: boolean;
     guestId?: string;
     gameMasterId?: string;
 }) {
@@ -282,8 +277,8 @@ export function PlayList({
     const [keyword, setKeyword] = useState("");
     const [debouncedKeyword] = useDebounce(keyword, 500);
     const { isLoading, list, page, setPage, isEmpty, isEnd } = usePlayList(
-        isGuest ? undefined : debouncedKeyword,
-        isGuest ? guestId : gameMasterId,
+        debouncedKeyword,
+        guestId ?? gameMasterId,
     );
 
     function handleSearch(event: ChangeEvent<HTMLInputElement>) {
@@ -294,7 +289,7 @@ export function PlayList({
         setPage(page + 1);
     }
 
-    if (isGuest) {
+    if (guestId !== undefined) {
         if (isLoading) {
             return (
                 <Container maxWidth="lg" sx={{ py: 2 }}>
@@ -331,14 +326,9 @@ export function PlayList({
                     <Alert severity="info">
                         サインインすると全ての部屋一覧が表示されます
                     </Alert>
-                    <Box sx={{ maxWidth: 320 }}>
-                        <SignIn size="small" />
-                    </Box>
                 </Stack>
                 <PlayGrid list={list.flat()} />
-                {!isEnd ? (
-                    <LoadMore handleClickMore={handleClickMore} />
-                ) : null}
+                {!isEnd ? <LoadMore handleClickMore={handleClickMore} /> : null}
             </Container>
         );
     }

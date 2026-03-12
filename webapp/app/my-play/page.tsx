@@ -14,7 +14,7 @@ export default function MyPlayListPage() {
         <PlayList
             title="自分が作った部屋"
             description="自分が部屋主として作成したプレイ一覧"
-            isGuest={user.authType === "guest"}
+            guestId={user.authType === "guest" ? user.id : undefined}
             gameMasterId={user.id}
         />
     );
