@@ -43,8 +43,8 @@ type ZSetKeyNameType = (typeof zsetKeyNames)[number];
 
 /**
  * NOTE:
- * * UnfilteredEvent: 非transient で 非 ignorable なもの。 transient なものは無視するが、現状存在しない
- * * FilteredEvent: 非transient なもの。 transient と ignorable なものは無視する（PointEventが該当）
+ * * UnfilteredEvent: 非transient なもの（ignorable を含む）。transient なものは無視するが、現状存在しない
+ * * FilteredEvent: 非transient かつ 非ignorable なもの。transient と ignorable なものを無視する
  */
 export const ValkeyZSetKey = {
     UnfilteredEvent: "amf:events:unfiltered",

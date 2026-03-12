@@ -77,7 +77,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         }
         const scores = opts.excludeEventFlags?.ignorable
             ? await this._valkey.zrangeWithScores(
-                  genKey(ValkeyZSetKey.FilteredEvent, this.playId),
+                  genKey(ValkeyZSetKey.FilteredEvent, this._hashPlayId),
                   {
                       type: "byScore",
                       start: {
@@ -89,7 +89,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
                   },
               )
             : await this._valkey.zrangeWithScores(
-                  genKey(ValkeyZSetKey.UnfilteredEvent, this.playId),
+                  genKey(ValkeyZSetKey.UnfilteredEvent, this._hashPlayId),
                   {
                       type: "byScore",
                       start: {
@@ -142,7 +142,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
 
     async putStartPoint(startPoint: StartPoint) {
         await this._valkey.zadd(
-            genKey(ValkeyZSetKey.StartPointByFrame, this.playId),
+            genKey(ValkeyZSetKey.StartPointByFrame, this._hashPlayId),
             [
                 {
                     score: startPoint.frame,
@@ -151,7 +151,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
             ],
         );
         await this._valkey.zadd(
-            genKey(ValkeyZSetKey.StartPointByTimestamp, this.playId),
+            genKey(ValkeyZSetKey.StartPointByTimestamp, this._hashPlayId),
             [
                 {
                     score: startPoint.timestamp,
@@ -175,7 +175,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
 
         if (isFirst) {
             const ids = await this._valkey.zrange(
-                genKey(ValkeyZSetKey.StartPointByFrame, this.playId),
+                genKey(ValkeyZSetKey.StartPointByFrame, this._hashPlayId),
                 {
                     start: 0,
                     end: 0,
@@ -184,7 +184,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
             return this._restoreStartPointFromIds(ids);
         } else if (opts.timestamp != null) {
             const ids = await this._valkey.zrange(
-                genKey(ValkeyZSetKey.StartPointByTimestamp, this.playId),
+                genKey(ValkeyZSetKey.StartPointByTimestamp, this._hashPlayId),
                 {
                     start: {
                         value: opts.timestamp,
@@ -206,7 +206,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
             return this._restoreStartPointFromIds(ids);
         } else if (opts.frame != null) {
             const ids = await this._valkey.zrange(
-                genKey(ValkeyZSetKey.StartPointByFrame, this.playId),
+                genKey(ValkeyZSetKey.StartPointByFrame, this._hashPlayId),
                 {
                     start: {
                         value: opts.frame - 1,
@@ -234,10 +234,10 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
             return;
         }
         await this._valkey.unlink([
-            genKey(ValkeyZSetKey.UnfilteredEvent, this.playId),
-            genKey(ValkeyZSetKey.FilteredEvent, this.playId),
-            genKey(ValkeyZSetKey.StartPointByFrame, this.playId),
-            genKey(ValkeyZSetKey.StartPointByTimestamp, this.playId),
+            genKey(ValkeyZSetKey.UnfilteredEvent, this._hashPlayId),
+            genKey(ValkeyZSetKey.FilteredEvent, this._hashPlayId),
+            genKey(ValkeyZSetKey.StartPointByFrame, this._hashPlayId),
+            genKey(ValkeyZSetKey.StartPointByTimestamp, this._hashPlayId),
             ...this._keyList,
         ]);
         this._isDestroyed = true;
@@ -378,7 +378,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         await Promise.all(
             events.map(async ({ id }) => {
                 await this._valkey.zadd(
-                    genKey(ValkeyZSetKey.UnfilteredEvent, this.playId),
+                    genKey(ValkeyZSetKey.UnfilteredEvent, this._hashPlayId),
                     [
                         {
                             score: tick,
@@ -397,7 +397,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         await Promise.all(
             events.map(async ({ id }) => {
                 await this._valkey.zadd(
-                    genKey(ValkeyZSetKey.FilteredEvent, this.playId),
+                    genKey(ValkeyZSetKey.FilteredEvent, this._hashPlayId),
                     [
                         {
                             score: tick,
