@@ -37,7 +37,6 @@ import {
 } from "@mui/icons-material";
 import { PlayInfo } from "@/lib/types";
 import { usePlayList } from "@/lib/client/usePlayList";
-import { useAuth } from "@/lib/client/useAuth";
 import { UserInline } from "./user-inline";
 import { SignIn } from "./sign-in";
 
