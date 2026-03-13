@@ -16,5 +16,6 @@ export const createValkeyConnection = async (
         inflightRequestsLimit: parseInt(
             process.env.INFLIGHT_REQUEST_LIMIT ?? "1000",
         ),
+        requestTimeout: parseInt(process.env.REQUEST_TIMEOUT ?? "250"),
         readFrom: "preferReplica",
     });

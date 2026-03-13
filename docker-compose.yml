@@ -167,6 +167,7 @@ services:
       VALKEY_NO_TLS: true
       STORAGE_ADMIN_TOKEN: ${STORAGE_ADMIN_TOKEN:-local-storage-admin-token}
       INFLIGHT_REQUEST_LIMIT: 1000
+      REQUEST_TIMEOUT: 5000
     depends_on:
       valkey-setup:
         condition: service_completed_successfully
@@ -221,6 +222,7 @@ services:
       S3_FORCE_PATH_STYLE: true
       S3_ACCESS_KEY: minioadmin
       S3_SECRET_KEY: minioadmin
+      GUEST_ROOM_LIMIT: 5
     env_file:
       - .env
     depends_on:
