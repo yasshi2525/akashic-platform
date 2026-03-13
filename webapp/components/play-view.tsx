@@ -32,6 +32,7 @@ import {
 import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
 import { GameInfo, User } from "@/lib/types";
 import { useAkashic } from "@/lib/client/useAkashic";
+import { useCustomData } from "@/lib/client/useCustomData";
 import { ResolvingPlayerInfoRequest } from "@/lib/client/akashic-plugins/coe-limited-plugin";
 import { AkashicContainer } from "@/lib/client/akashic-container";
 import { extendPlay } from "@/lib/server/play-extend";
@@ -64,7 +65,6 @@ const toMessage = (typ?: WarningType) => {
 // 同時に2インスタンス存在するとロードがとまり、破棄に必要なステップを踏めない
 const container = new AkashicContainer();
 const EXTEND_WINDOW_MS = 10 * 60 * 1000;
-const niconicoParentWorkUrl = process.env.NEXT_PUBLIC_NICONICO_PARENT_WORK_URL;
 
 export function PlayView({
     playId,
@@ -103,6 +103,7 @@ export function PlayView({
 }) {
     const theme = useTheme();
     const { playlogServerUrl } = useAkashic();
+    const { niconicommonsWorkUrl } = useCustomData();
     const [skipping, setSkipping] = useState(false);
     const [warning, setWarning] = useState<WarningType>();
     const [error, setError] = useState<string>();
@@ -762,21 +763,18 @@ export function PlayView({
                                             </Typography>
                                             <Tooltip
                                                 arrow
-                                                enterTouchDelay={0}
-                                                leaveTouchDelay={5000}
-                                                disableInteractive={false}
                                                 title={
                                                     game.streaming ? (
-                                                        <Stack spacing={0.75}>
+                                                        <Stack spacing={1}>
                                                             <Typography variant="body2">
-                                                                このゲームは、プレイ中の画面を実況配信したり動画投稿して問題ありません。
+                                                                このゲームはプレイ中の画面を配信したり、動画投稿することが許可されています。
                                                             </Typography>
-                                                            {niconicoParentWorkUrl ? (
+                                                            {niconicommonsWorkUrl ? (
                                                                 <Typography variant="body2">
                                                                     ニコニコ動画・生放送では
                                                                     <Link
                                                                         href={
-                                                                            niconicoParentWorkUrl
+                                                                            niconicommonsWorkUrl
                                                                         }
                                                                         target="_blank"
                                                                         rel="noopener noreferrer"
@@ -790,13 +788,13 @@ export function PlayView({
                                                                     >
                                                                         親作品登録
                                                                     </Link>
-                                                                    を推奨しています（任意）。登録いただくことでサーバー稼働維持に役立ちます。
+                                                                    を推奨しています（任意）。登録いただくとサーバー稼働維持に役立ちます。
                                                                 </Typography>
                                                             ) : null}
                                                         </Stack>
                                                     ) : (
                                                         <Typography variant="body2">
-                                                            このゲームは実況配信・動画投稿が許可されていません。
+                                                            このゲームはプレイ中の画面を配信したり、動画投稿することを禁止しています。
                                                         </Typography>
                                                     )
                                                 }
@@ -807,15 +805,17 @@ export function PlayView({
                                                     alignItems="center"
                                                     sx={{
                                                         color: game.streaming
-                                                            ? "success.main"
-                                                            : "error.main",
+                                                            ? theme.palette
+                                                                  .success.light
+                                                            : theme.palette
+                                                                  .error.light,
                                                         cursor: "help",
                                                     }}
                                                 >
                                                     {game.streaming ? (
                                                         <Videocam
                                                             fontSize="small"
-                                                            aria-label="配信可"
+                                                            aria-label="配信OK"
                                                         />
                                                     ) : (
                                                         <VideocamOff
@@ -825,7 +825,7 @@ export function PlayView({
                                                     )}
                                                     <Typography variant="body2">
                                                         {game.streaming
-                                                            ? "配信可"
+                                                            ? "配信OK"
                                                             : "配信不可"}
                                                     </Typography>
                                                 </Stack>

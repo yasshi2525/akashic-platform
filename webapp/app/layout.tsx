@@ -14,11 +14,12 @@ import {
     customFooterImagePath,
     customFooterImageWidth,
     customFooterHref,
-} from "@/lib/server/custom-footer";
+    niconicommonsWorkUrl,
+} from "@/lib/server/custom-data";
 import { theme } from "@/lib/client/theme";
 import { AkashicProvider } from "@/components/akashic-provider";
 import { AuthProvider } from "@/components/auth-provider";
-import { CustomFooterProvider } from "@/components/custom-footer-provider";
+import { CustomDataProvider } from "@/components/custom-data-provider";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ToastMessage } from "@/components/toast-message";
@@ -54,11 +55,12 @@ export default async function RootLayout({
                         playlogServerUrl={publicPlaylogServerUrl}
                         publicContentBaseUrl={publicContentBaseUrl}
                     >
-                        <CustomFooterProvider
+                        <CustomDataProvider
                             customFooterHref={customFooterHref}
                             customFooterLabel={customFooterLabel}
                             customFooterImagePath={customFooterImagePath}
                             customFooterImageWidth={customFooterImageWidth}
+                            niconicommonsWorkUrl={niconicommonsWorkUrl}
                         >
                             <AuthProvider user={user}>
                                 <ThemeProvider theme={theme}>
@@ -86,7 +88,7 @@ export default async function RootLayout({
                                     </Box>
                                 </ThemeProvider>
                             </AuthProvider>
-                        </CustomFooterProvider>
+                        </CustomDataProvider>
                     </AkashicProvider>
                 </AppRouterCacheProvider>
             </body>
