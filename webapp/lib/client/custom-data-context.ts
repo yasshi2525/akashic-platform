@@ -1,8 +1,9 @@
 import { createContext } from "react";
 
-export const CustomFooterContext = createContext<{
+export const CustomDataContext = createContext<{
     customFooterHref?: string;
     customFooterLabel?: string;
     customFooterImagePath?: string;
     customFooterImageWidth?: number;
+    niconicommonsWorkUrl?: string;
 } | null>(null);

@@ -2,7 +2,7 @@
 
 import { ReactNode } from "react";
 import { Box, Button, Link, Stack, Typography, useTheme } from "@mui/material";
-import { useCustomFooter } from "@/lib/client/useCustomFooter";
+import { useCustomData } from "@/lib/client/useCustomData";
 
 function LinkIf({ href, children }: { href?: string; children: ReactNode }) {
     if (href == null) {
@@ -29,7 +29,7 @@ export function SiteCustomFooter() {
         customFooterLabel,
         customFooterImagePath,
         customFooterImageWidth,
-    } = useCustomFooter();
+    } = useCustomData();
     if (!customFooterLabel && !customFooterImagePath) {
         return null;
     }
