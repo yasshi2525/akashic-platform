@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.3.2
+
+- Fix
+  - `./akashic-storage`
+    - Event 書き込み遅延により、イベントがないものとして応答してしまう問題を修正
+
 ## 1.3.1
 
 - Fix
