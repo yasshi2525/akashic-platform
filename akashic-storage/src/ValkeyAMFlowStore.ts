@@ -141,6 +141,13 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
     }
 
     async putStartPoint(startPoint: StartPoint) {
+        const startPointKey = genKey(
+            ValkeyKey.StartPoint,
+            this._hashPlayId,
+            this._nextSnapshotId,
+        );
+        await this._valkey.set(startPointKey, JSON.stringify(startPoint));
+        this._keyList.push(startPointKey);
         await this._valkey.zadd(
             genKey(ValkeyZSetKey.StartPointByFrame, this._hashPlayId),
             [
@@ -159,13 +166,6 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
                 },
             ],
         );
-        const startPointKey = genKey(
-            ValkeyKey.StartPoint,
-            this._hashPlayId,
-            this._nextSnapshotId,
-        );
-        await this._valkey.set(startPointKey, JSON.stringify(startPoint));
-        this._keyList.push(startPointKey);
         this._nextSnapshotId++;
     }
 
@@ -325,7 +325,6 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
                 // illegal age tick
                 return;
             }
-            this._latestTickFrame = tickPack[TickIndex.Frame];
             if (tickPack[TickIndex.Events]) {
                 const unfilteredEvents = this._genEventIds(
                     tickPack[TickIndex.Events].filter(
@@ -336,10 +335,6 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
                             ),
                     ),
                 );
-                await this._storeUnfilteredEvents(
-                    tickPack[TickIndex.Frame],
-                    unfilteredEvents,
-                );
                 const filteredEvents = unfilteredEvents.filter(
                     ({ event }) =>
                         !(
@@ -347,13 +342,18 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
                             EventFlagsMask.Ignorable
                         ),
                 );
+                await this._storeEvents(unfilteredEvents);
+                await this._storeUnfilteredEvents(
+                    tickPack[TickIndex.Frame],
+                    unfilteredEvents,
+                );
                 await this._storeFilteredEvents(
                     tickPack[TickIndex.Frame],
                     filteredEvents,
                 );
-                await this._storeEvents(unfilteredEvents);
                 this._nextUnfilteredEventId += unfilteredEvents.length;
             }
+            this._latestTickFrame = tickPack[TickIndex.Frame];
         }
     }
 
