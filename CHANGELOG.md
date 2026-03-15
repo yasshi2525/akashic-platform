@@ -1,5 +1,46 @@
 # CHANGELOG
 
+## 1.3.4
+
+- Improve
+  - `./akashic-storage`
+    - Valkey Server への再接続設定により接続安定性を向上
+
+## 1.3.3
+
+- Misc
+  - `./webapp`
+    - 実況可否の表記を分かりやすく改善 (#29)
+
+## 1.3.2
+
+- Fix
+  - `./akashic-storage`
+    - Event 書き込み遅延により、イベントがないものとして応答してしまう問題を修正
+
+## 1.3.1
+
+- Fix
+  - `./akashic-storage`
+    - Event 情報が異なるノードに振り分けられてしまう問題を修正 (#34)
+
+## 1.3.0
+
+- Feature
+  - `./webapp`
+    - ゲスト状態の場合同時に作成できる部屋数に上限を設定できるよう修正
+
+- Improve
+  - `./webapp`
+    - ゲスト状態の場合は部屋一覧でなく参加方法をガイドするよう修正
+
+## 1.2.4
+
+- Improve
+  - `./akashic-storage`
+    - 部屋を削除するとき、 Valkey Server へ負荷やブロックをかけないクエリに変更
+    - `GlideClusterClientConfiguration.requestTimeout` を変更できるように修正
+
 ## 1.2.3
 
 - Bug Fix

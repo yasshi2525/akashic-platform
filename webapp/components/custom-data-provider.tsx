@@ -1,31 +1,34 @@
 "use client";
 
 import { ReactNode } from "react";
-import { CustomFooterContext } from "@/lib/client/custom-footer-context";
+import { CustomDataContext } from "@/lib/client/custom-data-context";
 
-export function CustomFooterProvider({
+export function CustomDataProvider({
     customFooterHref,
     customFooterLabel,
     customFooterImagePath,
     customFooterImageWidth,
+    niconicommonsWorkUrl,
     children,
 }: {
     customFooterHref?: string;
     customFooterLabel?: string;
     customFooterImagePath?: string;
     customFooterImageWidth?: number;
+    niconicommonsWorkUrl?: string;
     children: ReactNode;
 }) {
     return (
-        <CustomFooterContext
+        <CustomDataContext
             value={{
                 customFooterHref,
                 customFooterLabel,
                 customFooterImagePath,
                 customFooterImageWidth,
+                niconicommonsWorkUrl,
             }}
         >
             {children}
-        </CustomFooterContext>
+        </CustomDataContext>
     );
 }

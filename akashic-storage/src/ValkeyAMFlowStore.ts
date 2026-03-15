@@ -1,9 +1,4 @@
-import {
-    ClusterScanCursor,
-    GlideClusterClient,
-    GlideString,
-    ObjectType,
-} from "@valkey/valkey-glide";
+import { GlideClusterClient, GlideString } from "@valkey/valkey-glide";
 import type {
     GetStartPointOptions,
     GetTickListOptions,
@@ -44,6 +39,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
     _nextSnapshotId: number;
     _isDestroyed: boolean;
     _hashPlayId: string;
+    _keyList: string[];
 
     constructor(param: ValkeyAMFlowStoreParameterObject) {
         super(param.playId);
@@ -53,6 +49,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         this._nextSnapshotId = 1;
         this._isDestroyed = false;
         this._hashPlayId = `{${this.playId}}`;
+        this._keyList = [];
     }
 
     async authenticate(token: string) {
@@ -80,7 +77,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         }
         const scores = opts.excludeEventFlags?.ignorable
             ? await this._valkey.zrangeWithScores(
-                  genKey(ValkeyZSetKey.FilteredEvent, this.playId),
+                  genKey(ValkeyZSetKey.FilteredEvent, this._hashPlayId),
                   {
                       type: "byScore",
                       start: {
@@ -92,7 +89,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
                   },
               )
             : await this._valkey.zrangeWithScores(
-                  genKey(ValkeyZSetKey.UnfilteredEvent, this.playId),
+                  genKey(ValkeyZSetKey.UnfilteredEvent, this._hashPlayId),
                   {
                       type: "byScore",
                       start: {
@@ -144,8 +141,15 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
     }
 
     async putStartPoint(startPoint: StartPoint) {
+        const startPointKey = genKey(
+            ValkeyKey.StartPoint,
+            this._hashPlayId,
+            this._nextSnapshotId,
+        );
+        await this._valkey.set(startPointKey, JSON.stringify(startPoint));
+        this._keyList.push(startPointKey);
         await this._valkey.zadd(
-            genKey(ValkeyZSetKey.StartPointByFrame, this.playId),
+            genKey(ValkeyZSetKey.StartPointByFrame, this._hashPlayId),
             [
                 {
                     score: startPoint.frame,
@@ -154,21 +158,13 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
             ],
         );
         await this._valkey.zadd(
-            genKey(ValkeyZSetKey.StartPointByTimestamp, this.playId),
+            genKey(ValkeyZSetKey.StartPointByTimestamp, this._hashPlayId),
             [
                 {
                     score: startPoint.timestamp,
                     element: this._nextSnapshotId.toString(),
                 },
             ],
-        );
-        await this._valkey.set(
-            genKey(
-                ValkeyKey.StartPoint,
-                this._hashPlayId,
-                this._nextSnapshotId,
-            ),
-            JSON.stringify(startPoint),
         );
         this._nextSnapshotId++;
     }
@@ -179,7 +175,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
 
         if (isFirst) {
             const ids = await this._valkey.zrange(
-                genKey(ValkeyZSetKey.StartPointByFrame, this.playId),
+                genKey(ValkeyZSetKey.StartPointByFrame, this._hashPlayId),
                 {
                     start: 0,
                     end: 0,
@@ -188,7 +184,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
             return this._restoreStartPointFromIds(ids);
         } else if (opts.timestamp != null) {
             const ids = await this._valkey.zrange(
-                genKey(ValkeyZSetKey.StartPointByTimestamp, this.playId),
+                genKey(ValkeyZSetKey.StartPointByTimestamp, this._hashPlayId),
                 {
                     start: {
                         value: opts.timestamp,
@@ -210,7 +206,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
             return this._restoreStartPointFromIds(ids);
         } else if (opts.frame != null) {
             const ids = await this._valkey.zrange(
-                genKey(ValkeyZSetKey.StartPointByFrame, this.playId),
+                genKey(ValkeyZSetKey.StartPointByFrame, this._hashPlayId),
                 {
                     start: {
                         value: opts.frame - 1,
@@ -237,42 +233,13 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         if (this._isDestroyed) {
             return;
         }
-        const tokens = await this.getAllKeys(
-            genKey(ValkeyKey.Token, this._hashPlayId, "*"),
-        );
-        const ufEvents = await this.getAllKeys(
-            genKey(ValkeyZSetKey.UnfilteredEvent, this.playId),
-            ObjectType.ZSET,
-        );
-        const fEvents = await this.getAllKeys(
-            genKey(ValkeyZSetKey.FilteredEvent, this.playId),
-            ObjectType.ZSET,
-        );
-        const events = await this.getAllKeys(
-            genKey(ValkeyKey.Event, this._hashPlayId, "*"),
-        );
-        const startpoints = await this.getAllKeys(
-            genKey(ValkeyKey.StartPoint, this._hashPlayId, "*"),
-        );
-        const startpointsByFrame = await this.getAllKeys(
-            genKey(ValkeyZSetKey.StartPointByFrame, this.playId),
-            ObjectType.ZSET,
-        );
-        const startpointsByTimestamp = await this.getAllKeys(
-            genKey(ValkeyZSetKey.StartPointByTimestamp, this.playId),
-            ObjectType.ZSET,
-        );
-        await Promise.all(
-            [
-                tokens,
-                ufEvents,
-                fEvents,
-                events,
-                startpoints,
-                startpointsByFrame,
-                startpointsByTimestamp,
-            ].map(async (list) => await this._valkey.del(list)),
-        );
+        await this._valkey.unlink([
+            genKey(ValkeyZSetKey.UnfilteredEvent, this._hashPlayId),
+            genKey(ValkeyZSetKey.FilteredEvent, this._hashPlayId),
+            genKey(ValkeyZSetKey.StartPointByFrame, this._hashPlayId),
+            genKey(ValkeyZSetKey.StartPointByTimestamp, this._hashPlayId),
+            ...this._keyList,
+        ]);
         this._isDestroyed = true;
     }
 
@@ -285,10 +252,9 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
      */
     async createPlayToken(permissionType: PermissionType) {
         const token = this._createPlayToken();
-        await this._valkey.set(
-            genKey(ValkeyKey.Token, this._hashPlayId, token),
-            permissionType,
-        );
+        const key = genKey(ValkeyKey.Token, this._hashPlayId, token);
+        await this._valkey.set(key, permissionType);
+        this._keyList.push(key);
         return token;
     }
 
@@ -359,7 +325,6 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
                 // illegal age tick
                 return;
             }
-            this._latestTickFrame = tickPack[TickIndex.Frame];
             if (tickPack[TickIndex.Events]) {
                 const unfilteredEvents = this._genEventIds(
                     tickPack[TickIndex.Events].filter(
@@ -370,10 +335,6 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
                             ),
                     ),
                 );
-                await this._storeUnfilteredEvents(
-                    tickPack[TickIndex.Frame],
-                    unfilteredEvents,
-                );
                 const filteredEvents = unfilteredEvents.filter(
                     ({ event }) =>
                         !(
@@ -381,13 +342,18 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
                             EventFlagsMask.Ignorable
                         ),
                 );
+                await this._storeEvents(unfilteredEvents);
+                await this._storeUnfilteredEvents(
+                    tickPack[TickIndex.Frame],
+                    unfilteredEvents,
+                );
                 await this._storeFilteredEvents(
                     tickPack[TickIndex.Frame],
                     filteredEvents,
                 );
-                await this._storeEvents(unfilteredEvents);
                 this._nextUnfilteredEventId += unfilteredEvents.length;
             }
+            this._latestTickFrame = tickPack[TickIndex.Frame];
         }
     }
 
@@ -412,7 +378,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         await Promise.all(
             events.map(async ({ id }) => {
                 await this._valkey.zadd(
-                    genKey(ValkeyZSetKey.UnfilteredEvent, this.playId),
+                    genKey(ValkeyZSetKey.UnfilteredEvent, this._hashPlayId),
                     [
                         {
                             score: tick,
@@ -431,7 +397,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         await Promise.all(
             events.map(async ({ id }) => {
                 await this._valkey.zadd(
-                    genKey(ValkeyZSetKey.FilteredEvent, this.playId),
+                    genKey(ValkeyZSetKey.FilteredEvent, this._hashPlayId),
                     [
                         {
                             score: tick,
@@ -444,15 +410,14 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
     }
 
     async _storeEvents(events: { event: Event; id: string }[]) {
+        const evs = events.map(({ event, id }) => ({
+            key: genKey(ValkeyKey.Event, this._hashPlayId, parseInt(id)),
+            value: JSON.stringify(event),
+        }));
         await Promise.all(
-            events.map(
-                async ({ event, id }) =>
-                    await this._valkey.set(
-                        genKey(ValkeyKey.Event, this._hashPlayId, parseInt(id)),
-                        JSON.stringify(event),
-                    ),
-            ),
+            evs.map(({ key, value }) => this._valkey.set(key, value)),
         );
+        this._keyList.push(...evs.map(({ key }) => key));
     }
 
     _toPaddedEventId(current: number, max: string) {
@@ -493,19 +458,5 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
             );
             return null;
         }
-    }
-
-    async getAllKeys(match: string, type: ObjectType = ObjectType.STRING) {
-        const keys: GlideString[] = [];
-        let cursor = new ClusterScanCursor();
-        while (!cursor.isFinished()) {
-            const res = await this._valkey.scan(cursor, {
-                match,
-                type,
-            });
-            cursor = res[0];
-            keys.push(...res[1]);
-        }
-        return keys;
     }
 }

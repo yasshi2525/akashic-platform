@@ -15,6 +15,7 @@ import {
     Slider,
     Snackbar,
     Stack,
+    Tooltip,
     Typography,
     useTheme,
 } from "@mui/material";
@@ -22,6 +23,8 @@ import {
     ContentCopy,
     OpenInNew,
     PhotoCamera,
+    Videocam,
+    VideocamOff,
     VolumeOff,
     VolumeUp,
     X,
@@ -29,6 +32,7 @@ import {
 import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
 import { GameInfo, User } from "@/lib/types";
 import { useAkashic } from "@/lib/client/useAkashic";
+import { useCustomData } from "@/lib/client/useCustomData";
 import { ResolvingPlayerInfoRequest } from "@/lib/client/akashic-plugins/coe-limited-plugin";
 import { AkashicContainer } from "@/lib/client/akashic-container";
 import { extendPlay } from "@/lib/server/play-extend";
@@ -103,6 +107,7 @@ export function PlayView({
 }) {
     const theme = useTheme();
     const { playlogServerUrl } = useAkashic();
+    const { niconicommonsWorkUrl } = useCustomData();
     const [skipping, setSkipping] = useState(false);
     const [warning, setWarning] = useState<WarningType>();
     const [error, setError] = useState<string>();
@@ -800,14 +805,75 @@ export function PlayView({
                                             >
                                                 {game.title}
                                             </Typography>
-                                            {!game.streaming ? (
-                                                <Typography
-                                                    variant="body2"
-                                                    color="error"
+                                            <Tooltip
+                                                arrow
+                                                title={
+                                                    game.streaming ? (
+                                                        <Stack spacing={1}>
+                                                            <Typography variant="body2">
+                                                                このゲームはプレイ中の画面を配信したり、動画投稿することが許可されています。
+                                                            </Typography>
+                                                            {niconicommonsWorkUrl ? (
+                                                                <Typography variant="body2">
+                                                                    ニコニコ動画・生放送では
+                                                                    <Link
+                                                                        href={
+                                                                            niconicommonsWorkUrl
+                                                                        }
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        style={{
+                                                                            color: "inherit",
+                                                                            textDecoration:
+                                                                                "underline",
+                                                                            marginLeft: 4,
+                                                                            marginRight: 4,
+                                                                        }}
+                                                                    >
+                                                                        親作品登録
+                                                                    </Link>
+                                                                    を推奨しています（任意）。登録いただくとサーバー稼働維持に役立ちます。
+                                                                </Typography>
+                                                            ) : null}
+                                                        </Stack>
+                                                    ) : (
+                                                        <Typography variant="body2">
+                                                            このゲームはプレイ中の画面を配信したり、動画投稿することを禁止しています。
+                                                        </Typography>
+                                                    )
+                                                }
+                                            >
+                                                <Stack
+                                                    direction="row"
+                                                    spacing={0.5}
+                                                    alignItems="center"
+                                                    sx={{
+                                                        color: game.streaming
+                                                            ? theme.palette
+                                                                  .success.light
+                                                            : theme.palette
+                                                                  .error.light,
+                                                        cursor: "help",
+                                                    }}
                                                 >
-                                                    実況不可
-                                                </Typography>
-                                            ) : null}
+                                                    {game.streaming ? (
+                                                        <Videocam
+                                                            fontSize="small"
+                                                            aria-label="配信OK"
+                                                        />
+                                                    ) : (
+                                                        <VideocamOff
+                                                            fontSize="small"
+                                                            aria-label="配信不可"
+                                                        />
+                                                    )}
+                                                    <Typography variant="body2">
+                                                        {game.streaming
+                                                            ? "配信OK"
+                                                            : "配信不可"}
+                                                    </Typography>
+                                                </Stack>
+                                            </Tooltip>
                                         </Stack>
                                         <Stack
                                             direction="row"
