@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 1.3.5
+
+- Feature
+  - 入室にキーワード入力を求める限定部屋機能を追加
+    - `./webapp`
+      - 限定部屋入室機能を追加
+    - `./akashic-server`
+      - 限定部屋を作成する機能を追加
+    - `./schema/persist`
+      - 限定部屋機能用フィールド追加
+
 ## 1.3.4
 
 - Improve

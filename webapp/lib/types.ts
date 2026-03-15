@@ -176,6 +176,7 @@ export type PlayResponse =
               playToken: string;
               playName: string;
               isLimited: boolean;
+              joinWord?: string;
               inviteHash?: string;
               game: GameInfo;
               gameMaster: {

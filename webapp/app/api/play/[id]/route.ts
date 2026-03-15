@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createHash } from "node:crypto";
 import { GameConfiguration } from "@akashic/game-configuration";
 import { Play, prisma } from "@yasshi2525/persist-schema";
 import { GUEST_NAME, PlayResponse } from "@/lib/types";
@@ -68,7 +67,7 @@ export async function GET(
                 gameMasterId: true,
                 name: true,
                 isLimited: true,
-                joinWordHash: true,
+                joinWord: true,
                 inviteHash: true,
                 createdAt: true,
                 gmUser: {
@@ -111,26 +110,17 @@ export async function GET(
             });
         }
         if (play.isLimited) {
-            const inviteMatched =
-                !!inviteHash &&
-                !!play.inviteHash &&
-                inviteHash === play.inviteHash;
-            if (!inviteMatched) {
-                if (!joinWord?.trim()) {
-                    return NextResponse.json({
-                        ok: false,
-                        reason: "JoinWordRequired",
-                    });
-                }
-                const joinWordHash = createHash("sha256")
-                    .update(joinWord.trim())
-                    .digest("hex");
-                if (!play.joinWordHash || joinWordHash !== play.joinWordHash) {
-                    return NextResponse.json({
-                        ok: false,
-                        reason: "InvalidJoinWord",
-                    });
-                }
+            if (!joinWord && inviteHash !== play.inviteHash) {
+                return NextResponse.json({
+                    ok: false,
+                    reason: "JoinWordRequired",
+                });
+            }
+            if (joinWord !== play.joinWord) {
+                return NextResponse.json({
+                    ok: false,
+                    reason: "InvalidJoinWord",
+                });
             }
         }
         const res = await fetch(
@@ -158,9 +148,8 @@ export async function GET(
                 playToken: await fetchPlayToken(play),
                 playName: play.name,
                 isLimited: play.isLimited,
-                inviteHash: play.isLimited
-                    ? play.inviteHash ?? undefined
-                    : undefined,
+                joinWord: play.joinWord ?? undefined,
+                inviteHash: play.inviteHash ?? undefined,
                 gameMaster: {
                     id: play.gameMasterId,
                     userId: play.gmUser?.id ?? undefined,

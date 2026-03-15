@@ -92,22 +92,24 @@ export async function GET(req: NextRequest) {
     );
     return NextResponse.json({
         ok: true,
-        data: result.map(({ id, name, isLimited, content, gmUser, createdAt }) => ({
-            id,
-            playName: name,
-            isLimited,
-            game: {
-                title: content.game.title,
-                iconURL: `${publicContentBaseUrl}/${content.id}/${content.icon}`,
-            },
-            gameMaster: {
-                userId: gmUser?.id ?? undefined,
-                name: gmUser?.name ?? GUEST_NAME,
-                iconURL: gmUser?.image ?? undefined,
-            },
-            participants:
-                participants.find((p) => p.id === id)?.participants ?? 0,
-            createdAt,
-        })) satisfies PlayInfo[],
+        data: result.map(
+            ({ id, name, isLimited, content, gmUser, createdAt }) => ({
+                id,
+                playName: name,
+                isLimited,
+                game: {
+                    title: content.game.title,
+                    iconURL: `${publicContentBaseUrl}/${content.id}/${content.icon}`,
+                },
+                gameMaster: {
+                    userId: gmUser?.id ?? undefined,
+                    name: gmUser?.name ?? GUEST_NAME,
+                    iconURL: gmUser?.image ?? undefined,
+                },
+                participants:
+                    participants.find((p) => p.id === id)?.participants ?? 0,
+                createdAt,
+            }),
+        ) satisfies PlayInfo[],
     });
 }

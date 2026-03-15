@@ -35,7 +35,7 @@ export interface RunnerParameterObject {
     playerUserId?: string;
     playerName: string;
     isLimited: boolean;
-    joinWordHash?: string;
+    joinWord?: string;
     inviteHash?: string;
     onDestroy: (playId: number) => void;
 }
@@ -150,7 +150,7 @@ export class Runner {
                     gmUserId: this._param.playerUserId,
                     name: this._param.playName,
                     isLimited: this._param.isLimited,
-                    joinWordHash: this._param.joinWordHash,
+                    joinWord: this._param.joinWord,
                     inviteHash: this._param.inviteHash,
                 },
             })

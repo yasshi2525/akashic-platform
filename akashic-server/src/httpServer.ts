@@ -61,8 +61,7 @@ export class HttpServer {
                 playerId,
                 playerUserId,
                 playerName,
-                isLimited,
-                joinWordHash,
+                joinWord,
                 inviteHash,
             } = req.body;
             if (
@@ -88,8 +87,8 @@ export class HttpServer {
                     playerId: playerId.toString(),
                     playerUserId: playerUserId?.toString(),
                     playerName: playerName.toString(),
-                    isLimited: !!isLimited,
-                    joinWordHash: joinWordHash?.toString(),
+                    isLimited: inviteHash?.toString() && joinWord?.toString(),
+                    joinWord: joinWord?.toString(),
                     inviteHash: inviteHash?.toString(),
                     onDestroy: (playId) => this._manager.unregister(playId),
                 });

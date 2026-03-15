@@ -23,7 +23,7 @@ export function PlayContainer() {
     const inviteHash = searchParams.get("inviteHash") ?? undefined;
     const [joinWord, setJoinWord] = useState("");
     const [submittedJoinWord, setSubmittedJoinWord] = useState<string>();
-    const { isLoading, data, error, reason } = usePlay(
+    const { isLoading, data, error, requiresJoinWork } = usePlay(
         id,
         inviteHash,
         submittedJoinWord,
@@ -43,7 +43,7 @@ export function PlayContainer() {
             </Container>
         );
     }
-    if (reason === "JoinWordRequired" || reason === "InvalidJoinWord") {
+    if (requiresJoinWork) {
         return (
             <Container maxWidth="sm" sx={{ mt: 2 }}>
                 <Card>
@@ -53,11 +53,16 @@ export function PlayContainer() {
                             spacing={2}
                             onSubmit={handleSubmitJoinWord}
                         >
+                            {error ? (
+                                <Alert severity="error" variant="outlined">
+                                    {error}
+                                </Alert>
+                            ) : null}
                             <Typography variant="h6">
                                 この部屋は限定公開です
                             </Typography>
                             <Typography variant="body2">
-                                部屋一覧から入る場合は、部屋主が共有した入室の言葉が必要です。
+                                部屋一覧から入る場合は、部屋主が設定した入室の言葉が必要です。
                             </Typography>
                             <TextField
                                 label="入室の言葉"
@@ -68,11 +73,6 @@ export function PlayContainer() {
                                 autoFocus
                                 fullWidth
                             />
-                            {reason === "InvalidJoinWord" ? (
-                                <Alert severity="error" variant="outlined">
-                                    入室の言葉が正しくありません。
-                                </Alert>
-                            ) : null}
                             <Button type="submit" variant="contained">
                                 入室する
                             </Button>

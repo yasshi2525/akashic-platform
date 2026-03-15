@@ -21,6 +21,8 @@ import {
 } from "@mui/material";
 import {
     ContentCopy,
+    HelpOutline,
+    Lock,
     OpenInNew,
     PhotoCamera,
     Videocam,
@@ -71,6 +73,7 @@ export function PlayView({
     playToken,
     playName,
     isLimited,
+    joinWord,
     inviteHash,
     game,
     gameMaster,
@@ -88,6 +91,7 @@ export function PlayView({
     playToken: string;
     playName: string | null;
     isLimited: boolean;
+    joinWord?: string;
     inviteHash?: string;
     game: GameInfo;
     gameMaster: {
@@ -219,11 +223,11 @@ export function PlayView({
         if (typeof window === "undefined") {
             return;
         }
-        const invite = new URL(`/play/${playId}`, window.location.origin);
-        if (isLimited && inviteHash) {
-            invite.searchParams.set("inviteHash", inviteHash);
+        const currentUrl = new URL(window.location.href);
+        if (isLimited) {
+            currentUrl.searchParams.set("inviteHash", inviteHash!);
         }
-        setInviteUrl(invite.toString());
+        setInviteUrl(currentUrl.toString());
     }, [playId, inviteHash, isLimited]);
 
     async function handleExtend() {
@@ -386,6 +390,9 @@ export function PlayView({
                     `/play/${playId}`,
                     window.location.origin,
                 );
+                if (isLimited) {
+                    shareUrl.searchParams.set("inviteHash", inviteHash!);
+                }
                 shareUrl.searchParams.set("shareId", res.shareId);
                 const params = new URLSearchParams([
                     [
@@ -542,34 +549,34 @@ export function PlayView({
                                                 {playName}
                                             </Typography>
                                             {isLimited ? (
-                                                <Typography
-                                                    variant="caption"
-                                                    sx={{
-                                                        px: 1,
-                                                        py: 0.5,
-                                                        borderRadius: 1,
-                                                        bgcolor:
-                                                            theme.palette
-                                                                .warning.light,
-                                                    }}
+                                                <Tooltip
+                                                    arrow
+                                                    title="この部屋は招待リンクまたは入室の言葉を知っている人だけが参加できます。"
                                                 >
-                                                    限定
-                                                </Typography>
-                                            ) : (
-                                                <Typography
-                                                    variant="caption"
-                                                    sx={{
-                                                        px: 1,
-                                                        py: 0.5,
-                                                        borderRadius: 1,
-                                                        bgcolor:
-                                                            theme.palette.success
-                                                                .light,
-                                                    }}
-                                                >
-                                                    公開
-                                                </Typography>
-                                            )}
+                                                    <Stack
+                                                        direction="row"
+                                                        spacing={0.5}
+                                                        alignItems="center"
+                                                    >
+                                                        <Lock fontSize="small" />
+                                                        <Typography
+                                                            variant="body2"
+                                                            color={
+                                                                theme.palette
+                                                                    .text
+                                                                    .secondary
+                                                            }
+                                                            sx={{
+                                                                px: 1,
+                                                                py: 0.5,
+                                                                borderRadius: 1,
+                                                            }}
+                                                        >
+                                                            限定
+                                                        </Typography>
+                                                    </Stack>
+                                                </Tooltip>
+                                            ) : null}
                                         </Stack>
                                         <Stack
                                             direction="row"
@@ -769,6 +776,37 @@ export function PlayView({
                                             ? "このリンクを知っている人は誰でも無条件で入室できます。共有先にご注意ください。"
                                             : "この部屋に招待したい人に上のリンクを共有してください。"}
                                     </Typography>
+                                    {isLimited ? (
+                                        <Stack direction="row" spacing={1}>
+                                            <Typography
+                                                variant="body2"
+                                                color={
+                                                    theme.palette.text.secondary
+                                                }
+                                            >
+                                                入室の言葉
+                                            </Typography>
+                                            <Tooltip
+                                                arrow
+                                                title="招待リンクからではなく、トップページから入室する場合に求められるキーワードです。入室できない人がいた場合、この言葉を伝えて下さい。"
+                                            >
+                                                <HelpOutline fontSize="small" />
+                                            </Tooltip>
+                                            <Typography
+                                                variant="body2"
+                                                sx={{
+                                                    borderRadius: 1,
+                                                    bgcolor:
+                                                        theme.palette.background
+                                                            .paper,
+                                                    textDecoration: "none",
+                                                    fontFamily: "monospace",
+                                                }}
+                                            >
+                                                {joinWord}
+                                            </Typography>
+                                        </Stack>
+                                    ) : null}
                                 </Stack>
                                 {isGameMaster ? (
                                     <Stack sx={{ justifyContent: "center" }}>

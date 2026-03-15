@@ -28,7 +28,7 @@ const errReasons = [
 ] as const;
 export type RegisterPlayErrorType = (typeof errReasons)[number];
 type RegisterPlayResponse =
-    | { ok: true; playId: number }
+    | { ok: true; playId: number; inviteHash?: string }
     | { ok: false; reason: RegisterPlayErrorType };
 
 const GUEST_ROOM_LIMIT = parseInt(process.env.GUEST_ROOM_LIMIT ?? "5");
@@ -53,8 +53,7 @@ export async function registerPlay({
             reason: "InvalidParams",
         };
     }
-    const normalizedJoinWord = joinWord?.trim();
-    if (isLimited && !normalizedJoinWord) {
+    if (isLimited && !joinWord) {
         return {
             ok: false,
             reason: "InvalidParams",
@@ -85,6 +84,9 @@ export async function registerPlay({
                       })
                   )?.name
                 : undefined) ?? GUEST_NAME;
+        const inviteHash = isLimited
+            ? randomBytes(12).toString("hex")
+            : undefined;
         const res = await fetch(`${akashicServerUrl}/start`, {
             method: "POST",
             headers: {
@@ -103,15 +105,8 @@ export async function registerPlay({
                     ? playName
                     : await fetchDefaultPlayName(contentId),
                 isLimited,
-                joinWordHash:
-                    isLimited && normalizedJoinWord
-                        ? createHash("sha256")
-                              .update(normalizedJoinWord)
-                              .digest("hex")
-                        : undefined,
-                inviteHash: isLimited
-                    ? randomBytes(24).toString("hex")
-                    : undefined,
+                joinWord: isLimited ? joinWord : undefined,
+                inviteHash,
             }),
         });
         if (res.status !== 200) {
@@ -128,6 +123,7 @@ export async function registerPlay({
             return {
                 ok: true,
                 playId,
+                inviteHash,
             };
         }
     } catch (err) {

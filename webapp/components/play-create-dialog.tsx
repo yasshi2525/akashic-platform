@@ -56,8 +56,8 @@ export function PlayCreateDialog({
             setError("サインインしてください。");
             return;
         }
-        if (isLimited && !joinWord.trim()) {
-            setError("限定部屋では入室の言葉を入力してください。");
+        if (isLimited && !joinWord) {
+            setError("限定部屋を作成する場合、入室の言葉が必要です。");
             return;
         }
         setSending(true);
@@ -70,9 +70,13 @@ export function PlayCreateDialog({
             joinWord,
         });
         if (res.ok) {
-            router.push(
-                `/play/${res.playId}?${messageKey}=${messages.play.registerSuccessful}`,
-            );
+            const query = new URLSearchParams({
+                messageKey: messages.play.registerSuccessful,
+            });
+            if (isLimited) {
+                query.set("inviteHash", res.inviteHash!);
+            }
+            router.push(`/play/${res.playId}?${query.toString()}`);
         } else {
             switch (res.reason) {
                 case "InvalidParams":
@@ -124,9 +128,7 @@ export function PlayCreateDialog({
                         <RadioGroup
                             value={isLimited ? "limited" : "public"}
                             onChange={(event) =>
-                                setIsLimited(
-                                    event.target.value === "limited",
-                                )
+                                setIsLimited(event.target.value === "limited")
                             }
                         >
                             <FormControlLabel
@@ -137,7 +139,7 @@ export function PlayCreateDialog({
                             <FormControlLabel
                                 value="limited"
                                 control={<Radio />}
-                                label="限定: 部屋一覧には表示されますが、一覧から入るには入室の言葉が必要です。"
+                                label="限定: 部屋一覧には表示されますが、入室の言葉がないと入れません。"
                             />
                         </RadioGroup>
                     </Stack>
@@ -145,14 +147,16 @@ export function PlayCreateDialog({
                         <TextField
                             label="入室の言葉"
                             value={joinWord}
-                            onChange={(event) => setJoinWord(event.target.value)}
+                            onChange={(event) =>
+                                setJoinWord(event.target.value)
+                            }
                             fullWidth
                             slotProps={{
                                 htmlInput: {
                                     maxLength: 100,
                                 },
                             }}
-                            helperText="限定部屋に一覧から入るときに必要な言葉です。"
+                            helperText="部屋一覧から入室するときに必要な言葉です。"
                         />
                     ) : null}
                     {error ? (

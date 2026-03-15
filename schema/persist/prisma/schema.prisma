@@ -100,7 +100,7 @@ model Play {
   gmUserId     String?
   name         String
   isLimited    Boolean @default(false)
-  joinWordHash String?
+  joinWord     String?
   inviteHash   String?
 
   createdAt DateTime @default(now())
