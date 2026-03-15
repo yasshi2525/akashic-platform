@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.3.4
+
+- Improve
+  - `./akashic-storage`
+    - Valkey Server への再接続設定により接続安定性を向上
+
 ## 1.3.3
 
 - Misc

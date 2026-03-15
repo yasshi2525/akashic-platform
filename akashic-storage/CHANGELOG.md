@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.1.5
+
+- Improve
+  - Valkey Server への再接続設定により接続安定性を向上
+
 ## 1.1.4
 
 - Fix
