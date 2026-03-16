@@ -61,6 +61,7 @@ export function usePlay(
                   playToken: data.playToken,
                   playName: data.playName,
                   isLimited: data.isLimited,
+                  joinWord: data.joinWord,
                   inviteHash: data.inviteHash,
                   gameMaster: data.gameMaster,
                   game: data.game,

@@ -777,7 +777,11 @@ export function PlayView({
                                             : "この部屋に招待したい人に上のリンクを共有してください。"}
                                     </Typography>
                                     {isLimited ? (
-                                        <Stack direction="row" spacing={1}>
+                                        <Stack
+                                            direction="row"
+                                            spacing={1}
+                                            alignItems="center"
+                                        >
                                             <Typography
                                                 variant="body2"
                                                 color={
@@ -788,9 +792,15 @@ export function PlayView({
                                             </Typography>
                                             <Tooltip
                                                 arrow
-                                                title="招待リンクからではなく、トップページから入室する場合に求められるキーワードです。入室できない人がいた場合、この言葉を伝えて下さい。"
+                                                title="トップページから入室する場合に求められる合言葉です。入室できない人がいた場合、この言葉を伝えて下さい。"
                                             >
-                                                <HelpOutline fontSize="small" />
+                                                <HelpOutline
+                                                    fontSize="small"
+                                                    sx={{
+                                                        color: theme.palette
+                                                            .text.secondary,
+                                                    }}
+                                                />
                                             </Tooltip>
                                             <Typography
                                                 variant="body2"
@@ -798,9 +808,10 @@ export function PlayView({
                                                     borderRadius: 1,
                                                     bgcolor:
                                                         theme.palette.background
-                                                            .paper,
+                                                            .default,
                                                     textDecoration: "none",
                                                     fontFamily: "monospace",
+                                                    p: 1,
                                                 }}
                                             >
                                                 {joinWord}

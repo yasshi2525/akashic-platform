@@ -99,6 +99,7 @@ export function PlayContainer() {
             playToken={data.playToken}
             playName={data.playName}
             isLimited={data.isLimited}
+            joinWord={data.joinWord}
             inviteHash={data.inviteHash}
             isGameMaster={data.isGameMaster}
             contentWidth={data.contentWidth}
