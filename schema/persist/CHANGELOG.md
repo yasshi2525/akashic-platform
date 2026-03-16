@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.1.0
+
+- Feature
+  - `Play` に限定部屋機能用フィールドを追加
+
 ## 1.0.2
 
 - Bug Fix

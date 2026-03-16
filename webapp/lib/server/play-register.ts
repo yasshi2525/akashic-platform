@@ -1,5 +1,6 @@
 "use server";
 
+import { createHash, randomBytes } from "node:crypto";
 import { prisma } from "@yasshi2525/persist-schema";
 import { GUEST_NAME } from "../types";
 import {
@@ -15,6 +16,8 @@ interface PlayForm {
     gmUserId: string | undefined;
     contentId: number;
     playName: string;
+    isLimited: boolean;
+    joinWord?: string;
 }
 
 const errReasons = [
@@ -25,18 +28,18 @@ const errReasons = [
 ] as const;
 export type RegisterPlayErrorType = (typeof errReasons)[number];
 type RegisterPlayResponse =
-    | { ok: true; playId: number }
+    | { ok: true; playId: number; inviteHash?: string }
     | { ok: false; reason: RegisterPlayErrorType };
 
-const GUEST_ROOM_LIMIT = parseInt(
-    process.env.GUEST_ROOM_LIMIT ?? "5",
-);
+const GUEST_ROOM_LIMIT = parseInt(process.env.GUEST_ROOM_LIMIT ?? "5");
 
 export async function registerPlay({
     gameMasterId,
     gmUserId,
     contentId,
     playName,
+    isLimited,
+    joinWord,
 }: PlayForm): Promise<RegisterPlayResponse> {
     if (isWriteBlocked()) {
         return {
@@ -45,6 +48,12 @@ export async function registerPlay({
         };
     }
     if (!gameMasterId || contentId == null) {
+        return {
+            ok: false,
+            reason: "InvalidParams",
+        };
+    }
+    if (isLimited && !joinWord) {
         return {
             ok: false,
             reason: "InvalidParams",
@@ -75,6 +84,9 @@ export async function registerPlay({
                       })
                   )?.name
                 : undefined) ?? GUEST_NAME;
+        const inviteHash = isLimited
+            ? randomBytes(12).toString("hex")
+            : undefined;
         const res = await fetch(`${akashicServerUrl}/start`, {
             method: "POST",
             headers: {
@@ -92,6 +104,9 @@ export async function registerPlay({
                 playName: !!playName
                     ? playName
                     : await fetchDefaultPlayName(contentId),
+                isLimited,
+                joinWord: isLimited ? joinWord : undefined,
+                inviteHash,
             }),
         });
         if (res.status !== 200) {
@@ -108,6 +123,7 @@ export async function registerPlay({
             return {
                 ok: true,
                 playId,
+                inviteHash,
             };
         }
     } catch (err) {

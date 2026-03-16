@@ -10,7 +10,10 @@ import {
     Card,
     CardContent,
     Container,
+    FormControlLabel,
     InputAdornment,
+    Radio,
+    RadioGroup,
     Stack,
     TextField,
     Typography,
@@ -27,6 +30,8 @@ export function PlayForm() {
     const [selectedGameTitle, setSelectedGameTitle] = useState<string>();
     const [keyword, setKeyword] = useState("");
     const [playName, setPlayName] = useState("");
+    const [isLimited, setIsLimited] = useState(false);
+    const [joinWord, setJoinWord] = useState("");
     const [sending, setIsSending] = useOptimistic(false, () => true);
     const [error, setError] = useState<string>();
 
@@ -37,6 +42,9 @@ export function PlayForm() {
     function handlePlayName(event: ChangeEvent<HTMLInputElement>) {
         setPlayName(event.target.value);
     }
+    function handleJoinWord(event: ChangeEvent<HTMLInputElement>) {
+        setJoinWord(event.target.value);
+    }
 
     async function handleSubmit() {
         if (!selectedContent) {
@@ -46,12 +54,18 @@ export function PlayForm() {
             setError("サインインしてください。");
         }
         if (selectedContent && user) {
+            if (isLimited && !joinWord) {
+                setError("限定部屋を作成する場合、入室の言葉が必要です。");
+                return;
+            }
             setIsSending(true);
             const res = await registerPlay({
                 contentId: selectedContent,
                 gameMasterId: user.id,
                 gmUserId: user.authType !== "guest" ? user.id : undefined,
                 playName,
+                isLimited,
+                joinWord,
             });
             if (res.ok) {
                 redirect(
@@ -141,6 +155,48 @@ export function PlayForm() {
                                 helperText={`最大 100 文字`}
                             />
                         </Box>
+                        <Box>
+                            <Typography variant="h6" gutterBottom>
+                                公開設定
+                            </Typography>
+                            <RadioGroup
+                                value={isLimited ? "limited" : "public"}
+                                onChange={(event) =>
+                                    setIsLimited(
+                                        event.target.value === "limited",
+                                    )
+                                }
+                            >
+                                <FormControlLabel
+                                    value="public"
+                                    control={<Radio />}
+                                    label="公開: 部屋一覧から誰でもそのまま入室できます。"
+                                />
+                                <FormControlLabel
+                                    value="limited"
+                                    control={<Radio />}
+                                    label="限定: 部屋一覧には表示されますが、入室の言葉がないと入れません。"
+                                />
+                            </RadioGroup>
+                        </Box>
+                        {isLimited ? (
+                            <Box>
+                                <Typography variant="h6" gutterBottom>
+                                    入室の言葉
+                                </Typography>
+                                <TextField
+                                    value={joinWord}
+                                    onChange={handleJoinWord}
+                                    fullWidth
+                                    slotProps={{
+                                        htmlInput: {
+                                            maxLength: 100,
+                                        },
+                                    }}
+                                    helperText="部屋一覧から入室するときに必要な言葉です。"
+                                />
+                            </Box>
+                        ) : null}
                         <Box>
                             <Typography variant="h6" gutterBottom>
                                 ゲーム選択{" "}

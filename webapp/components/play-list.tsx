@@ -13,6 +13,7 @@ import {
     Card,
     CardActions,
     CardContent,
+    Chip,
     Container,
     Divider,
     Grid,
@@ -24,6 +25,7 @@ import {
     Skeleton,
     Stack,
     TextField,
+    Tooltip,
     Typography,
     useTheme,
 } from "@mui/material";
@@ -34,6 +36,7 @@ import {
     Search,
     SportsEsports,
     Link as LinkIcon,
+    Lock,
 } from "@mui/icons-material";
 import { PlayInfo } from "@/lib/types";
 import { usePlayList } from "@/lib/client/usePlayList";
@@ -99,6 +102,27 @@ function PlayGrid({ list }: { list: PlayInfo[] }) {
                             <Typography variant="h6" component="h2">
                                 {info.playName}
                             </Typography>
+                            {info.isLimited ? (
+                                <Tooltip
+                                    arrow
+                                    title="この部屋に入室するには「入室の言葉」が必要です。"
+                                >
+                                    <Stack spacing={0.5} direction="row">
+                                        <Lock fontSize="small" />
+                                        <Typography
+                                            variant="body2"
+                                            color={theme.palette.text.secondary}
+                                            sx={{
+                                                px: 1,
+                                                py: 0.5,
+                                                borderRadius: 1,
+                                            }}
+                                        >
+                                            限定
+                                        </Typography>
+                                    </Stack>
+                                </Tooltip>
+                            ) : null}
                             <Typography
                                 variant="body2"
                                 color={theme.palette.text.secondary}

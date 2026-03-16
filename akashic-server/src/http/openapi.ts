@@ -164,6 +164,8 @@ export const openapi = {
                     playerId: { type: "string" },
                     playerUserId: { type: "string" },
                     playerName: { type: "string" },
+                    joinWord: { type: "string" },
+                    inviteHash: { type: "string" },
                 },
             },
             StartResponse: {

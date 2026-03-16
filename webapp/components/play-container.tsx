@@ -1,22 +1,84 @@
 "use client";
 
-import { useRef } from "react";
-import { useParams } from "next/navigation";
-import { Alert, Container, Skeleton } from "@mui/material";
+import { FormEvent, useRef, useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
+import {
+    Alert,
+    Button,
+    Card,
+    CardContent,
+    Container,
+    Skeleton,
+    Stack,
+    TextField,
+    Typography,
+} from "@mui/material";
 import { usePlay } from "@/lib/client/usePlay";
 import { useAuth } from "@/lib/client/useAuth";
 import { PlayView } from "@/components/play-view";
 
 export function PlayContainer() {
     const { id } = useParams<{ id: string }>();
-    const { isLoading, data, error } = usePlay(id);
+    const searchParams = useSearchParams();
+    const inviteHash = searchParams.get("inviteHash") ?? undefined;
+    const [joinWord, setJoinWord] = useState("");
+    const [submittedJoinWord, setSubmittedJoinWord] = useState<string>();
+    const { isLoading, data, error, requiresJoinWork } = usePlay(
+        id,
+        inviteHash,
+        submittedJoinWord,
+    );
     const [user] = useAuth();
     const container = useRef<HTMLDivElement>(null);
+
+    function handleSubmitJoinWord(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        setSubmittedJoinWord(joinWord);
+    }
 
     if (isLoading) {
         return (
             <Container>
                 <Skeleton variant="rectangular" />
+            </Container>
+        );
+    }
+    if (requiresJoinWork) {
+        return (
+            <Container maxWidth="sm" sx={{ mt: 2 }}>
+                <Card>
+                    <CardContent>
+                        <Stack
+                            component="form"
+                            spacing={2}
+                            onSubmit={handleSubmitJoinWord}
+                        >
+                            {error ? (
+                                <Alert severity="error" variant="outlined">
+                                    {error}
+                                </Alert>
+                            ) : null}
+                            <Typography variant="h6">
+                                この部屋は限定公開です
+                            </Typography>
+                            <Typography variant="body2">
+                                部屋一覧から入る場合は、部屋主が設定した入室の言葉が必要です。
+                            </Typography>
+                            <TextField
+                                label="入室の言葉"
+                                value={joinWord}
+                                onChange={(event) =>
+                                    setJoinWord(event.target.value)
+                                }
+                                autoFocus
+                                fullWidth
+                            />
+                            <Button type="submit" variant="contained">
+                                入室する
+                            </Button>
+                        </Stack>
+                    </CardContent>
+                </Card>
             </Container>
         );
     }
@@ -36,6 +98,9 @@ export function PlayContainer() {
             playId={id}
             playToken={data.playToken}
             playName={data.playName}
+            isLimited={data.isLimited}
+            joinWord={data.joinWord}
+            inviteHash={data.inviteHash}
             isGameMaster={data.isGameMaster}
             contentWidth={data.contentWidth}
             contentHeight={data.contentHeight}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { GameConfiguration } from "@akashic/game-configuration";
 import { Play, prisma } from "@yasshi2525/persist-schema";
 import { GUEST_NAME, PlayResponse } from "@/lib/types";
+import { getAuth } from "@/lib/server/auth";
 import {
     akashicServerUrl,
     internalContentBaseUrl,
@@ -48,6 +49,8 @@ export async function GET(
     ctx: RouteContext<"/api/play/[id]">,
 ): Promise<NextResponse<PlayResponse>> {
     const { id: playId } = await ctx.params;
+    const inviteHash = req.nextUrl.searchParams.get("inviteHash") ?? undefined;
+    const joinWord = req.nextUrl.searchParams.get("joinWord") ?? undefined;
     if (playId == null) {
         return NextResponse.json({
             ok: false,
@@ -64,6 +67,9 @@ export async function GET(
                 contentId: true,
                 gameMasterId: true,
                 name: true,
+                isLimited: true,
+                joinWord: true,
+                inviteHash: true,
                 createdAt: true,
                 gmUser: {
                     select: {
@@ -104,6 +110,25 @@ export async function GET(
                 reason: "ClosedPlay",
             });
         }
+        if (play.isLimited) {
+            const user = await getAuth();
+            if (user?.id !== play.gameMasterId) {
+                if (inviteHash !== play.inviteHash) {
+                    if (!joinWord) {
+                        return NextResponse.json({
+                            ok: false,
+                            reason: "JoinWordRequired",
+                        });
+                    }
+                    if (joinWord !== play.joinWord) {
+                        return NextResponse.json({
+                            ok: false,
+                            reason: "InvalidJoinWord",
+                        });
+                    }
+                }
+            }
+        }
         const res = await fetch(
             `${akashicServerUrl}/remaining?playId=${playId}`,
             { headers: withAkashicServerAuth() },
@@ -128,6 +153,9 @@ export async function GET(
             data: {
                 playToken: await fetchPlayToken(play),
                 playName: play.name,
+                isLimited: play.isLimited,
+                joinWord: play.joinWord ?? undefined,
+                inviteHash: play.inviteHash ?? undefined,
                 gameMaster: {
                     id: play.gameMasterId,
                     userId: play.gmUser?.id ?? undefined,
