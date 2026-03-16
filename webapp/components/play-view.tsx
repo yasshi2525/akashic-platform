@@ -223,7 +223,7 @@ export function PlayView({
         if (typeof window === "undefined") {
             return;
         }
-        const currentUrl = new URL(window.location.href);
+        const currentUrl = new URL(`/play/${playId}`, window.location.origin);
         if (isLimited) {
             currentUrl.searchParams.set("inviteHash", inviteHash!);
         }

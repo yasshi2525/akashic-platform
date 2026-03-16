@@ -70,13 +70,9 @@ export function PlayCreateDialog({
             joinWord,
         });
         if (res.ok) {
-            const query = new URLSearchParams({
-                messageKey: messages.play.registerSuccessful,
-            });
-            if (isLimited) {
-                query.set("inviteHash", res.inviteHash!);
-            }
-            router.push(`/play/${res.playId}?${query.toString()}`);
+            router.push(
+                `/play/${res.playId}?${messageKey}=${messages.play.registerSuccessful}`,
+            );
         } else {
             switch (res.reason) {
                 case "InvalidParams":

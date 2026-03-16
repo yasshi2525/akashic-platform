@@ -68,13 +68,9 @@ export function PlayForm() {
                 joinWord,
             });
             if (res.ok) {
-                const query = new URLSearchParams({
-                    messageKey: messages.play.registerSuccessful,
-                });
-                if (isLimited) {
-                    query.set("inviteHash", res.inviteHash!);
-                }
-                redirect(`/play/${res.playId}?${query.toString()}`);
+                redirect(
+                    `/play/${res.playId}?${messageKey}=${messages.play.registerSuccessful}`,
+                );
             } else {
                 switch (res.reason) {
                     case "InvalidParams":

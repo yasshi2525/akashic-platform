@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { GameConfiguration } from "@akashic/game-configuration";
 import { Play, prisma } from "@yasshi2525/persist-schema";
 import { GUEST_NAME, PlayResponse } from "@/lib/types";
+import { getAuth } from "@/lib/server/auth";
 import {
     akashicServerUrl,
     internalContentBaseUrl,
@@ -110,17 +111,22 @@ export async function GET(
             });
         }
         if (play.isLimited) {
-            if (!joinWord && inviteHash !== play.inviteHash) {
-                return NextResponse.json({
-                    ok: false,
-                    reason: "JoinWordRequired",
-                });
-            }
-            if (joinWord !== play.joinWord) {
-                return NextResponse.json({
-                    ok: false,
-                    reason: "InvalidJoinWord",
-                });
+            const user = await getAuth();
+            if (user?.id !== play.gameMasterId) {
+                if (inviteHash !== play.inviteHash) {
+                    if (!joinWord) {
+                        return NextResponse.json({
+                            ok: false,
+                            reason: "JoinWordRequired",
+                        });
+                    }
+                    if (joinWord !== play.joinWord) {
+                        return NextResponse.json({
+                            ok: false,
+                            reason: "InvalidJoinWord",
+                        });
+                    }
+                }
             }
         }
         const res = await fetch(
