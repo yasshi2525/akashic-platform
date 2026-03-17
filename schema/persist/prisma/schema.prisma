@@ -156,4 +156,6 @@ model Notification {
 enum NotificationType {
   FEEDBACKED
   FEEDBACK_REPLIED
+  GAME_CRASHED
+  GAME_ERROR_LOGGED
 }

@@ -4,6 +4,8 @@ import * as util from "node:util";
 export interface PlayContext {
     playId: number;
     contentId: number;
+    onError?: () => void;
+    logs?: string[];
 }
 
 export const playStorage = new AsyncLocalStorage<PlayContext>();
@@ -23,20 +25,23 @@ export function installConsoleOverride(): void {
             output(util.format(...args));
             return;
         }
-        output(
-            JSON.stringify({
-                timestamp: new Date().toISOString(),
-                level,
-                playId: ctx.playId,
-                contentId: ctx.contentId,
-                message: util.format(...args),
-            }),
-        );
+        const line = JSON.stringify({
+            timestamp: new Date().toISOString(),
+            level,
+            playId: ctx.playId,
+            contentId: ctx.contentId,
+            message: util.format(...args),
+        });
+        ctx.logs?.push(line);
+        output(line);
     };
 
     console.log = (...args: unknown[]) => patchedLog("info", args, _origLog);
     console.info = (...args: unknown[]) => patchedLog("info", args, _origLog);
     console.debug = (...args: unknown[]) => patchedLog("info", args, _origLog);
     console.warn = (...args: unknown[]) => patchedLog("warn", args, _origWarn);
-    console.error = (...args: unknown[]) => patchedLog("error", args, _origError);
+    console.error = (...args: unknown[]) => {
+        patchedLog("error", args, _origError);
+        playStorage.getStore()?.onError?.();
+    };
 }
