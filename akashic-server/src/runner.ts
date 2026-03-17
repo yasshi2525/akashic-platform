@@ -8,6 +8,7 @@ import {
     Session,
     SessionLike,
 } from "@yasshi2525/playlog-client-like";
+import { playStorage } from "./logger";
 
 /**
  * `akashic-gameview` の ProtocolType と同じ。
@@ -62,23 +63,41 @@ export class Runner {
         }
         const playId = await this._createPlayId();
         this._playId = playId;
-        try {
-            const playToken = await this._fetchPlayToken(playId);
-            this._session = this._openSession(playId, playToken);
-            const amflow = await this._createAMFlow(this._session);
-            this._subscribePlayEnd(amflow);
-            this._runner = await this._createRunner(playId, playToken, amflow);
-            this._initGame(amflow);
-            this._setTimer(Date.now() + PLAY_DURATION_MS);
-            return playId;
-        } catch (err) {
-            this._clearTimer();
-            this._deletePlayId(playId);
-            throw err;
-        }
+        return await playStorage.run(
+            { playId, contentId: this._param.contentId },
+            async () => {
+                try {
+                    const playToken = await this._fetchPlayToken(playId);
+                    this._session = this._openSession(playId, playToken);
+                    const amflow = await this._createAMFlow(this._session);
+                    this._subscribePlayEnd(amflow);
+                    this._runner = await this._createRunner(
+                        playId,
+                        playToken,
+                        amflow,
+                    );
+                    this._initGame(amflow);
+                    this._setTimer(Date.now() + PLAY_DURATION_MS);
+                    return playId;
+                } catch (err) {
+                    this._clearTimer();
+                    this._deletePlayId(playId);
+                    throw err;
+                }
+            },
+        );
     }
 
-    async end(reason: PlayEndReason, notifyPlaylogServer = true) {
+    async end(
+        reason: PlayEndReason,
+        notifyPlaylogServer = true,
+    ): Promise<void> {
+        if (this._playId != null && playStorage.getStore() == null) {
+            return playStorage.run(
+                { playId: this._playId, contentId: this._param.contentId },
+                () => this.end(reason, notifyPlaylogServer),
+            );
+        }
         this._clearTimer();
         if (this._runner) {
             const playId = parseInt(this._runner.playId);
@@ -117,7 +136,17 @@ export class Runner {
         };
     }
 
-    async extend() {
+    async extend(): Promise<
+        | { ok: false; reason: "NotFound" }
+        | { ok: false; reason: "TooEarly"; remainingMs: number; expiresAt: number }
+        | { ok: true; expiresAt: number; remainingMs: number; extendMs: number }
+    > {
+        if (this._playId != null && playStorage.getStore() == null) {
+            return playStorage.run(
+                { playId: this._playId, contentId: this._param.contentId },
+                () => this.extend(),
+            );
+        }
         if (this._expiresAt == null || this._playId == null) {
             return { ok: false, reason: "NotFound" } as const;
         }

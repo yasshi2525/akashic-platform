@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.3.0
+
+- Feature
+  - ユーザー投稿ゲームのログに PlayID, ContentID を埋め込む機能を追加
+
 ## 1.2.0
 
 - Feature

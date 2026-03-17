@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.4.0
+
+- Feature
+  - `./akashic-server`
+    - ユーザー投稿ゲームのログに PlayID, ContentID を埋め込む機能を追加
+
 ## 1.3.5
 
 - Feature
