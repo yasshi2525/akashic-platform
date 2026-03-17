@@ -1,6 +1,9 @@
 import * as process from "node:process";
+import { installConsoleOverride } from "./logger";
 import { RunnerManager } from "./runnerManager";
 import { HttpServer } from "./httpServer";
+
+installConsoleOverride();
 
 const storagePublicUrl =
     process.env.STORAGE_PUBLIC_URL ?? "http://localhost:3031";
