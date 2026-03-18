@@ -97,6 +97,32 @@ export interface UserFeedbackItem {
     game: FeedbackGameSummary;
 }
 
+export const PLAY_LOG_LIMITS = 20;
+
+export interface PlayLogInfo {
+    id: number;
+    contentId: number;
+    name: string;
+    gameMaster: {
+        userId?: string;
+        name: string;
+        iconURL?: string;
+    };
+    createdAt: Date;
+    endedAt: Date | null;
+    logUploadedAt: Date | null;
+    crashed: boolean;
+    errorLogged: boolean;
+}
+
+export interface PlayLogEntry {
+    timestamp: string;
+    level: "info" | "warn" | "error";
+    playId: number;
+    contentId: number;
+    message: string;
+}
+
 export const NOTIFICATION_LIMITS = 10;
 
 export interface NotificationInfo {

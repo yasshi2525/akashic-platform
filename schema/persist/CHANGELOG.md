@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 1.3.0
+
+- Feature
+  - `Play` にログ管理用フィールドを追加
+    - `isActive`: プレイ中かどうか（終了時に `false` に更新）
+    - `endedAt`: プレイ終了日時
+    - `logUploadedAt`: S3 へのログアップロード完了日時
+    - `crashed`: 異常終了フラグ
+    - `errorLogged`: エラーログ出力フラグ
+
 ## 1.2.0
 
 - Feature

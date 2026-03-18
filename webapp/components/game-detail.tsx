@@ -13,6 +13,7 @@ import {
     Typography,
     useTheme,
 } from "@mui/material";
+import Link from "next/link";
 import { FeedbackPost, GameInfo, User } from "@/lib/types";
 import { FeedbackPanel } from "./feedback-panel";
 import { CreditPanel } from "./credit-panel";
@@ -115,18 +116,35 @@ export function GameDetailClient({
                                 >
                                     {gameInfo.description}
                                 </Typography>
-                                <Button
-                                    variant="outlined"
-                                    onClick={handleOpenCreateDialog}
-                                    sx={{
-                                        borderColor:
-                                            theme.palette.primary.light,
-                                        color: theme.palette.primary.light,
-                                        alignSelf: "flex-start",
-                                    }}
-                                >
-                                    部屋を作る
-                                </Button>
+                                <Stack direction="row" spacing={1}>
+                                    <Button
+                                        variant="outlined"
+                                        onClick={handleOpenCreateDialog}
+                                        sx={{
+                                            borderColor:
+                                                theme.palette.primary.light,
+                                            color: theme.palette.primary.light,
+                                        }}
+                                    >
+                                        部屋を作る
+                                    </Button>
+                                    {isPublisher && (
+                                        <Button
+                                            variant="outlined"
+                                            component={Link}
+                                            href={`/game/${gameInfo.id}/logs`}
+                                            sx={{
+                                                borderColor:
+                                                    theme.palette.text
+                                                        .secondary,
+                                                color: theme.palette.text
+                                                    .secondary,
+                                            }}
+                                        >
+                                            ログを見る
+                                        </Button>
+                                    )}
+                                </Stack>
                                 <CreditPanel
                                     credit={gameInfo.credit}
                                     contentId={gameInfo.contentId}

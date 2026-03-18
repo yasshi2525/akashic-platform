@@ -1,5 +1,7 @@
 import * as process from "node:process";
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { PassThrough } from "node:stream";
+import { S3Client } from "@aws-sdk/client-s3";
+import { Upload } from "@aws-sdk/lib-storage";
 
 let s3Client: S3Client | undefined;
 
@@ -26,21 +28,25 @@ export function getPlayLogS3Key(contentId: number, playId: number): string {
     return `${prefix}play-logs/${contentId}/${playId}.jsonl`;
 }
 
-export async function uploadPlayLog(
+export function createPlayLogUpload(
     contentId: number,
     playId: number,
-    logs: string[],
-): Promise<void> {
+): { logStream: PassThrough; upload: Upload } {
     const bucket = process.env.S3_BUCKET;
     if (!bucket) {
         throw new Error("S3_BUCKET is required.");
     }
-    await getS3Client().send(
-        new PutObjectCommand({
+    const logStream = new PassThrough();
+    const upload = new Upload({
+        client: getS3Client(),
+        params: {
             Bucket: bucket,
             Key: getPlayLogS3Key(contentId, playId),
-            Body: logs.join("\n"),
+            Body: logStream,
             ContentType: "application/x-ndjson",
-        }),
-    );
+        },
+        queueSize: 1,
+        partSize: 5 * 1024 * 1024,
+    });
+    return { logStream, upload };
 }

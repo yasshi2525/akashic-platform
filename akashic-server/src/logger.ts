@@ -1,11 +1,12 @@
 import { AsyncLocalStorage } from "node:async_hooks";
+import type { PassThrough } from "node:stream";
 import * as util from "node:util";
 
 export interface PlayContext {
     playId: number;
     contentId: number;
     onError?: () => void;
-    logs?: string[];
+    logStream?: PassThrough;
 }
 
 export const playStorage = new AsyncLocalStorage<PlayContext>();
@@ -32,7 +33,9 @@ export function installConsoleOverride(): void {
             contentId: ctx.contentId,
             message: util.format(...args),
         });
-        ctx.logs?.push(line);
+        if (ctx.logStream && !ctx.logStream.writableEnded) {
+            ctx.logStream.write(line + "\n");
+        }
         output(line);
     };
 

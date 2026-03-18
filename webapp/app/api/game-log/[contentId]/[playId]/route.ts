@@ -35,6 +35,8 @@ export async function GET(
         return new NextResponse("Forbidden", { status: 403 });
     }
 
+    const filter = _req.nextUrl.searchParams.get("filter");
+
     try {
         const result = await getS3Client().send(
             new GetObjectCommand({
@@ -46,7 +48,27 @@ export async function GET(
         if (body == null) {
             return new NextResponse("NotFound", { status: 404 });
         }
-        return new NextResponse(body, {
+        const responseBody =
+            filter === "error"
+                ? body
+                      .split("\n")
+                      .filter((line) => {
+                          if (!line.trim()) return false;
+                          try {
+                              return (
+                                  (
+                                      JSON.parse(line) as {
+                                          level?: string;
+                                      }
+                                  ).level === "error"
+                              );
+                          } catch {
+                              return false;
+                          }
+                      })
+                      .join("\n")
+                : body;
+        return new NextResponse(responseBody, {
             status: 200,
             headers: { "Content-Type": "application/x-ndjson; charset=utf-8" },
         });

@@ -102,6 +102,11 @@ model Play {
   isLimited    Boolean @default(false)
   joinWord     String?
   inviteHash   String?
+  isActive      Boolean   @default(true)
+  endedAt       DateTime?
+  logUploadedAt DateTime?
+  crashed       Boolean   @default(false)
+  errorLogged   Boolean   @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

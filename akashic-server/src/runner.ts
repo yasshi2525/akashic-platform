@@ -8,8 +8,10 @@ import {
     Session,
     SessionLike,
 } from "@yasshi2525/playlog-client-like";
+import type { PassThrough } from "node:stream";
+import type { Upload } from "@aws-sdk/lib-storage";
 import { playStorage } from "./logger";
-import { uploadPlayLog } from "./s3Logger";
+import { createPlayLogUpload } from "./s3Logger";
 
 /**
  * `akashic-gameview` の ProtocolType と同じ。
@@ -52,7 +54,8 @@ export class Runner {
     _timeoutId?: NodeJS.Timeout;
     _crashing = false;
     _errorLogged = false;
-    _logs?: string[];
+    _logStream?: PassThrough;
+    _upload?: Upload;
 
     constructor(param: RunnerParameterObject) {
         this._param = param;
@@ -67,8 +70,16 @@ export class Runner {
         }
         const playId = await this._createPlayId();
         this._playId = playId;
+
+        const { logStream, upload } = createPlayLogUpload(
+            this._param.contentId,
+            playId,
+        );
+        this._logStream = logStream;
+        this._upload = upload;
+
         return await playStorage.run(
-            { playId, contentId: this._param.contentId, logs: [] },
+            { playId, contentId: this._param.contentId, logStream },
             async () => {
                 try {
                     const playToken = await this._fetchPlayToken(playId);
@@ -85,6 +96,10 @@ export class Runner {
                     return playId;
                 } catch (err) {
                     this._clearTimer();
+                    logStream.destroy();
+                    upload.abort().catch(() => {});
+                    this._logStream = undefined;
+                    this._upload = undefined;
                     this._deletePlayId(playId);
                     throw err;
                 }
@@ -98,7 +113,11 @@ export class Runner {
     ): Promise<void> {
         if (this._playId != null && playStorage.getStore() == null) {
             return playStorage.run(
-                { playId: this._playId, contentId: this._param.contentId },
+                {
+                    playId: this._playId,
+                    contentId: this._param.contentId,
+                    logStream: this._logStream,
+                },
                 () => this.end(reason, notifyPlaylogServer),
             );
         }
@@ -119,9 +138,28 @@ export class Runner {
                     );
                 }
             }
-            await this._uploadPlayLog(playId);
-            await this._deletePlayId(playId);
+            await this._endPlayRecord(playId);
             this._param.onDestroy(playId);
+
+            // fire-and-forget: S3 アップロード・DB 更新・通知作成
+            const logStream = this._logStream;
+            const upload = this._upload;
+            const crashing = this._crashing;
+            const errorLogged = this._errorLogged;
+            if (logStream && upload) {
+                this._runBackgroundUpload(
+                    playId,
+                    logStream,
+                    upload,
+                    crashing,
+                    errorLogged,
+                ).catch((err) => {
+                    console.warn(
+                        `background upload failed (playId = "${playId}")`,
+                        err,
+                    );
+                });
+            }
         }
         if (this._session) {
             this._closeSession(this._session);
@@ -129,6 +167,8 @@ export class Runner {
         this._runner = undefined;
         this._session = undefined;
         this._playId = undefined;
+        this._logStream = undefined;
+        this._upload = undefined;
     }
 
     getRemaining() {
@@ -205,6 +245,80 @@ export class Runner {
             });
         } catch (err) {
             console.warn(`failed to delete playId "${playId}"`, err);
+        }
+    }
+
+    async _endPlayRecord(playId: number) {
+        try {
+            await prisma.play.update({
+                where: { id: playId },
+                data: {
+                    isActive: false,
+                    endedAt: new Date(),
+                },
+            });
+        } catch (err) {
+            console.warn(
+                `failed to end play record (playId = "${playId}")`,
+                err,
+            );
+        }
+    }
+
+    async _runBackgroundUpload(
+        playId: number,
+        logStream: PassThrough,
+        upload: Upload,
+        crashing: boolean,
+        errorLogged: boolean,
+    ): Promise<void> {
+        logStream.end();
+
+        let uploadSucceeded = false;
+        try {
+            await upload.done();
+            uploadSucceeded = true;
+        } catch (err) {
+            console.warn(
+                `failed to upload play log (playId = "${playId}")`,
+                err,
+            );
+        }
+
+        try {
+            await prisma.play.update({
+                where: { id: playId },
+                data: {
+                    crashed,
+                    errorLogged,
+                    ...(uploadSucceeded ? { logUploadedAt: new Date() } : {}),
+                },
+            });
+        } catch (err) {
+            console.warn(
+                `failed to update play log status (playId = "${playId}")`,
+                err,
+            );
+            return;
+        }
+
+        if (!uploadSucceeded) return;
+
+        if (crashing) {
+            await this._notifyGameCrashed(playId).catch((err) => {
+                console.warn(
+                    `failed to create GAME_CRASHED notification (playId = "${playId}")`,
+                    err,
+                );
+            });
+        }
+        if (errorLogged) {
+            await this._notifyGameErrorLogged(playId).catch((err) => {
+                console.warn(
+                    `failed to create GAME_ERROR_LOGGED notification (playId = "${playId}")`,
+                    err,
+                );
+            });
         }
     }
 
@@ -339,21 +453,13 @@ export class Runner {
                 err,
                 (err as any).cause,
             );
-            await this._notifyGameCrashed(playId);
             await this.end("INTERNAL_ERROR");
         });
         const ctx = playStorage.getStore();
         if (ctx) {
-            this._logs = ctx.logs;
             ctx.onError = () => {
                 if (this._crashing || this._errorLogged) return;
                 this._errorLogged = true;
-                this._notifyGameErrorLogged(playId).catch((err) => {
-                    console.warn(
-                        `failed to create GAME_ERROR_LOGGED notification (playId = "${playId}")`,
-                        err,
-                    );
-                });
             };
         }
         const game = await runner.start({ paused: false });
@@ -419,72 +525,46 @@ export class Runner {
         this._expiresAt = undefined;
     }
 
-    async _uploadPlayLog(playId: number): Promise<void> {
-        if (!this._logs || this._logs.length === 0) return;
-        try {
-            await uploadPlayLog(this._param.contentId, playId, this._logs);
-        } catch (err) {
-            console.warn(
-                `failed to upload play log (playId = "${playId}")`,
-                err,
-            );
-        }
-    }
-
     async _notifyGameCrashed(playId: number): Promise<void> {
-        try {
-            const content = await prisma.content.findUnique({
-                where: { id: this._param.contentId },
-                select: {
-                    game: {
-                        select: { id: true, title: true, publisherId: true },
-                    },
+        const content = await prisma.content.findUnique({
+            where: { id: this._param.contentId },
+            select: {
+                game: {
+                    select: { id: true, title: true, publisherId: true },
                 },
-            });
-            if (!content) return;
-            await prisma.notification.create({
-                data: {
-                    userId: content.game.publisherId,
-                    unread: true,
-                    type: "GAME_CRASHED",
-                    body: `「${content.game.title}」がエラーで異常終了しました。`,
-                    link: `/game-log/${this._param.contentId}/${playId}`,
-                },
-            });
-        } catch (err) {
-            console.warn(
-                `failed to create GAME_CRASHED notification (playId = "${playId}")`,
-                err,
-            );
-        }
+            },
+        });
+        if (!content) return;
+        await prisma.notification.create({
+            data: {
+                userId: content.game.publisherId,
+                unread: true,
+                type: "GAME_CRASHED",
+                body: `「${content.game.title}」がエラーで異常終了しました。`,
+                link: `/game/${content.game.id}/logs#play-${playId}`,
+            },
+        });
     }
 
     async _notifyGameErrorLogged(playId: number): Promise<void> {
-        try {
-            const content = await prisma.content.findUnique({
-                where: { id: this._param.contentId },
-                select: {
-                    game: {
-                        select: { id: true, title: true, publisherId: true },
-                    },
+        const content = await prisma.content.findUnique({
+            where: { id: this._param.contentId },
+            select: {
+                game: {
+                    select: { id: true, title: true, publisherId: true },
                 },
-            });
-            if (!content) return;
-            await prisma.notification.create({
-                data: {
-                    userId: content.game.publisherId,
-                    unread: true,
-                    type: "GAME_ERROR_LOGGED",
-                    body: `「${content.game.title}」の実行中にエラーログが出力されました。`,
-                    link: `/game-log/${this._param.contentId}/${playId}`,
-                },
-            });
-        } catch (err) {
-            console.warn(
-                `failed to create GAME_ERROR_LOGGED notification (playId = "${playId}")`,
-                err,
-            );
-        }
+            },
+        });
+        if (!content) return;
+        await prisma.notification.create({
+            data: {
+                userId: content.game.publisherId,
+                unread: true,
+                type: "GAME_ERROR_LOGGED",
+                body: `「${content.game.title}」の実行中にエラーログが出力されました。`,
+                link: `/game/${content.game.id}/logs#play-${playId}`,
+            },
+        });
     }
 
     async _notifyExtend(
