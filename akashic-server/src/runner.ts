@@ -1,3 +1,5 @@
+import type { PassThrough } from "node:stream";
+import type { Upload } from "@aws-sdk/lib-storage";
 import type { AMFlow } from "@akashic/amflow";
 import { EventCode, JoinEvent, MessageEvent } from "@akashic/playlog";
 import { RunnerV3 } from "@akashic/headless-driver";
@@ -8,10 +10,8 @@ import {
     Session,
     SessionLike,
 } from "@yasshi2525/playlog-client-like";
-import type { PassThrough } from "node:stream";
-import type { Upload } from "@aws-sdk/lib-storage";
 import { playStorage } from "./logger";
-import { createPlayLogUpload } from "./s3Logger";
+import { createContentLogUpload } from "./s3Logger";
 
 /**
  * `akashic-gameview` の ProtocolType と同じ。
@@ -71,7 +71,7 @@ export class Runner {
         const playId = await this._createPlayId();
         this._playId = playId;
 
-        const { logStream, upload } = createPlayLogUpload(
+        const { logStream, upload } = createContentLogUpload(
             this._param.contentId,
             playId,
         );
@@ -97,7 +97,12 @@ export class Runner {
                 } catch (err) {
                     this._clearTimer();
                     logStream.destroy();
-                    upload.abort().catch(() => {});
+                    upload.abort().catch((err) => {
+                        console.warn(
+                            `upload was aborted in initialization`,
+                            err,
+                        );
+                    });
                     this._logStream = undefined;
                     this._upload = undefined;
                     this._deletePlayId(playId);
@@ -141,18 +146,13 @@ export class Runner {
             await this._endPlayRecord(playId);
             this._param.onDestroy(playId);
 
-            // fire-and-forget: S3 アップロード・DB 更新・通知作成
-            const logStream = this._logStream;
-            const upload = this._upload;
-            const crashing = this._crashing;
-            const errorLogged = this._errorLogged;
-            if (logStream && upload) {
+            if (this._logStream && this._upload) {
                 this._runBackgroundUpload(
                     playId,
-                    logStream,
-                    upload,
-                    crashing,
-                    errorLogged,
+                    this._logStream,
+                    this._upload,
+                    this._crashing,
+                    this._errorLogged,
                 ).catch((err) => {
                     console.warn(
                         `background upload failed (playId = "${playId}")`,
@@ -269,7 +269,7 @@ export class Runner {
         playId: number,
         logStream: PassThrough,
         upload: Upload,
-        crashing: boolean,
+        crashed: boolean,
         errorLogged: boolean,
     ): Promise<void> {
         logStream.end();
@@ -302,10 +302,12 @@ export class Runner {
             return;
         }
 
-        if (!uploadSucceeded) return;
+        if (!uploadSucceeded) {
+            return;
+        }
 
-        if (crashing) {
-            await this._notifyGameCrashed(playId).catch((err) => {
+        if (crashed) {
+            await this._createGameCrashedNortification(playId).catch((err) => {
                 console.warn(
                     `failed to create GAME_CRASHED notification (playId = "${playId}")`,
                     err,
@@ -313,12 +315,14 @@ export class Runner {
             });
         }
         if (errorLogged) {
-            await this._notifyGameErrorLogged(playId).catch((err) => {
-                console.warn(
-                    `failed to create GAME_ERROR_LOGGED notification (playId = "${playId}")`,
-                    err,
-                );
-            });
+            await this._createGameErrorLoggedNortification(playId).catch(
+                (err) => {
+                    console.warn(
+                        `failed to create GAME_ERROR_LOGGED notification (playId = "${playId}")`,
+                        err,
+                    );
+                },
+            );
         }
     }
 
@@ -525,8 +529,8 @@ export class Runner {
         this._expiresAt = undefined;
     }
 
-    async _notifyGameCrashed(playId: number): Promise<void> {
-        const content = await prisma.content.findUnique({
+    async _createGameCrashedNortification(playId: number): Promise<void> {
+        const content = await prisma.content.findUniqueOrThrow({
             where: { id: this._param.contentId },
             select: {
                 game: {
@@ -534,7 +538,6 @@ export class Runner {
                 },
             },
         });
-        if (!content) return;
         await prisma.notification.create({
             data: {
                 userId: content.game.publisherId,
@@ -546,8 +549,8 @@ export class Runner {
         });
     }
 
-    async _notifyGameErrorLogged(playId: number): Promise<void> {
-        const content = await prisma.content.findUnique({
+    async _createGameErrorLoggedNortification(playId: number): Promise<void> {
+        const content = await prisma.content.findUniqueOrThrow({
             where: { id: this._param.contentId },
             select: {
                 game: {
@@ -555,7 +558,6 @@ export class Runner {
                 },
             },
         });
-        if (!content) return;
         await prisma.notification.create({
             data: {
                 userId: content.game.publisherId,

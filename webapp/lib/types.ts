@@ -97,9 +97,9 @@ export interface UserFeedbackItem {
     game: FeedbackGameSummary;
 }
 
-export const PLAY_LOG_LIMITS = 20;
+export const CONTENT_LOG_LIMITS = 20;
 
-export interface PlayLogInfo {
+export interface ContentLogInfo {
     id: number;
     contentId: number;
     name: string;
@@ -115,7 +115,7 @@ export interface PlayLogInfo {
     errorLogged: boolean;
 }
 
-export interface PlayLogEntry {
+export interface ContentLogEntry {
     timestamp: string;
     level: "info" | "warn" | "error";
     playId: number;
@@ -246,6 +246,14 @@ export type UserFeedbackErrorType = (typeof userFeedbackErrReasons)[number];
 export type UserFeedbackResponse =
     | { ok: true; data: UserFeedbackItem[] }
     | { ok: false; reason: UserFeedbackErrorType };
+
+const contentLogErrReasons = [
+    "InvalidParams",
+    "Forbidden",
+    "NotFound",
+    "InternalError",
+] as const;
+export type ContentLogErrorType = (typeof contentLogErrReasons)[number];
 
 const notificationErrReasons = ["NotAuthorized", "InternalError"] as const;
 export type NotificationErrorType = (typeof notificationErrReasons)[number];

@@ -94,14 +94,14 @@ model Content {
 }
 
 model Play {
-  id           Int     @id @default(autoincrement())
-  contentId    Int
-  gameMasterId String
-  gmUserId     String?
-  name         String
-  isLimited    Boolean @default(false)
-  joinWord     String?
-  inviteHash   String?
+  id            Int       @id @default(autoincrement())
+  contentId     Int
+  gameMasterId  String
+  gmUserId      String?
+  name          String
+  isLimited     Boolean   @default(false)
+  joinWord      String?
+  inviteHash    String?
   isActive      Boolean   @default(true)
   endedAt       DateTime?
   logUploadedAt DateTime?

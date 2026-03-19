@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@yasshi2525/persist-schema";
 import { getAuth } from "@/lib/server/auth";
-import { GUEST_NAME, PLAY_LOG_LIMITS } from "@/lib/types";
+import { GUEST_NAME, CONTENT_LOG_LIMITS } from "@/lib/types";
 
 export async function GET(
     req: NextRequest,
@@ -30,7 +30,7 @@ export async function GET(
     }
 
     const limits = parseInt(
-        req.nextUrl.searchParams.get("limits") ?? PLAY_LOG_LIMITS.toString(),
+        req.nextUrl.searchParams.get("limits") ?? CONTENT_LOG_LIMITS.toString(),
     );
     const page = parseInt(req.nextUrl.searchParams.get("page") ?? "0");
 

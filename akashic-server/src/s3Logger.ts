@@ -23,12 +23,12 @@ function getS3Client(): S3Client {
     return s3Client;
 }
 
-export function getPlayLogS3Key(contentId: number, playId: number): string {
+export function getContentLogS3Key(contentId: number, playId: number): string {
     const prefix = process.env.S3_KEY_PREFIX ?? "";
-    return `${prefix}play-logs/${contentId}/${playId}.jsonl`;
+    return `${prefix}content-logs/${contentId}/${playId}.jsonl`;
 }
 
-export function createPlayLogUpload(
+export function createContentLogUpload(
     contentId: number,
     playId: number,
 ): { logStream: PassThrough; upload: Upload } {
@@ -41,7 +41,7 @@ export function createPlayLogUpload(
         client: getS3Client(),
         params: {
             Bucket: bucket,
-            Key: getPlayLogS3Key(contentId, playId),
+            Key: getContentLogS3Key(contentId, playId),
             Body: logStream,
             ContentType: "application/x-ndjson",
         },

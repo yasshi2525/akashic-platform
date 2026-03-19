@@ -1,9 +1,9 @@
 import useSWR from "swr";
-import { PlayLogInfo, PLAY_LOG_LIMITS } from "../types";
+import { ContentLogInfo, CONTENT_LOG_LIMITS } from "../types";
 
 interface GamePlaysResponse {
     ok: true;
-    data: PlayLogInfo[];
+    data: ContentLogInfo[];
     total: number;
 }
 
@@ -26,7 +26,7 @@ const fetcher = async (url: string): Promise<GamePlaysResponse> => {
 export function useGamePlays(
     gameId: string,
     page: number = 0,
-    limits: number = PLAY_LOG_LIMITS,
+    limits: number = CONTENT_LOG_LIMITS,
 ) {
     const { isLoading, data, error } = useSWR(
         `/api/game/${gameId}/plays?page=${page}&limits=${limits}`,

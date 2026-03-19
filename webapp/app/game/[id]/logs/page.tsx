@@ -14,11 +14,16 @@ import {
     Skeleton,
     Stack,
     Typography,
+    useTheme,
 } from "@mui/material";
+import {
+    ContentLogEntry,
+    ContentLogInfo,
+    CONTENT_LOG_LIMITS,
+} from "@/lib/types";
 import { useAuth } from "@/lib/client/useAuth";
 import { useGame } from "@/lib/client/useGame";
 import { useGamePlays } from "@/lib/client/useGamePlays";
-import { PlayLogEntry, PlayLogInfo, PLAY_LOG_LIMITS } from "@/lib/types";
 
 function PlayErrorDetails({
     contentId,
@@ -29,7 +34,7 @@ function PlayErrorDetails({
 }) {
     const [expanded, setExpanded] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [entries, setEntries] = useState<PlayLogEntry[] | null>(null);
+    const [entries, setEntries] = useState<ContentLogEntry[] | null>(null);
     const [fetchError, setFetchError] = useState<string>();
 
     async function handleToggle() {
@@ -37,7 +42,7 @@ function PlayErrorDetails({
             setLoading(true);
             try {
                 const res = await fetch(
-                    `/api/game-log/${contentId}/${playId}?filter=error`,
+                    `/api/content/${contentId}/play/${playId}/logs?filter=error`,
                 );
                 if (res.status === 404) {
                     setEntries([]);
@@ -48,7 +53,7 @@ function PlayErrorDetails({
                     const parsed = text
                         .split("\n")
                         .filter((l) => l.trim())
-                        .map((l) => JSON.parse(l) as PlayLogEntry);
+                        .map((l) => JSON.parse(l) as ContentLogEntry);
                     setEntries(parsed);
                 }
             } catch {
@@ -112,13 +117,19 @@ function PlayErrorDetails({
     );
 }
 
-function PlayLogCard({ play }: { play: PlayLogInfo }) {
+function ContentLogCard({ play }: { play: ContentLogInfo }) {
+    const theme = useTheme();
     const hasError = play.crashed || play.errorLogged;
 
     return (
         <Box
             id={`play-${play.id}`}
-            sx={{ border: 1, borderColor: "divider", borderRadius: 1, p: 2 }}
+            sx={{
+                border: 1,
+                borderColor: theme.palette.divider,
+                borderRadius: 1,
+                p: 2,
+            }}
         >
             <Stack spacing={1}>
                 <Stack
@@ -131,14 +142,10 @@ function PlayLogCard({ play }: { play: PlayLogInfo }) {
                         {play.name}
                     </Typography>
                     {play.crashed && (
-                        <Chip label="クラッシュ" color="error" size="small" />
+                        <Chip label="強制終了" color="error" size="small" />
                     )}
                     {!play.crashed && play.errorLogged && (
-                        <Chip
-                            label="エラーあり"
-                            color="warning"
-                            size="small"
-                        />
+                        <Chip label="エラーあり" color="warning" size="small" />
                     )}
                     {!hasError && (
                         <Chip
@@ -156,17 +163,25 @@ function PlayLogCard({ play }: { play: PlayLogInfo }) {
                             sx={{ width: 20, height: 20 }}
                         />
                     )}
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography
+                        variant="body2"
+                        color={theme.palette.text.secondary}
+                    >
                         {play.gameMaster.name}
                     </Typography>
                 </Stack>
 
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-                    <Typography variant="body2" color="text.secondary">
-                        開始:{" "}
-                        {new Date(play.createdAt).toLocaleString("ja-JP")}
+                    <Typography
+                        variant="body2"
+                        color={theme.palette.text.secondary}
+                    >
+                        開始: {new Date(play.createdAt).toLocaleString("ja-JP")}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography
+                        variant="body2"
+                        color={theme.palette.text.secondary}
+                    >
                         終了:{" "}
                         {play.endedAt
                             ? new Date(play.endedAt).toLocaleString("ja-JP")
@@ -185,7 +200,7 @@ function PlayLogCard({ play }: { play: PlayLogInfo }) {
                     <Button
                         variant="text"
                         size="small"
-                        href={`/api/game-log/${play.contentId}/${play.id}`}
+                        href={`/api/content/${play.contentId}/play/${play.id}/logs`}
                         target="_blank"
                         rel="noopener noreferrer"
                         sx={{ alignSelf: "flex-start", pl: 0 }}
@@ -193,7 +208,10 @@ function PlayLogCard({ play }: { play: PlayLogInfo }) {
                         全ログをダウンロード
                     </Button>
                 ) : (
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography
+                        variant="body2"
+                        color={theme.palette.text.secondary}
+                    >
                         ログ準備中...
                     </Typography>
                 )}
@@ -202,10 +220,15 @@ function PlayLogCard({ play }: { play: PlayLogInfo }) {
     );
 }
 
-export default function GameLogs() {
+export default function ContentLogs() {
     const { id } = useParams<{ id: string }>();
+    const theme = useTheme();
     const [user] = useAuth();
-    const { isLoading: isGameLoading, gameInfo, error: gameError } = useGame(id);
+    const {
+        isLoading: isGameLoading,
+        gameInfo,
+        error: gameError,
+    } = useGame(id);
     const [page, setPage] = useState(0);
     const {
         isLoading: isPlaysLoading,
@@ -241,7 +264,7 @@ export default function GameLogs() {
         return (
             <Container maxWidth="md" sx={{ py: 2 }}>
                 <Alert severity="error" variant="outlined">
-                    このページにはアクセスできません。
+                    このページへのアクセス権がありません。
                 </Alert>
             </Container>
         );
@@ -253,7 +276,7 @@ export default function GameLogs() {
                 {gameInfo.title} - ログ一覧
             </Typography>
             <Alert severity="info" sx={{ mb: 2 }}>
-                終了したプレイのみ表示されます。ログの反映には若干時間がかかる場合があります。
+                終了した部屋のログのみ表示されます。反映には若干時間がかかります。
             </Alert>
 
             {playsError && (
@@ -268,17 +291,17 @@ export default function GameLogs() {
                     <Skeleton variant="rectangular" height={120} />
                 </Stack>
             ) : plays.length === 0 ? (
-                <Typography color="text.secondary">
-                    ログはまだありません。
+                <Typography color={theme.palette.text.secondary}>
+                    まだログがありません。
                 </Typography>
             ) : (
                 <Stack spacing={2}>
                     {plays.map((play) => (
-                        <PlayLogCard key={play.id} play={play} />
+                        <ContentLogCard key={play.id} play={play} />
                     ))}
-                    {total > PLAY_LOG_LIMITS && (
+                    {total > CONTENT_LOG_LIMITS && (
                         <Pagination
-                            count={Math.ceil(total / PLAY_LOG_LIMITS)}
+                            count={Math.ceil(total / CONTENT_LOG_LIMITS)}
                             page={page + 1}
                             onChange={(_, p) => setPage(p - 1)}
                             sx={{ alignSelf: "center" }}
