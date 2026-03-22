@@ -1,0 +1,338 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { useParams } from "next/navigation";
+import {
+    Alert,
+    Avatar,
+    Box,
+    Button,
+    Chip,
+    CircularProgress,
+    Container,
+    Pagination,
+    Skeleton,
+    Stack,
+    Typography,
+    useTheme,
+} from "@mui/material";
+import { ContentLogEntry, ContentLogInfo } from "@/lib/types";
+import { useAuth } from "@/lib/client/useAuth";
+import { useGame } from "@/lib/client/useGame";
+import { useContentLogList } from "@/lib/client/useContentLogList";
+
+function PlayErrorDetails({
+    contentId,
+    playId,
+}: {
+    contentId: number;
+    playId: number;
+}) {
+    const theme = useTheme();
+    const [expanded, setExpanded] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [entries, setEntries] = useState<ContentLogEntry[] | null>(null);
+    const [fetchError, setFetchError] = useState<string>();
+
+    async function handleToggle() {
+        if (!expanded && entries === null && !loading) {
+            setLoading(true);
+            try {
+                const res = await fetch(
+                    `/api/content/${contentId}/play/${playId}/logs?filter=error`,
+                );
+                if (res.status === 404) {
+                    setEntries([]);
+                } else if (!res.ok) {
+                    throw new Error(res.statusText);
+                } else {
+                    const text = await res.text();
+                    const parsed = text
+                        .split("\n")
+                        .filter((l) => l.trim())
+                        .map((l) => JSON.parse(l) as ContentLogEntry);
+                    setEntries(parsed);
+                }
+            } catch {
+                setFetchError("エラーログの取得に失敗しました。");
+            } finally {
+                setLoading(false);
+            }
+        }
+        setExpanded((prev) => !prev);
+    }
+
+    return (
+        <Box>
+            <Button size="small" onClick={handleToggle} sx={{ pl: 0 }}>
+                {expanded ? "▲ エラーログを隠す" : "▼ エラーログを表示"}
+            </Button>
+            {expanded && (
+                <Box sx={{ mt: 1 }}>
+                    {loading && <CircularProgress size={20} />}
+                    {fetchError && (
+                        <Alert severity="error" sx={{ mb: 1 }}>
+                            {fetchError}
+                        </Alert>
+                    )}
+                    {entries != null && entries.length === 0 && (
+                        <Typography
+                            variant="body2"
+                            color={theme.palette.text.secondary}
+                        >
+                            エラーログはありません。
+                        </Typography>
+                    )}
+                    {entries?.map((entry, i) => (
+                        <Box key={i} sx={{ mb: 2 }}>
+                            <Typography
+                                variant="caption"
+                                color={theme.palette.text.secondary}
+                                display="block"
+                            >
+                                {new Date(entry.timestamp).toLocaleString(
+                                    "ja-JP",
+                                )}
+                            </Typography>
+                            <Box
+                                component="pre"
+                                sx={{
+                                    whiteSpace: "pre-wrap",
+                                    wordBreak: "break-word",
+                                    m: 0,
+                                    p: 1,
+                                    bgcolor: "grey.100",
+                                    borderRadius: 1,
+                                    fontSize: "0.8rem",
+                                    fontFamily: "monospace",
+                                }}
+                            >
+                                {entry.message}
+                            </Box>
+                        </Box>
+                    ))}
+                </Box>
+            )}
+        </Box>
+    );
+}
+
+function ContentLogCard({ info }: { info: ContentLogInfo }) {
+    const theme = useTheme();
+    const hasError = info.crashed || info.errorLogged;
+
+    return (
+        <Box
+            id={`play-${info.playId}`}
+            sx={{
+                border: 1,
+                borderColor: theme.palette.divider,
+                borderRadius: 1,
+                p: 2,
+            }}
+        >
+            <Stack spacing={1}>
+                <Stack
+                    direction="row"
+                    spacing={1}
+                    alignItems="center"
+                    flexWrap="wrap"
+                >
+                    <Typography variant="subtitle1" fontWeight="bold">
+                        {info.name}
+                    </Typography>
+                    {info.crashed && (
+                        <Chip label="強制終了" color="error" size="small" />
+                    )}
+                    {!info.crashed && info.errorLogged && (
+                        <Chip label="エラーあり" color="warning" size="small" />
+                    )}
+                    {!hasError && (
+                        <Chip
+                            label="エラーなし"
+                            size="small"
+                            variant="outlined"
+                        />
+                    )}
+                </Stack>
+
+                <Stack direction="row" spacing={1} alignItems="center">
+                    {info.gameMaster.iconURL && (
+                        <Avatar
+                            src={info.gameMaster.iconURL}
+                            sx={{ width: 20, height: 20 }}
+                        />
+                    )}
+                    <Typography
+                        variant="body2"
+                        color={theme.palette.text.secondary}
+                    >
+                        {info.gameMaster.name}
+                    </Typography>
+                </Stack>
+
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                    <Typography
+                        variant="body2"
+                        color={theme.palette.text.secondary}
+                    >
+                        開始: {new Date(info.createdAt).toLocaleString("ja-JP")}
+                    </Typography>
+                    <Typography
+                        variant="body2"
+                        color={theme.palette.text.secondary}
+                    >
+                        終了:{" "}
+                        {info.endedAt
+                            ? new Date(info.endedAt).toLocaleString("ja-JP")
+                            : "-"}
+                    </Typography>
+                </Stack>
+
+                {hasError && (
+                    <PlayErrorDetails
+                        contentId={info.contentId}
+                        playId={info.playId}
+                    />
+                )}
+
+                {info.logUploadedAt ? (
+                    <Button
+                        variant="text"
+                        size="small"
+                        href={`/api/content/${info.contentId}/play/${info.playId}/logs`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{ alignSelf: "flex-start", pl: 0 }}
+                    >
+                        全ログをダウンロード
+                    </Button>
+                ) : (
+                    <Typography
+                        variant="body2"
+                        color={theme.palette.text.secondary}
+                    >
+                        ログ準備中 (しばらくお待ち下さい)
+                    </Typography>
+                )}
+            </Stack>
+        </Box>
+    );
+}
+
+export default function ContentLogs() {
+    const { id } = useParams<{ id: string }>();
+    const theme = useTheme();
+    const [user] = useAuth();
+    const {
+        isLoading: isGameLoading,
+        gameInfo,
+        error: gameError,
+    } = useGame(id);
+    const {
+        isLoading: isContentLogsLoading,
+        list,
+        page,
+        setPage,
+        isEmpty,
+        isEnd,
+        error: contentLogsError,
+    } = useContentLogList(id);
+
+    const isPublisher = useMemo(() => {
+        if (!user || user.authType !== "oauth" || !gameInfo) {
+            return false;
+        }
+        return user.id === gameInfo.publisher.id;
+    }, [user, gameInfo]);
+
+    function handleClickMore() {
+        setPage(page + 1);
+    }
+
+    if (isGameLoading) {
+        return (
+            <Container maxWidth="md" sx={{ py: 2 }}>
+                <Skeleton variant="rectangular" height={240} />
+            </Container>
+        );
+    }
+
+    if (gameError || !gameInfo) {
+        return (
+            <Container maxWidth="md" sx={{ py: 2 }}>
+                <Alert severity="error" variant="outlined">
+                    {gameError ?? "読み込みに失敗しました。"}
+                </Alert>
+            </Container>
+        );
+    }
+
+    if (!isPublisher) {
+        return (
+            <Container maxWidth="md" sx={{ py: 2 }}>
+                <Alert severity="error" variant="outlined">
+                    このページへのアクセス権がありません。
+                </Alert>
+            </Container>
+        );
+    }
+
+    return (
+        <Container maxWidth="md" sx={{ py: 2 }}>
+            <Stack spacing={1} direction="row" justifyContent="center">
+                <Avatar
+                    variant="square"
+                    src={gameInfo.iconURL}
+                    sx={{ width: 60, height: 60 }}
+                />
+                <Typography variant="h5" component="h1" gutterBottom>
+                    {gameInfo.title} - ログ一覧
+                </Typography>
+            </Stack>
+            <Typography variant="body2" color={theme.palette.text.secondary}>
+                終了した部屋のログのみ表示されます。
+                (反映には若干時間がかかります)
+            </Typography>
+
+            {contentLogsError && (
+                <Alert severity="error" variant="outlined" sx={{ mb: 2 }}>
+                    {contentLogsError}
+                </Alert>
+            )}
+
+            {isContentLogsLoading ? (
+                <Stack spacing={2}>
+                    <Skeleton variant="rectangular" height={120} />
+                    <Skeleton variant="rectangular" height={120} />
+                </Stack>
+            ) : contentLogsError ? (
+                <Alert severity="error" variant="outlined" sx={{ mb: 2 }}>
+                    {contentLogsError}
+                </Alert>
+            ) : !list || isEmpty ? (
+                <Typography color={theme.palette.text.secondary}>
+                    まだログがありません。
+                </Typography>
+            ) : (
+                <Stack spacing={2}>
+                    {list.flat().map((info) => (
+                        <ContentLogCard key={info.contentId} info={info} />
+                    ))}
+
+                    {!isEnd && (
+                        <Button
+                            onClick={handleClickMore}
+                            sx={{
+                                backgroundColor: theme.palette.background.paper,
+                            }}
+                            size="large"
+                        >
+                            もっと読む
+                        </Button>
+                    )}
+                </Stack>
+            )}
+        </Container>
+    );
+}

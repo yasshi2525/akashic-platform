@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
 
     const where: Awaited<
         NonNullable<Parameters<typeof prisma.play.findMany>[0]>["where"]
-    > = {};
+    > = { isActive: true };
     if (keyword) {
         where.OR = [
             {

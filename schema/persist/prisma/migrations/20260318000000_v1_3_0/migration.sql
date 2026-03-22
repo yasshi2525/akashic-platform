@@ -1,0 +1,5 @@
+ALTER TABLE "Play" ADD COLUMN "isActive"      BOOLEAN      NOT NULL DEFAULT true;
+ALTER TABLE "Play" ADD COLUMN "endedAt"       TIMESTAMP(3);
+ALTER TABLE "Play" ADD COLUMN "logUploadedAt" TIMESTAMP(3);
+ALTER TABLE "Play" ADD COLUMN "crashed"       BOOLEAN      NOT NULL DEFAULT false;
+ALTER TABLE "Play" ADD COLUMN "errorLogged"   BOOLEAN      NOT NULL DEFAULT false;
