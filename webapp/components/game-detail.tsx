@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
     Alert,
     Avatar,
@@ -13,7 +14,6 @@ import {
     Typography,
     useTheme,
 } from "@mui/material";
-import Link from "next/link";
 import { FeedbackPost, GameInfo, User } from "@/lib/types";
 import { FeedbackPanel } from "./feedback-panel";
 import { CreditPanel } from "./credit-panel";

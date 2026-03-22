@@ -16,14 +16,10 @@ import {
     Typography,
     useTheme,
 } from "@mui/material";
-import {
-    ContentLogEntry,
-    ContentLogInfo,
-    CONTENT_LOG_LIMITS,
-} from "@/lib/types";
+import { ContentLogEntry, ContentLogInfo } from "@/lib/types";
 import { useAuth } from "@/lib/client/useAuth";
 import { useGame } from "@/lib/client/useGame";
-import { useGamePlays } from "@/lib/client/useGamePlays";
+import { useContentLogList } from "@/lib/client/useContentLogList";
 
 function PlayErrorDetails({
     contentId,
@@ -32,6 +28,7 @@ function PlayErrorDetails({
     contentId: number;
     playId: number;
 }) {
+    const theme = useTheme();
     const [expanded, setExpanded] = useState(false);
     const [loading, setLoading] = useState(false);
     const [entries, setEntries] = useState<ContentLogEntry[] | null>(null);
@@ -79,7 +76,10 @@ function PlayErrorDetails({
                         </Alert>
                     )}
                     {entries != null && entries.length === 0 && (
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography
+                            variant="body2"
+                            color={theme.palette.text.secondary}
+                        >
                             エラーログはありません。
                         </Typography>
                     )}
@@ -87,7 +87,7 @@ function PlayErrorDetails({
                         <Box key={i} sx={{ mb: 2 }}>
                             <Typography
                                 variant="caption"
-                                color="text.secondary"
+                                color={theme.palette.text.secondary}
                                 display="block"
                             >
                                 {new Date(entry.timestamp).toLocaleString(
@@ -117,13 +117,13 @@ function PlayErrorDetails({
     );
 }
 
-function ContentLogCard({ play }: { play: ContentLogInfo }) {
+function ContentLogCard({ info }: { info: ContentLogInfo }) {
     const theme = useTheme();
-    const hasError = play.crashed || play.errorLogged;
+    const hasError = info.crashed || info.errorLogged;
 
     return (
         <Box
-            id={`play-${play.id}`}
+            id={`play-${info.playId}`}
             sx={{
                 border: 1,
                 borderColor: theme.palette.divider,
@@ -139,12 +139,12 @@ function ContentLogCard({ play }: { play: ContentLogInfo }) {
                     flexWrap="wrap"
                 >
                     <Typography variant="subtitle1" fontWeight="bold">
-                        {play.name}
+                        {info.name}
                     </Typography>
-                    {play.crashed && (
+                    {info.crashed && (
                         <Chip label="強制終了" color="error" size="small" />
                     )}
-                    {!play.crashed && play.errorLogged && (
+                    {!info.crashed && info.errorLogged && (
                         <Chip label="エラーあり" color="warning" size="small" />
                     )}
                     {!hasError && (
@@ -157,9 +157,9 @@ function ContentLogCard({ play }: { play: ContentLogInfo }) {
                 </Stack>
 
                 <Stack direction="row" spacing={1} alignItems="center">
-                    {play.gameMaster.iconURL && (
+                    {info.gameMaster.iconURL && (
                         <Avatar
-                            src={play.gameMaster.iconURL}
+                            src={info.gameMaster.iconURL}
                             sx={{ width: 20, height: 20 }}
                         />
                     )}
@@ -167,7 +167,7 @@ function ContentLogCard({ play }: { play: ContentLogInfo }) {
                         variant="body2"
                         color={theme.palette.text.secondary}
                     >
-                        {play.gameMaster.name}
+                        {info.gameMaster.name}
                     </Typography>
                 </Stack>
 
@@ -176,31 +176,31 @@ function ContentLogCard({ play }: { play: ContentLogInfo }) {
                         variant="body2"
                         color={theme.palette.text.secondary}
                     >
-                        開始: {new Date(play.createdAt).toLocaleString("ja-JP")}
+                        開始: {new Date(info.createdAt).toLocaleString("ja-JP")}
                     </Typography>
                     <Typography
                         variant="body2"
                         color={theme.palette.text.secondary}
                     >
                         終了:{" "}
-                        {play.endedAt
-                            ? new Date(play.endedAt).toLocaleString("ja-JP")
+                        {info.endedAt
+                            ? new Date(info.endedAt).toLocaleString("ja-JP")
                             : "-"}
                     </Typography>
                 </Stack>
 
                 {hasError && (
                     <PlayErrorDetails
-                        contentId={play.contentId}
-                        playId={play.id}
+                        contentId={info.contentId}
+                        playId={info.playId}
                     />
                 )}
 
-                {play.logUploadedAt ? (
+                {info.logUploadedAt ? (
                     <Button
                         variant="text"
                         size="small"
-                        href={`/api/content/${play.contentId}/play/${play.id}/logs`}
+                        href={`/api/content/${info.contentId}/play/${info.playId}/logs`}
                         target="_blank"
                         rel="noopener noreferrer"
                         sx={{ alignSelf: "flex-start", pl: 0 }}
@@ -212,7 +212,7 @@ function ContentLogCard({ play }: { play: ContentLogInfo }) {
                         variant="body2"
                         color={theme.palette.text.secondary}
                     >
-                        ログ準備中...
+                        ログ準備中 (しばらくお待ち下さい)
                     </Typography>
                 )}
             </Stack>
@@ -229,18 +229,26 @@ export default function ContentLogs() {
         gameInfo,
         error: gameError,
     } = useGame(id);
-    const [page, setPage] = useState(0);
     const {
-        isLoading: isPlaysLoading,
-        plays,
-        total,
-        error: playsError,
-    } = useGamePlays(id, page);
+        isLoading: isContentLogsLoading,
+        list,
+        page,
+        setPage,
+        isEmpty,
+        isEnd,
+        error: contentLogsError,
+    } = useContentLogList(id);
 
     const isPublisher = useMemo(() => {
-        if (!user || user.authType !== "oauth" || !gameInfo) return false;
+        if (!user || user.authType !== "oauth" || !gameInfo) {
+            return false;
+        }
         return user.id === gameInfo.publisher.id;
     }, [user, gameInfo]);
+
+    function handleClickMore() {
+        setPage(page + 1);
+    }
 
     if (isGameLoading) {
         return (
@@ -272,40 +280,56 @@ export default function ContentLogs() {
 
     return (
         <Container maxWidth="md" sx={{ py: 2 }}>
-            <Typography variant="h5" component="h1" gutterBottom>
-                {gameInfo.title} - ログ一覧
+            <Stack spacing={1} direction="row" justifyContent="center">
+                <Avatar
+                    variant="square"
+                    src={gameInfo.iconURL}
+                    sx={{ width: 60, height: 60 }}
+                />
+                <Typography variant="h5" component="h1" gutterBottom>
+                    {gameInfo.title} - ログ一覧
+                </Typography>
+            </Stack>
+            <Typography variant="body2" color={theme.palette.text.secondary}>
+                終了した部屋のログのみ表示されます。
+                (反映には若干時間がかかります)
             </Typography>
-            <Alert severity="info" sx={{ mb: 2 }}>
-                終了した部屋のログのみ表示されます。反映には若干時間がかかります。
-            </Alert>
 
-            {playsError && (
+            {contentLogsError && (
                 <Alert severity="error" variant="outlined" sx={{ mb: 2 }}>
-                    {playsError}
+                    {contentLogsError}
                 </Alert>
             )}
 
-            {isPlaysLoading ? (
+            {isContentLogsLoading ? (
                 <Stack spacing={2}>
                     <Skeleton variant="rectangular" height={120} />
                     <Skeleton variant="rectangular" height={120} />
                 </Stack>
-            ) : plays.length === 0 ? (
+            ) : contentLogsError ? (
+                <Alert severity="error" variant="outlined" sx={{ mb: 2 }}>
+                    {contentLogsError}
+                </Alert>
+            ) : !list || isEmpty ? (
                 <Typography color={theme.palette.text.secondary}>
                     まだログがありません。
                 </Typography>
             ) : (
                 <Stack spacing={2}>
-                    {plays.map((play) => (
-                        <ContentLogCard key={play.id} play={play} />
+                    {list.flat().map((info) => (
+                        <ContentLogCard key={info.contentId} info={info} />
                     ))}
-                    {total > CONTENT_LOG_LIMITS && (
-                        <Pagination
-                            count={Math.ceil(total / CONTENT_LOG_LIMITS)}
-                            page={page + 1}
-                            onChange={(_, p) => setPage(p - 1)}
-                            sx={{ alignSelf: "center" }}
-                        />
+
+                    {!isEnd && (
+                        <Button
+                            onClick={handleClickMore}
+                            sx={{
+                                backgroundColor: theme.palette.background.paper,
+                            }}
+                            size="large"
+                        >
+                            もっと読む
+                        </Button>
                     )}
                 </Stack>
             )}

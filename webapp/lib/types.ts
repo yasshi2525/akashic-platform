@@ -97,10 +97,10 @@ export interface UserFeedbackItem {
     game: FeedbackGameSummary;
 }
 
-export const CONTENT_LOG_LIMITS = 20;
+export const CONTENT_LOGLIST_LIMITS = 20;
 
 export interface ContentLogInfo {
-    id: number;
+    playId: number;
     contentId: number;
     name: string;
     gameMaster: {
@@ -246,6 +246,17 @@ export type UserFeedbackErrorType = (typeof userFeedbackErrReasons)[number];
 export type UserFeedbackResponse =
     | { ok: true; data: UserFeedbackItem[] }
     | { ok: false; reason: UserFeedbackErrorType };
+
+const contentLogListErrReasons = [
+    "InvalidParams",
+    "Forbidden",
+    "NotFound",
+    "InternalError",
+] as const;
+export type ContentLogListErrorType = (typeof contentLogListErrReasons)[number];
+export type ContentLogListResponse =
+    | { ok: true; data: ContentLogInfo[] }
+    | { ok: false; reason: ContentLogListErrorType };
 
 const contentLogErrReasons = [
     "InvalidParams",
