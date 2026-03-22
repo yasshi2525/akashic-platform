@@ -18,7 +18,6 @@ import {
     getS3Client,
     s3KeyPrefix,
 } from "./content-utils";
-import { endPlay } from "./play-end";
 import { isWriteBlocked } from "./drain-state";
 
 interface EditGameForm extends Partial<GameForm> {
@@ -143,28 +142,6 @@ export async function copyIconFile(
     );
 }
 
-async function endCurrentPlay(contentId: number) {
-    const playIds = (
-        await prisma.content.findUniqueOrThrow({
-            select: {
-                plays: {
-                    select: {
-                        id: true,
-                    },
-                },
-            },
-            where: {
-                id: contentId,
-            },
-        })
-    ).plays.map(({ id }) => id.toString());
-    await Promise.all(
-        playIds.map(async (playId) => {
-            await endPlay({ playId, reason: "DEL_CONTENT" });
-        }),
-    );
-}
-
 export async function editContent(
     param: EditGameForm,
 ): Promise<ContentResponse> {
@@ -204,9 +181,6 @@ export async function editContent(
                 } else {
                     await copyIconFile(param.contentId, newContentId, iconPath);
                 }
-                await endCurrentPlay(param.contentId);
-                await deleteContentRecord(param.contentId);
-                await deleteContentDir(param.contentId);
                 await updateGameRecord(param);
                 return {
                     ok: true,
