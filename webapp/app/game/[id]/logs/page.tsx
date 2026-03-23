@@ -280,7 +280,12 @@ export default function ContentLogs() {
 
     return (
         <Container maxWidth="md" sx={{ py: 2 }}>
-            <Stack spacing={1} direction="row" justifyContent="center">
+            <Stack
+                spacing={1}
+                direction="row"
+                alignItems="center"
+                justifyContent="center"
+            >
                 <Avatar
                     variant="square"
                     src={gameInfo.iconURL}
