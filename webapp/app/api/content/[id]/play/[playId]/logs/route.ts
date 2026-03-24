@@ -35,6 +35,7 @@ export async function GET(
     }
 
     const filter = _req.nextUrl.searchParams.get("filter");
+    const format = _req.nextUrl.searchParams.get("format") ?? "plain";
 
     try {
         const result = await getS3Client().send(
@@ -47,7 +48,7 @@ export async function GET(
         if (body == null) {
             return new NextResponse("NotFound", { status: 404 });
         }
-        const responseBody = body
+        const logEntries = body
             .split("\n")
             .filter((line) => line.trim())
             .map((line) => JSON.parse(line) as ContentLogEntry)
@@ -56,12 +57,16 @@ export async function GET(
                     return entry.level === "error";
                 }
                 return true;
-            })
-            .map((entry) => entry.message)
-            .join("\n");
+            });
+        const responseBody =
+            format === "plain"
+                ? logEntries.map((entry) => entry.message).join("\n")
+                : logEntries.map((entry) => JSON.stringify(entry)).join("\n");
         return new NextResponse(responseBody, {
             status: 200,
-            headers: { "Content-Type": "text/plain; charset=utf-8" },
+            headers: {
+                "Content-Type": `${format === "plain" ? "text/plain" : "application/x-ndjson"}; charset=utf-8`,
+            },
         });
     } catch (err) {
         const code = (err as { Code?: string }).Code;

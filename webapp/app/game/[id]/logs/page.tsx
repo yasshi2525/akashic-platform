@@ -40,7 +40,7 @@ function PlayErrorDetails({
             setLoading(true);
             try {
                 const res = await fetch(
-                    `/api/content/${contentId}/play/${playId}/logs?filter=error`,
+                    `/api/content/${contentId}/play/${playId}/logs?filter=error&format=json`,
                 );
                 if (res.status === 404) {
                     setEntries([]);
