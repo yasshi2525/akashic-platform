@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
     Alert,
@@ -10,12 +11,12 @@ import {
     Chip,
     CircularProgress,
     Container,
-    Pagination,
     Skeleton,
     Stack,
     Typography,
     useTheme,
 } from "@mui/material";
+import { ArrowBack } from "@mui/icons-material";
 import { ContentLogEntry, ContentLogInfo } from "@/lib/types";
 import { useAuth } from "@/lib/client/useAuth";
 import { useGame } from "@/lib/client/useGame";
@@ -101,7 +102,7 @@ function PlayErrorDetails({
                                     wordBreak: "break-word",
                                     m: 0,
                                     p: 1,
-                                    bgcolor: "grey.100",
+                                    bgcolor: theme.palette.background.default,
                                     borderRadius: 1,
                                     fontSize: "0.8rem",
                                     fontFamily: "monospace",
@@ -201,6 +202,7 @@ function ContentLogCard({ info }: { info: ContentLogInfo }) {
                         variant="text"
                         size="small"
                         href={`/api/content/${info.contentId}/play/${info.playId}/logs`}
+                        download={`content_log_play${info.playId}.txt`}
                         target="_blank"
                         rel="noopener noreferrer"
                         sx={{ alignSelf: "flex-start", pl: 0 }}
@@ -286,6 +288,14 @@ export default function ContentLogs() {
                 alignItems="center"
                 justifyContent="center"
             >
+                <Button
+                    component={Link}
+                    href={`/game/${id}`}
+                    variant="text"
+                    size="large"
+                    startIcon={<ArrowBack fontSize="large" />}
+                    sx={{ flex: 1, justifyContent: "start" }}
+                />
                 <Avatar
                     variant="square"
                     src={gameInfo.iconURL}
@@ -294,6 +304,7 @@ export default function ContentLogs() {
                 <Typography variant="h5" component="h1" gutterBottom>
                     {gameInfo.title} - ログ一覧
                 </Typography>
+                <Box sx={{ flex: 1 }} />
             </Stack>
             <Typography variant="body2" color={theme.palette.text.secondary}>
                 終了した部屋のログのみ表示されます。
