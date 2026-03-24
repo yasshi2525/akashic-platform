@@ -16,7 +16,7 @@ import {
     Typography,
     useTheme,
 } from "@mui/material";
-import { ArrowBack } from "@mui/icons-material";
+import { ArrowBack, Download } from "@mui/icons-material";
 import { ContentLogEntry, ContentLogInfo } from "@/lib/types";
 import { useAuth } from "@/lib/client/useAuth";
 import { useGame } from "@/lib/client/useGame";
@@ -65,7 +65,15 @@ function PlayErrorDetails({
 
     return (
         <Box>
-            <Button size="small" onClick={handleToggle} sx={{ pl: 0 }}>
+            <Button
+                variant="outlined"
+                size="small"
+                onClick={handleToggle}
+                sx={{
+                    borderColor: theme.palette.primary.light,
+                    color: theme.palette.primary.light,
+                }}
+            >
                 {expanded ? "▲ エラーログを隠す" : "▼ エラーログを表示"}
             </Button>
             {expanded && (
@@ -126,10 +134,9 @@ function ContentLogCard({ info }: { info: ContentLogInfo }) {
         <Box
             id={`play-${info.playId}`}
             sx={{
-                border: 1,
-                borderColor: theme.palette.divider,
                 borderRadius: 1,
                 p: 2,
+                backgroundColor: theme.palette.background.paper,
             }}
         >
             <Stack spacing={1}>
@@ -199,15 +206,20 @@ function ContentLogCard({ info }: { info: ContentLogInfo }) {
 
                 {info.logUploadedAt ? (
                     <Button
-                        variant="text"
+                        variant="outlined"
                         size="small"
                         href={`/api/content/${info.contentId}/play/${info.playId}/logs`}
                         download={`content_log_play${info.playId}.txt`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        sx={{ alignSelf: "flex-start", pl: 0 }}
+                        sx={{
+                            alignSelf: "flex-start",
+                            borderColor: theme.palette.primary.light,
+                            color: theme.palette.primary.light,
+                        }}
+                        startIcon={<Download fontSize="small" />}
                     >
-                        全ログをダウンロード
+                        全てのログをダウンロード
                     </Button>
                 ) : (
                     <Typography
@@ -306,7 +318,11 @@ export default function ContentLogs() {
                 </Typography>
                 <Box sx={{ flex: 1 }} />
             </Stack>
-            <Typography variant="body2" color={theme.palette.text.secondary}>
+            <Typography
+                variant="body2"
+                color={theme.palette.text.secondary}
+                sx={{ my: 1 }}
+            >
                 終了した部屋のログのみ表示されます。
                 (反映には若干時間がかかります)
             </Typography>
@@ -341,6 +357,8 @@ export default function ContentLogs() {
                             onClick={handleClickMore}
                             sx={{
                                 backgroundColor: theme.palette.background.paper,
+                                borderColor: theme.palette.primary.light,
+                                color: theme.palette.primary.light,
                             }}
                             size="large"
                         >
