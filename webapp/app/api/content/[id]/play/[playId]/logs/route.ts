@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { prisma } from "@yasshi2525/persist-schema";
-import { ContentLogErrorType } from "@/lib/types";
+import { ContentLogEntry, ContentLogErrorType } from "@/lib/types";
 import { getAuth } from "@/lib/server/auth";
 import {
     getBucket,
@@ -47,29 +47,21 @@ export async function GET(
         if (body == null) {
             return new NextResponse("NotFound", { status: 404 });
         }
-        const responseBody =
-            filter === "error"
-                ? body
-                      .split("\n")
-                      .filter((line) => {
-                          if (!line.trim()) return false;
-                          try {
-                              return (
-                                  (
-                                      JSON.parse(line) as {
-                                          level?: string;
-                                      }
-                                  ).level === "error"
-                              );
-                          } catch {
-                              return false;
-                          }
-                      })
-                      .join("\n")
-                : body;
+        const responseBody = body
+            .split("\n")
+            .filter((line) => line.trim())
+            .map((line) => JSON.parse(line) as ContentLogEntry)
+            .filter((entry) => {
+                if (filter === "error") {
+                    return entry.level === "error";
+                }
+                return true;
+            })
+            .map((entry) => entry.message)
+            .join("\n");
         return new NextResponse(responseBody, {
             status: 200,
-            headers: { "Content-Type": "application/x-ndjson; charset=utf-8" },
+            headers: { "Content-Type": "text/plain; charset=utf-8" },
         });
     } catch (err) {
         const code = (err as { Code?: string }).Code;
