@@ -113,6 +113,7 @@ export interface ContentLogInfo {
     logUploadedAt: Date | null;
     crashed: boolean;
     errorLogged: boolean;
+    clientLogCount: number;
 }
 
 export interface ContentLogEntry {
@@ -122,6 +123,52 @@ export interface ContentLogEntry {
     contentId: number;
     message: string;
 }
+
+export interface ClientLogEntry {
+    timestamp: string;
+    level: "log" | "warn" | "error";
+    message: string;
+}
+
+export interface ClientLogSubmission {
+    id: number;
+    clientId: string;
+    errorMessage: string | null;
+    submittedAt: Date;
+    entries: ClientLogEntry[];
+}
+
+const clientLogSubmitErrReasons = [
+    "InvalidParams",
+    "NotFound",
+    "RateLimited",
+    "InternalError",
+] as const;
+export type ClientLogSubmitErrorType =
+    (typeof clientLogSubmitErrReasons)[number];
+export type ClientLogSubmitResponse =
+    | { ok: true }
+    | {
+          ok: false;
+          reason: "RateLimited";
+          retryAfterSeconds: number;
+      }
+    | {
+          ok: false;
+          reason: Exclude<ClientLogSubmitErrorType, "RateLimited">;
+      };
+
+const clientLogsGetErrReasons = [
+    "InvalidParams",
+    "Forbidden",
+    "NotFound",
+    "InternalError",
+] as const;
+export type ClientLogsGetErrorType =
+    (typeof clientLogsGetErrReasons)[number];
+export type ClientLogsGetResponse =
+    | { ok: true; data: ClientLogSubmission[] }
+    | { ok: false; reason: ClientLogsGetErrorType };
 
 export const NOTIFICATION_LIMITS = 10;
 

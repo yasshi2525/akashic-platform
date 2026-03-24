@@ -10,6 +10,7 @@ import {
 } from "@yasshi2525/agvw-like";
 import { User } from "../types";
 import { destroyAkashicGameView } from "./akashic-gameview-destroyer";
+import { LogCache } from "./log-cache";
 import {
     CoeLimitedPlugin,
     ResolvingPlayerInfoRequest,
@@ -27,8 +28,10 @@ interface AkashicContainerCreateParameterObject {
     initialMasterVolume?: number;
     isGameMaster: boolean;
     external: string[];
+    logCache: LogCache;
     onSkip: (skip: boolean) => void;
     onError: (errMsg: string) => void;
+    onOpenTroubleshoot: (errorMessage?: string) => void;
     onPlayEnd: (reason: PlayEndReason) => void;
     onPlayExtend: (payload: PlayExtendPayload) => void;
     onRequestPlayerInfo: (
@@ -124,6 +127,9 @@ export class AkashicContainer {
             contentUrl: `/api/content/${param.contentId}`,
             runInIframe: true,
             argument: this._createContentArgument(param),
+            onConsoleLog: (entry) => {
+                param.logCache.push(entry);
+            },
         });
         content.addSkippingListener({
             onSkip: (isSkipping) => {
@@ -132,9 +138,10 @@ export class AkashicContainer {
         });
         content.addErrorListener({
             onError: (err) => {
-                param.onError(
-                    "予期しないエラーが発生しました。画面を更新してください。",
-                );
+                const errMsg =
+                    "予期しないエラーが発生しました。画面を更新してください。";
+                param.onError(errMsg);
+                param.onOpenTroubleshoot(errMsg);
                 console.error(err);
                 content.pause();
             },

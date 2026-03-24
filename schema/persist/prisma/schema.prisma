@@ -158,9 +158,21 @@ model Notification {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model ClientLogRecord {
+  id           Int      @id @default(autoincrement())
+  playId       Int
+  contentId    Int
+  clientId     String
+  errorMessage String?
+  submittedAt  DateTime @default(now())
+
+  createdAt DateTime @default(now())
+}
+
 enum NotificationType {
   FEEDBACKED
   FEEDBACK_REPLIED
   GAME_CRASHED
   GAME_ERROR_LOGGED
+  CLIENT_LOG_SUBMITTED
 }

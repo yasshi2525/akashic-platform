@@ -39,11 +39,14 @@ import { ResolvingPlayerInfoRequest } from "@/lib/client/akashic-plugins/coe-lim
 import { AkashicContainer } from "@/lib/client/akashic-container";
 import { extendPlay } from "@/lib/server/play-extend";
 import { uploadPlayShareScreenshot } from "@/lib/server/play-share";
+import { LogCache } from "@/lib/client/log-cache";
 import { PlayCloseDialog } from "./play-close-dialog";
 import { PlayEndNotification } from "./play-end-notification";
 import { PlayPlayerInfoResolver } from "./play-player-info-resolver";
 import { CreditPanel } from "./credit-panel";
 import { UserInline } from "./user-inline";
+import { ClientLogDialog } from "./client-log-dialog";
+import { TroubleshootButton } from "./troubleshoot-button";
 
 const warnings = ["EVENT_ON_SKIPPING"] as const;
 type WarningType = (typeof warnings)[number];
@@ -66,6 +69,7 @@ const toMessage = (typ?: WarningType) => {
 // 破棄に Promise が必要 → useEffect 内で破棄が完了しない
 // 同時に2インスタンス存在するとロードがとまり、破棄に必要なステップを踏めない
 const container = new AkashicContainer();
+const logCache = new LogCache();
 const EXTEND_WINDOW_MS = 10 * 60 * 1000;
 
 export function PlayView({
@@ -138,6 +142,13 @@ export function PlayView({
     >();
     const [xShareStatus, setXShareStatus] = useState<"shared" | "error">();
     const [isXSharing, setIsXSharing] = useState(false);
+    const [clientId] = useState(
+        () =>
+            `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`,
+    );
+    const [troubleshootOpen, setTroubleshootOpen] = useState(false);
+    const [troubleshootErrorMessage, setTroubleshootErrorMessage] =
+        useState<string | undefined>();
 
     function formatRemaining(ms: number | undefined) {
         if (ms == null) {
@@ -181,6 +192,7 @@ export function PlayView({
         if (!ref.current) {
             return;
         }
+        logCache.clear();
         container.create({
             parent: ref.current,
             user,
@@ -191,8 +203,13 @@ export function PlayView({
             initialMasterVolume: MASTER_VOLUME_MAX,
             isGameMaster,
             external: contentExternal,
+            logCache,
             onSkip: setSkipping,
             onError: setError,
+            onOpenTroubleshoot: (errMsg) => {
+                setTroubleshootErrorMessage(errMsg);
+                setTroubleshootOpen(true);
+            },
             onPlayEnd: setPlayEndReason,
             onPlayExtend: (payload) => {
                 setExpiresAt(payload.expiresAt);
@@ -431,6 +448,16 @@ export function PlayView({
                 onTouchMove={handleTouchEvent}
                 onTouchEnd={handleTouchEvent}
                 onClick={handleMouseEvent}
+            />
+            <ClientLogDialog
+                open={troubleshootOpen}
+                contentId={game.contentId}
+                playId={playId}
+                clientId={clientId}
+                errorMessage={troubleshootErrorMessage}
+                getLogs={() => logCache.getAll()}
+                onClose={() => setTroubleshootOpen(false)}
+                onSubmitSuccess={() => logCache.clear()}
             />
             {requestPlayerInfo ? (
                 <PlayPlayerInfoResolver request={requestPlayerInfo} />
@@ -681,6 +708,14 @@ export function PlayView({
                                             >
                                                 <X fontSize="large" />
                                             </IconButton>
+                                            <TroubleshootButton
+                                                onClick={() => {
+                                                    setTroubleshootErrorMessage(
+                                                        undefined,
+                                                    );
+                                                    setTroubleshootOpen(true);
+                                                }}
+                                            />
                                         </Stack>
                                         <Stack
                                             alignItems="center"

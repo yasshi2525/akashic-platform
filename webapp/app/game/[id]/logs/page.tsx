@@ -17,7 +17,11 @@ import {
     useTheme,
 } from "@mui/material";
 import { ArrowBack, Download } from "@mui/icons-material";
-import { ContentLogEntry, ContentLogInfo } from "@/lib/types";
+import {
+    ClientLogSubmission,
+    ContentLogEntry,
+    ContentLogInfo,
+} from "@/lib/types";
 import { useAuth } from "@/lib/client/useAuth";
 import { useGame } from "@/lib/client/useGame";
 import { useContentLogList } from "@/lib/client/useContentLogList";
@@ -126,6 +130,155 @@ function PlayErrorDetails({
     );
 }
 
+function ClientLogDetails({
+    contentId,
+    playId,
+}: {
+    contentId: number;
+    playId: number;
+}) {
+    const theme = useTheme();
+    const [expanded, setExpanded] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [submissions, setSubmissions] = useState<
+        ClientLogSubmission[] | null
+    >(null);
+    const [fetchError, setFetchError] = useState<string>();
+
+    async function handleToggle() {
+        if (!expanded && submissions === null && !loading) {
+            setLoading(true);
+            try {
+                const res = await fetch(
+                    `/api/content/${contentId}/play/${playId}/client-logs`,
+                );
+                if (!res.ok) {
+                    throw new Error(res.statusText);
+                }
+                const json = await res.json();
+                if (json.ok) {
+                    setSubmissions(json.data);
+                } else {
+                    setFetchError("クライアントログの取得に失敗しました。");
+                }
+            } catch {
+                setFetchError("クライアントログの取得に失敗しました。");
+            } finally {
+                setLoading(false);
+            }
+        }
+        setExpanded((prev) => !prev);
+    }
+
+    return (
+        <Box>
+            <Button
+                variant="outlined"
+                size="small"
+                onClick={handleToggle}
+                sx={{
+                    borderColor: theme.palette.warning.light,
+                    color: theme.palette.warning.light,
+                }}
+            >
+                {expanded
+                    ? "▲ クライアントログを隠す"
+                    : "▼ クライアントログを表示"}
+            </Button>
+            {expanded && (
+                <Box sx={{ mt: 1 }}>
+                    {loading && <CircularProgress size={20} />}
+                    {fetchError && (
+                        <Alert severity="error" sx={{ mb: 1 }}>
+                            {fetchError}
+                        </Alert>
+                    )}
+                    {submissions?.map((sub, si) => (
+                        <Box
+                            key={sub.id}
+                            sx={{
+                                mb: 2,
+                                p: 1,
+                                borderRadius: 1,
+                                bgcolor: theme.palette.background.default,
+                            }}
+                        >
+                            <Typography
+                                variant="caption"
+                                color={theme.palette.text.secondary}
+                                display="block"
+                                sx={{ mb: 0.5 }}
+                            >
+                                送信 {si + 1} —{" "}
+                                {new Date(sub.submittedAt).toLocaleString(
+                                    "ja-JP",
+                                )}
+                            </Typography>
+                            {sub.errorMessage && (
+                                <Alert
+                                    severity="error"
+                                    variant="outlined"
+                                    sx={{ mb: 1, fontSize: "0.75rem" }}
+                                >
+                                    {sub.errorMessage}
+                                </Alert>
+                            )}
+                            {sub.entries.length === 0 ? (
+                                <Typography
+                                    variant="body2"
+                                    color={theme.palette.text.secondary}
+                                >
+                                    ログはありません。
+                                </Typography>
+                            ) : (
+                                sub.entries.map((entry, ei) => (
+                                    <Box key={ei} sx={{ mb: 1 }}>
+                                        <Typography
+                                            variant="caption"
+                                            color={
+                                                entry.level === "error"
+                                                    ? theme.palette.error.light
+                                                    : entry.level === "warn"
+                                                      ? theme.palette.warning
+                                                            .light
+                                                      : theme.palette.text
+                                                            .secondary
+                                            }
+                                            display="block"
+                                        >
+                                            [{entry.level}]{" "}
+                                            {new Date(
+                                                entry.timestamp,
+                                            ).toLocaleString("ja-JP")}
+                                        </Typography>
+                                        <Box
+                                            component="pre"
+                                            sx={{
+                                                whiteSpace: "pre-wrap",
+                                                wordBreak: "break-word",
+                                                m: 0,
+                                                p: 1,
+                                                bgcolor:
+                                                    theme.palette.background
+                                                        .paper,
+                                                borderRadius: 1,
+                                                fontSize: "0.75rem",
+                                                fontFamily: "monospace",
+                                            }}
+                                        >
+                                            {entry.message}
+                                        </Box>
+                                    </Box>
+                                ))
+                            )}
+                        </Box>
+                    ))}
+                </Box>
+            )}
+        </Box>
+    );
+}
+
 function ContentLogCard({ info }: { info: ContentLogInfo }) {
     const theme = useTheme();
     const hasError = info.crashed || info.errorLogged;
@@ -158,6 +311,14 @@ function ContentLogCard({ info }: { info: ContentLogInfo }) {
                     {!hasError && (
                         <Chip
                             label="エラーなし"
+                            size="small"
+                            variant="outlined"
+                        />
+                    )}
+                    {info.clientLogCount > 0 && (
+                        <Chip
+                            label={`クライアントログ ${info.clientLogCount} 件`}
+                            color="info"
                             size="small"
                             variant="outlined"
                         />
@@ -199,6 +360,12 @@ function ContentLogCard({ info }: { info: ContentLogInfo }) {
 
                 {hasError && (
                     <PlayErrorDetails
+                        contentId={info.contentId}
+                        playId={info.playId}
+                    />
+                )}
+                {info.clientLogCount > 0 && (
+                    <ClientLogDetails
                         contentId={info.contentId}
                         playId={info.playId}
                     />
