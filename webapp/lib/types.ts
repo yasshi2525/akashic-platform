@@ -97,6 +97,32 @@ export interface UserFeedbackItem {
     game: FeedbackGameSummary;
 }
 
+export const CONTENT_LOGLIST_LIMITS = 20;
+
+export interface ContentLogInfo {
+    playId: number;
+    contentId: number;
+    name: string;
+    gameMaster: {
+        userId?: string;
+        name: string;
+        iconURL?: string;
+    };
+    createdAt: Date;
+    endedAt: Date | null;
+    logUploadedAt: Date | null;
+    crashed: boolean;
+    errorLogged: boolean;
+}
+
+export interface ContentLogEntry {
+    timestamp: string;
+    level: "info" | "warn" | "error";
+    playId: number;
+    contentId: number;
+    message: string;
+}
+
 export const NOTIFICATION_LIMITS = 10;
 
 export interface NotificationInfo {
@@ -220,6 +246,25 @@ export type UserFeedbackErrorType = (typeof userFeedbackErrReasons)[number];
 export type UserFeedbackResponse =
     | { ok: true; data: UserFeedbackItem[] }
     | { ok: false; reason: UserFeedbackErrorType };
+
+const contentLogListErrReasons = [
+    "InvalidParams",
+    "Forbidden",
+    "NotFound",
+    "InternalError",
+] as const;
+export type ContentLogListErrorType = (typeof contentLogListErrReasons)[number];
+export type ContentLogListResponse =
+    | { ok: true; data: ContentLogInfo[] }
+    | { ok: false; reason: ContentLogListErrorType };
+
+const contentLogErrReasons = [
+    "InvalidParams",
+    "Forbidden",
+    "NotFound",
+    "InternalError",
+] as const;
+export type ContentLogErrorType = (typeof contentLogErrReasons)[number];
 
 const notificationErrReasons = ["NotAuthorized", "InternalError"] as const;
 export type NotificationErrorType = (typeof notificationErrReasons)[number];

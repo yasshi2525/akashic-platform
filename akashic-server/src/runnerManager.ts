@@ -2,6 +2,7 @@ import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
 import { Runner, RunnerParameterObject } from "./runner";
 
 interface RunnerManagerParameterObject {
+    publicWebappUrl: string;
     storagePublicUrl: string;
     storageAdminUrl: string;
     storageAdminToken: string;
@@ -11,18 +12,21 @@ export type RunnerStartParameterObject = Omit<
     RunnerParameterObject,
     | "playId"
     | "playToken"
+    | "publicWebappUrl"
     | "storagePublicUrl"
     | "storageAdminUrl"
     | "storageAdminToken"
 >;
 
 export class RunnerManager {
+    _publicWebappUrl: string;
     _storagePublicUrl: string;
     _storageAdminUrl: string;
     _storageAdminToken: string;
     _runners: Map<number, Runner>;
 
     constructor(param: RunnerManagerParameterObject) {
+        this._publicWebappUrl = param.publicWebappUrl;
         this._storagePublicUrl = param.storagePublicUrl;
         this._storageAdminUrl = param.storageAdminUrl;
         this._storageAdminToken = param.storageAdminToken;
@@ -31,6 +35,7 @@ export class RunnerManager {
 
     async start(param: RunnerStartParameterObject) {
         const runner = new Runner({
+            publicWebappUrl: this._publicWebappUrl,
             storagePublicUrl: this._storagePublicUrl,
             storageAdminUrl: this._storageAdminUrl,
             storageAdminToken: this._storageAdminToken,

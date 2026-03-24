@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.3.1
+
+- Feature
+  - プレイのゲームログを S3 にアップロードする機能を追加
+  - アクティブインスタンスが異常終了（`errorTrigger` でcatch）するか、プレイ中に `console.error` が出力された場合、通知レコードを作成するよう修正
+
 ## 1.3.0
 
 - Feature

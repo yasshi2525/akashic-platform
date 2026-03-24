@@ -139,6 +139,7 @@ export function NotificationBell() {
                                     variant="body2"
                                     sx={{
                                         fontWeight: notice.unread ? 600 : 400,
+                                        whiteSpace: "pre-wrap",
                                     }}
                                 >
                                     {notice.body}
