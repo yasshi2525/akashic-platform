@@ -27,6 +27,7 @@ const EXTEND_WINDOW_MS = 10 * 60 * 1000;
 const EXTEND_MS = 30 * 60 * 1000;
 
 export interface RunnerParameterObject {
+    publicWebappUrl: string;
     storagePublicUrl: string;
     storageAdminUrl: string;
     storageAdminToken: string;
@@ -544,6 +545,7 @@ export class Runner {
                 unread: true,
                 type: "GAME_CRASHED",
                 body: `「${content.game.title}」がエラーで異常終了しました。`,
+                iconURL: `${this._param.publicWebappUrl}/api/game/${content.game.id}/icon`,
                 link: `/game/${content.game.id}/logs#play-${playId}`,
             },
         });
@@ -564,6 +566,7 @@ export class Runner {
                 unread: true,
                 type: "GAME_ERROR_LOGGED",
                 body: `「${content.game.title}」の実行中にエラーログが出力されました。`,
+                iconURL: `${this._param.publicWebappUrl}/api/game/${content.game.id}/icon`,
                 link: `/game/${content.game.id}/logs#play-${playId}`,
             },
         });

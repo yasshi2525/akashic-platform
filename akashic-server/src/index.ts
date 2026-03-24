@@ -5,6 +5,8 @@ import { HttpServer } from "./httpServer";
 
 installConsoleOverride();
 
+const publicWebappUrl =
+    process.env.PUBLIC_WEBAPP_URL ?? "http://localhost:3000";
 const storagePublicUrl =
     process.env.STORAGE_PUBLIC_URL ?? "http://localhost:3031";
 const storageAdminUrl =
@@ -13,6 +15,7 @@ const storageAdminToken = process.env.STORAGE_ADMIN_TOKEN ?? "";
 const apiToken = process.env.SERVER_API_TOKEN ?? "";
 
 const manager = new RunnerManager({
+    publicWebappUrl,
     storagePublicUrl,
     storageAdminUrl,
     storageAdminToken,

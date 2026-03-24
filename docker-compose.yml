@@ -187,6 +187,7 @@ services:
     user: 1000:1000
     environment:
       PORT: 3032
+      PUBLIC_WEBAPP_URL: http://localhost:3000
       STORAGE_PUBLIC_URL: http://akashic-storage:3031/playlog
       STORAGE_ADMIN_URL: http://akashic-storage:3033/playlog
       STORAGE_ADMIN_TOKEN: ${STORAGE_ADMIN_TOKEN:-local-storage-admin-token}
