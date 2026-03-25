@@ -93,11 +93,6 @@ interface GameContentParameterObject extends ContentParameterObject {
      * @default "0"
      */
     tabIndex?: string;
-    onConsoleLog?: (entry: {
-        level: "log" | "warn" | "error";
-        message: string;
-        timestamp: number;
-    }) => void;
 }
 
 interface SkippingListener {
@@ -159,8 +154,6 @@ export class GameContent extends Content {
     _loader: GameLoader | null;
     _element: GameContentElement | null;
     _pluginDataBus: MemoryQueueDataBus | null;
-    _onConsoleLog: ((entry: { level: "log" | "warn" | "error"; message: string; timestamp: number }) => void) | null;
-    _consoleOverrideCleanup: (() => void) | null;
 
     constructor(param: GameContentParameterObject) {
         super(param, "game");
@@ -207,8 +200,6 @@ export class GameContent extends Content {
         this._loader = null;
         this._element = null;
         this._pluginDataBus = null;
-        this._onConsoleLog = param.onConsoleLog ?? null;
-        this._consoleOverrideCleanup = null;
     }
 
     start(
@@ -350,47 +341,6 @@ export class GameContent extends Content {
                 type: "object",
                 content,
             };
-            const isRunningInIframe =
-                this._givenRunInIframe ||
-                (this._engineConfig!.runInIframe ?? false);
-            if (isRunningInIframe && !this._untrusted && this._onConsoleLog) {
-                const onLog = this._onConsoleLog;
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const c = (win as any).console as Console;
-                const origLog = c.log.bind(c) as (...args: any[]) => void;
-                const origWarn = c.warn.bind(c) as (...args: any[]) => void;
-                const origError = c.error.bind(c) as (...args: any[]) => void;
-                const toStr = (a: unknown): string => {
-                    if (typeof a === "string") return a;
-                    if (a instanceof Error) return a.message;
-                    try {
-                        return JSON.stringify(a);
-                    } catch {
-                        return String(a);
-                    }
-                };
-                const makeOverride = (
-                    level: "log" | "warn" | "error",
-                    orig: (...args: any[]) => void,
-                ) => (...args: any[]) => {
-                    orig(...args);
-                    try {
-                        onLog({
-                            level,
-                            message: (args as unknown[]).map(toStr).join(" "),
-                            timestamp: Date.now(),
-                        });
-                    } catch { /* ignore */ }
-                };
-                c.log = makeOverride("log", origLog);
-                c.warn = makeOverride("warn", origWarn);
-                c.error = makeOverride("error", origError);
-                this._consoleOverrideCleanup = () => {
-                    c.log = origLog;
-                    c.warn = origWarn;
-                    c.error = origError;
-                };
-            }
             this._loader.start({
                 parentHtmlElement: div,
                 contentUrl: this._contentUrl,
@@ -573,10 +523,6 @@ export class GameContent extends Content {
             this._innerArea = undefined!;
             this._destroyed = true;
             this._cancelResizePrimarySurface();
-            if (this._consoleOverrideCleanup) {
-                this._consoleOverrideCleanup();
-                this._consoleOverrideCleanup = null;
-            }
             super.destroy();
         }
     }

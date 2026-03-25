@@ -127,9 +127,6 @@ export class AkashicContainer {
             contentUrl: `/api/content/${param.contentId}`,
             runInIframe: true,
             argument: this._createContentArgument(param),
-            onConsoleLog: (entry) => {
-                param.logCache.push(entry);
-            },
         });
         content.addSkippingListener({
             onSkip: (isSkipping) => {
@@ -151,8 +148,29 @@ export class AkashicContainer {
                 if (param.initialMasterVolume != null) {
                     content.setMasterVolume(param.initialMasterVolume);
                 }
-                content._element!.getContentWindow()!.document.body.children[0].id =
-                    "container";
+                const win = content._element?.getContentWindow();
+                if (win) {
+                    win.document.body.children[0].id = "container";
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const c = (win as any).console as Console;
+                    const toStr = (a: unknown): string => {
+                        if (typeof a === "string") return a;
+                        if (a instanceof Error) return a.message;
+                        try { return JSON.stringify(a); } catch { return String(a); }
+                    };
+                    const makeOverride = (
+                        level: "log" | "warn" | "error",
+                        orig: (...args: any[]) => void,
+                    ) => (...args: any[]) => {
+                        orig(...args);
+                        try {
+                            param.logCache.push({ level, message: (args as unknown[]).map(toStr).join(" "), timestamp: Date.now() });
+                        } catch { /* ignore */ }
+                    };
+                    c.log = makeOverride("log", c.log.bind(c));
+                    c.warn = makeOverride("warn", c.warn.bind(c));
+                    c.error = makeOverride("error", c.error.bind(c));
+                }
                 const amflowcontent = content.getGameDriver()!._platform
                     .amflow as AMFlowClient;
                 amflowcontent.onPlayEnd((reason) => param.onPlayEnd(reason));
