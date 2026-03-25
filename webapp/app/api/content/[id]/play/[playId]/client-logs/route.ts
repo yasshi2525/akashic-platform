@@ -33,7 +33,6 @@ export async function POST(
     }
 
     let body: {
-        clientId?: unknown;
         logs?: unknown;
         errorMessage?: unknown;
     };
@@ -43,14 +42,19 @@ export async function POST(
         return NextResponse.json({ ok: false, reason: "InvalidParams" });
     }
 
-    const { clientId, logs, errorMessage } = body;
-    if (
-        typeof clientId !== "string" ||
-        !clientId ||
-        !Array.isArray(logs)
-    ) {
+    const { logs, errorMessage } = body;
+    if (!Array.isArray(logs)) {
         return NextResponse.json({ ok: false, reason: "InvalidParams" });
     }
+
+    const sessionUser = await getAuth();
+    if (!sessionUser) {
+        return NextResponse.json({ ok: false, reason: "Unauthorized" });
+    }
+
+    const effectiveClientId = sessionUser.id;
+    const effectiveUserId =
+        sessionUser.authType === "oauth" ? sessionUser.id : null;
 
     const contentIdNum = parseInt(id, 10);
     const playIdNum = parseInt(playId, 10);
@@ -72,7 +76,7 @@ export async function POST(
 
     // レートリミット確認
     const lastRecord = await prisma.clientLogRecord.findFirst({
-        where: { playId: playIdNum, clientId },
+        where: { playId: playIdNum, clientId: effectiveClientId },
         orderBy: { submittedAt: "desc" },
     });
     if (lastRecord) {
@@ -108,7 +112,7 @@ export async function POST(
             message: e.message as string,
         }));
 
-    const key = s3Key(id, playId, clientId);
+    const key = s3Key(id, playId, effectiveClientId);
 
     // 既存ファイルがあれば追記、なければ新規作成
     let existingContent = "";
@@ -149,7 +153,8 @@ export async function POST(
         data: {
             playId: playIdNum,
             contentId: contentIdNum,
-            clientId,
+            clientId: effectiveClientId,
+            userId: effectiveUserId,
             errorMessage:
                 typeof errorMessage === "string" && errorMessage
                     ? errorMessage
@@ -228,6 +233,7 @@ export async function GET(
             return {
                 id: record.id,
                 clientId: record.clientId,
+                userId: record.userId,
                 errorMessage: record.errorMessage,
                 submittedAt: record.submittedAt,
                 entries,

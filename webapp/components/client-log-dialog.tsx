@@ -22,7 +22,6 @@ interface ClientLogDialogProps {
     open: boolean;
     contentId: number;
     playId: string;
-    clientId: string;
     errorMessage?: string;
     getLogs: () => ClientCapturedLog[];
     onClose: () => void;
@@ -33,7 +32,6 @@ export function ClientLogDialog({
     open,
     contentId,
     playId,
-    clientId,
     errorMessage,
     getLogs,
     onClose,
@@ -55,7 +53,6 @@ export function ClientLogDialog({
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        clientId,
                         logs,
                         errorMessage: errorMessage ?? null,
                     }),

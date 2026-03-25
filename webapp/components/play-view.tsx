@@ -142,10 +142,6 @@ export function PlayView({
     >();
     const [xShareStatus, setXShareStatus] = useState<"shared" | "error">();
     const [isXSharing, setIsXSharing] = useState(false);
-    const [clientId] = useState(
-        () =>
-            `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`,
-    );
     const [troubleshootOpen, setTroubleshootOpen] = useState(false);
     const [troubleshootErrorMessage, setTroubleshootErrorMessage] =
         useState<string | undefined>();
@@ -453,7 +449,6 @@ export function PlayView({
                 open={troubleshootOpen}
                 contentId={game.contentId}
                 playId={playId}
-                clientId={clientId}
                 errorMessage={troubleshootErrorMessage}
                 getLogs={() => logCache.getAll()}
                 onClose={() => setTroubleshootOpen(false)}

@@ -8,9 +8,9 @@ datasource db {
 }
 
 model User {
-  id            String          @id @default(cuid())
+  id            String            @id @default(cuid())
   name          String?
-  email         String?         @unique
+  email         String?           @unique
   emailVerified DateTime?
   image         String?
   accounts      Account[]
@@ -20,6 +20,7 @@ model User {
   plays         Play[]
   fbPosts       FeedbackPost[]
   fbReplies     FeedbackReply[]
+  clientLogs    ClientLogRecord[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -162,7 +163,9 @@ model ClientLogRecord {
   id           Int      @id @default(autoincrement())
   playId       Int
   contentId    Int
-  clientId     String
+  clientId     String // getAuth().id (セッションベース、ゲスト同士の区別用)
+  userId       String? // FK to User。OAuth認証済みのときのみ設定、ゲストは null
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   errorMessage String?
   submittedAt  DateTime @default(now())
 

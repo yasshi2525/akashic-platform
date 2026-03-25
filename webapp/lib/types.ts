@@ -133,6 +133,7 @@ export interface ClientLogEntry {
 export interface ClientLogSubmission {
     id: number;
     clientId: string;
+    userId: string | null;
     errorMessage: string | null;
     submittedAt: Date;
     entries: ClientLogEntry[];
@@ -141,6 +142,7 @@ export interface ClientLogSubmission {
 const clientLogSubmitErrReasons = [
     "InvalidParams",
     "NotFound",
+    "Unauthorized",
     "RateLimited",
     "InternalError",
 ] as const;
