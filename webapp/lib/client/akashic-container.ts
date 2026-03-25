@@ -31,7 +31,7 @@ interface AkashicContainerCreateParameterObject {
     logCache: LogCache;
     onSkip: (skip: boolean) => void;
     onError: (errMsg: string) => void;
-    onOpenTroubleshoot: (errorMessage?: string) => void;
+    onOpenTroubleshoot: () => void;
     onPlayEnd: (reason: PlayEndReason) => void;
     onPlayExtend: (payload: PlayExtendPayload) => void;
     onRequestPlayerInfo: (
@@ -138,7 +138,7 @@ export class AkashicContainer {
                 const errMsg =
                     "予期しないエラーが発生しました。画面を更新してください。";
                 param.onError(errMsg);
-                param.onOpenTroubleshoot(errMsg);
+                param.onOpenTroubleshoot();
                 console.error(err);
                 content.pause();
             },

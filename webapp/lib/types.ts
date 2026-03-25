@@ -135,7 +135,6 @@ export interface ClientLogSubmission {
     clientId: string;
     userId: string | null;
     reporter: { name: string | null; image: string | null } | null;
-    errorMessage: string | null;
     submittedAt: Date;
     entries: ClientLogEntry[];
 }

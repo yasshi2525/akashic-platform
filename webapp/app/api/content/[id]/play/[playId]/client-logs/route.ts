@@ -34,7 +34,6 @@ export async function POST(
 
     let body: {
         logs?: unknown;
-        errorMessage?: unknown;
     };
     try {
         body = await req.json();
@@ -42,7 +41,7 @@ export async function POST(
         return NextResponse.json({ ok: false, reason: "InvalidParams" });
     }
 
-    const { logs, errorMessage } = body;
+    const { logs } = body;
     if (!Array.isArray(logs)) {
         return NextResponse.json({ ok: false, reason: "InvalidParams" });
     }
@@ -155,10 +154,6 @@ export async function POST(
             contentId: contentIdNum,
             clientId: effectiveClientId,
             userId: effectiveUserId,
-            errorMessage:
-                typeof errorMessage === "string" && errorMessage
-                    ? errorMessage
-                    : null,
         },
     });
 
@@ -238,7 +233,6 @@ export async function GET(
                 reporter: record.user
                     ? { name: record.user.name, image: record.user.image }
                     : null,
-                errorMessage: record.errorMessage,
                 submittedAt: record.submittedAt,
                 entries,
             };

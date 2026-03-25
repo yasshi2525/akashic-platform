@@ -228,15 +228,6 @@ function ClientLogDetails({
                                     )}
                                 </Typography>
                             </Stack>
-                            {sub.errorMessage && (
-                                <Alert
-                                    severity="error"
-                                    variant="outlined"
-                                    sx={{ mb: 1, fontSize: "0.75rem" }}
-                                >
-                                    {sub.errorMessage}
-                                </Alert>
-                            )}
                             {sub.entries.length === 0 ? (
                                 <Typography
                                     variant="body2"

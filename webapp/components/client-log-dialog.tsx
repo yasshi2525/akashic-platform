@@ -22,7 +22,6 @@ interface ClientLogDialogProps {
     open: boolean;
     contentId: number;
     playId: string;
-    errorMessage?: string;
     getLogs: () => ClientCapturedLog[];
     onClose: () => void;
     onSubmitSuccess: () => void;
@@ -32,7 +31,6 @@ export function ClientLogDialog({
     open,
     contentId,
     playId,
-    errorMessage,
     getLogs,
     onClose,
     onSubmitSuccess,
@@ -52,10 +50,7 @@ export function ClientLogDialog({
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        logs,
-                        errorMessage: errorMessage ?? null,
-                    }),
+                    body: JSON.stringify({ logs }),
                 },
             );
             const json: ClientLogSubmitResponse = await res.json();
@@ -87,13 +82,6 @@ export function ClientLogDialog({
             <DialogTitle>不具合を投稿主に報告する</DialogTitle>
             <DialogContent>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                    {errorMessage && (
-                        <Alert severity="error" variant="outlined">
-                            <Typography variant="body2" fontFamily="monospace">
-                                {errorMessage}
-                            </Typography>
-                        </Alert>
-                    )}
                     <Typography variant="body2">
                         投稿主にトラブルシュート情報を送信します。送信した情報は投稿主のみ閲覧できます。
                     </Typography>

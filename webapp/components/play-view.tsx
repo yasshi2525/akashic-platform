@@ -143,8 +143,6 @@ export function PlayView({
     const [xShareStatus, setXShareStatus] = useState<"shared" | "error">();
     const [isXSharing, setIsXSharing] = useState(false);
     const [troubleshootOpen, setTroubleshootOpen] = useState(false);
-    const [troubleshootErrorMessage, setTroubleshootErrorMessage] =
-        useState<string | undefined>();
 
     function formatRemaining(ms: number | undefined) {
         if (ms == null) {
@@ -202,8 +200,7 @@ export function PlayView({
             logCache,
             onSkip: setSkipping,
             onError: setError,
-            onOpenTroubleshoot: (errMsg) => {
-                setTroubleshootErrorMessage(errMsg);
+            onOpenTroubleshoot: () => {
                 setTroubleshootOpen(true);
             },
             onPlayEnd: setPlayEndReason,
@@ -449,7 +446,7 @@ export function PlayView({
                 open={troubleshootOpen}
                 contentId={game.contentId}
                 playId={playId}
-                errorMessage={troubleshootErrorMessage}
+
                 getLogs={() => logCache.getAll()}
                 onClose={() => setTroubleshootOpen(false)}
                 onSubmitSuccess={() => logCache.clear()}

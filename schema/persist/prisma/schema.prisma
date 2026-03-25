@@ -160,14 +160,13 @@ model Notification {
 }
 
 model ClientLogRecord {
-  id           Int      @id @default(autoincrement())
-  playId       Int
-  contentId    Int
-  clientId     String // getAuth().id (セッションベース、ゲスト同士の区別用)
-  userId       String? // FK to User。OAuth認証済みのときのみ設定、ゲストは null
-  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  errorMessage String?
-  submittedAt  DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  playId      Int
+  contentId   Int
+  clientId    String // getAuth().id (セッションベース、ゲスト同士の区別用)
+  userId      String? // FK to User。OAuth認証済みのときのみ設定、ゲストは null
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  submittedAt DateTime @default(now())
 
   createdAt DateTime @default(now())
 }

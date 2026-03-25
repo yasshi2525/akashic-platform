@@ -8,7 +8,6 @@ CREATE TABLE "ClientLogRecord" (
     "contentId" INTEGER NOT NULL,
     "clientId" TEXT NOT NULL,
     "userId" TEXT,
-    "errorMessage" TEXT,
     "submittedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
