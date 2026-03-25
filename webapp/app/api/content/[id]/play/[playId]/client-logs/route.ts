@@ -208,6 +208,7 @@ export async function GET(
         where: { playId: parseInt(playId, 10), contentId: parseInt(id, 10) },
         orderBy: { submittedAt: "asc" },
         distinct: ["clientId"],
+        include: { user: { select: { name: true, image: true } } },
     });
 
     const submissions = await Promise.all(
@@ -234,6 +235,9 @@ export async function GET(
                 id: record.id,
                 clientId: record.clientId,
                 userId: record.userId,
+                reporter: record.user
+                    ? { name: record.user.name, image: record.user.image }
+                    : null,
                 errorMessage: record.errorMessage,
                 submittedAt: record.submittedAt,
                 entries,

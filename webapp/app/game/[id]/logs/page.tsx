@@ -203,17 +203,31 @@ function ClientLogDetails({
                                 bgcolor: theme.palette.background.default,
                             }}
                         >
-                            <Typography
-                                variant="caption"
-                                color={theme.palette.text.secondary}
-                                display="block"
+                            <Stack
+                                direction="row"
+                                spacing={1}
+                                alignItems="center"
                                 sx={{ mb: 0.5 }}
                             >
-                                送信 {si + 1} —{" "}
-                                {new Date(sub.submittedAt).toLocaleString(
-                                    "ja-JP",
-                                )}
-                            </Typography>
+                                <Avatar
+                                    src={sub.reporter?.image ?? undefined}
+                                    sx={{ width: 20, height: 20, fontSize: "0.7rem" }}
+                                >
+                                    {!sub.reporter?.image
+                                        ? (sub.reporter?.name?.[0] ?? "?")
+                                        : undefined}
+                                </Avatar>
+                                <Typography
+                                    variant="caption"
+                                    color={theme.palette.text.secondary}
+                                >
+                                    {sub.reporter?.name ?? "ゲスト"} —{" "}
+                                    送信 {si + 1} —{" "}
+                                    {new Date(sub.submittedAt).toLocaleString(
+                                        "ja-JP",
+                                    )}
+                                </Typography>
+                            </Stack>
                             {sub.errorMessage && (
                                 <Alert
                                     severity="error"
