@@ -446,7 +446,6 @@ export function PlayView({
                 open={troubleshootOpen}
                 contentId={game.contentId}
                 playId={playId}
-
                 getLogs={() => logCache.getAll()}
                 onClose={() => setTroubleshootOpen(false)}
                 onSubmitSuccess={() => logCache.clear()}
@@ -702,9 +701,6 @@ export function PlayView({
                                             </IconButton>
                                             <TroubleshootButton
                                                 onClick={() => {
-                                                    setTroubleshootErrorMessage(
-                                                        undefined,
-                                                    );
                                                     setTroubleshootOpen(true);
                                                 }}
                                             />
