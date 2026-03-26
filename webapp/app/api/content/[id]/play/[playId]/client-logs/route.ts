@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-    GetObjectCommand,
-    PutObjectCommand,
-} from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { prisma } from "@yasshi2525/persist-schema";
 import {
+    ClientCapturedLog,
     ClientLogEntry,
     ClientLogSubmitResponse,
     ClientLogsGetResponse,
@@ -16,8 +14,9 @@ import {
     s3KeyPrefix,
 } from "@/lib/server/content-utils";
 
-const RATE_LIMIT_SECONDS =
-    parseInt(process.env.CLIENT_LOG_RATE_LIMIT_SECONDS ?? "30", 10) || 30;
+const RATE_LIMIT_SECONDS = parseInt(
+    process.env.CLIENT_LOG_RATE_LIMIT_SECONDS ?? "30",
+);
 
 function s3Key(contentId: string, playId: string, clientId: string) {
     return `${s3KeyPrefix}client-logs/${contentId}/${playId}/${clientId}.jsonl`;
@@ -25,58 +24,78 @@ function s3Key(contentId: string, playId: string, clientId: string) {
 
 export async function POST(
     req: NextRequest,
-    ctx: { params: Promise<{ id: string; playId: string }> },
+    ctx: RouteContext<"/api/content/[id]/play/[playId]/client-logs">,
 ): Promise<NextResponse<ClientLogSubmitResponse>> {
     const { id, playId } = await ctx.params;
     if (!id || !playId) {
-        return NextResponse.json({ ok: false, reason: "InvalidParams" });
+        return NextResponse.json({
+            ok: false,
+            reason: "InvalidParams",
+        });
     }
 
-    let body: {
-        logs?: unknown;
-    };
+    let logs: ClientCapturedLog[];
     try {
-        body = await req.json();
-    } catch {
-        return NextResponse.json({ ok: false, reason: "InvalidParams" });
-    }
-
-    const { logs } = body;
-    if (!Array.isArray(logs)) {
-        return NextResponse.json({ ok: false, reason: "InvalidParams" });
+        logs = (await req.json()).logs;
+        if (!Array.isArray(logs)) {
+            return NextResponse.json({ ok: false, reason: "InvalidParams" });
+        }
+    } catch (err) {
+        console.warn(
+            `failed to parse request (contentId = "${id}", playId = "${playId}")`,
+            err,
+        );
+        return NextResponse.json({
+            ok: false,
+            reason: "InvalidParams",
+        });
     }
 
     const sessionUser = await getAuth();
     if (!sessionUser) {
-        return NextResponse.json({ ok: false, reason: "Unauthorized" });
+        return NextResponse.json({
+            ok: false,
+            reason: "Unauthorized",
+        });
     }
 
     const effectiveClientId = sessionUser.id;
     const effectiveUserId =
         sessionUser.authType === "oauth" ? sessionUser.id : null;
 
-    const contentIdNum = parseInt(id, 10);
-    const playIdNum = parseInt(playId, 10);
-    if (isNaN(contentIdNum) || isNaN(playIdNum)) {
-        return NextResponse.json({ ok: false, reason: "InvalidParams" });
-    }
-
     const play = await prisma.play.findUnique({
-        where: { id: playIdNum },
+        where: {
+            id: parseInt(playId),
+        },
         select: {
             id: true,
             contentId: true,
-            content: { select: { game: { select: { id: true, title: true, publisherId: true } } } },
+            content: {
+                select: {
+                    game: {
+                        select: { id: true, title: true, publisherId: true },
+                    },
+                },
+            },
         },
     });
-    if (!play || play.contentId !== contentIdNum) {
-        return NextResponse.json({ ok: false, reason: "NotFound" });
+    // サーバーから送られる contentLog に対して、クライアントから送られるので念の為バリデート
+    if (!play || play.contentId !== parseInt(id)) {
+        return NextResponse.json({
+            ok: false,
+            reason: "NotFound",
+        });
     }
 
     // レートリミット確認
     const lastRecord = await prisma.clientLogRecord.findFirst({
-        where: { playId: playIdNum, clientId: effectiveClientId },
-        orderBy: { submittedAt: "desc" },
+        where: {
+            playId: play.id,
+            clientId: effectiveClientId,
+        },
+        orderBy: {
+            submittedAt: "desc",
+        },
     });
     if (lastRecord) {
         const elapsedMs = Date.now() - lastRecord.submittedAt.getTime();
@@ -94,9 +113,7 @@ export async function POST(
     }
 
     // ログエントリをS3保存形式に変換
-    const newEntries: ClientLogEntry[] = (
-        logs as Array<{ timestamp?: unknown; level?: unknown; message?: unknown }>
-    )
+    const appendingEntries: ClientLogEntry[] = logs
         .filter(
             (e) =>
                 typeof e.timestamp === "number" &&
@@ -105,10 +122,10 @@ export async function POST(
                     e.level === "error") &&
                 typeof e.message === "string",
         )
-        .map((e) => ({
-            timestamp: new Date(e.timestamp as number).toISOString(),
-            level: e.level as "log" | "warn" | "error",
-            message: e.message as string,
+        .map(({ timestamp, level, message }) => ({
+            timestamp: new Date(timestamp).toISOString(),
+            level,
+            message,
         }));
 
     const key = s3Key(id, playId, effectiveClientId);
@@ -117,21 +134,31 @@ export async function POST(
     let existingContent = "";
     try {
         const result = await getS3Client().send(
-            new GetObjectCommand({ Bucket: getBucket(), Key: key }),
+            new GetObjectCommand({
+                Bucket: getBucket(),
+                Key: key,
+            }),
         );
-        existingContent =
-            (await result.Body?.transformToString("utf-8")) ?? "";
+        existingContent = (await result.Body?.transformToString("utf-8")) ?? "";
     } catch (err) {
         if ((err as { Code?: string }).Code !== "NoSuchKey") {
-            console.warn("failed to read existing client log", err);
-            return NextResponse.json({ ok: false, reason: "InternalError" });
+            console.warn(
+                `failed to read existing client log (contentId = "${id}", playId = "${playId}")`,
+                err,
+            );
+            return NextResponse.json({
+                ok: false,
+                reason: "InternalError",
+            });
         }
     }
 
-    const newLines = newEntries.map((e) => JSON.stringify(e)).join("\n");
+    const appendingLines = appendingEntries
+        .map((e) => JSON.stringify(e))
+        .join("\n");
     const combined = existingContent
-        ? `${existingContent.trimEnd()}\n${newLines}`
-        : newLines;
+        ? `${existingContent.trimEnd()}\n${appendingLines}`
+        : appendingLines;
 
     try {
         await getS3Client().send(
@@ -143,15 +170,21 @@ export async function POST(
             }),
         );
     } catch (err) {
-        console.warn("failed to write client log to S3", err);
-        return NextResponse.json({ ok: false, reason: "InternalError" });
+        console.warn(
+            `failed to write client log to S3 (contentId = "${id}", playId = "${playId}"`,
+            err,
+        );
+        return NextResponse.json({
+            ok: false,
+            reason: "InternalError",
+        });
     }
 
     // DBにレコード保存
     await prisma.clientLogRecord.create({
         data: {
-            playId: playIdNum,
-            contentId: contentIdNum,
+            playId: play.id,
+            contentId: play.contentId,
             clientId: effectiveClientId,
             userId: effectiveUserId,
         },
@@ -167,11 +200,14 @@ export async function POST(
                 type: "CLIENT_LOG_SUBMITTED",
                 body: `「${game.title}」のプレイ中にトラブルシュートログが届きました。`,
                 iconURL: `${process.env.PUBLIC_BASE_URL}/api/game/${game.id}/icon`,
-                link: `/game/${game.id}/logs#play-${playIdNum}`,
+                link: `/game/${game.id}/logs#play-${play.id}`,
             },
         });
     } catch (err) {
-        console.warn("failed to create client log notification", err);
+        console.warn(
+            `failed to create client log notification (contentId = "${id}", playId = "${playId}`,
+            err,
+        );
     }
 
     return NextResponse.json({ ok: true });
@@ -179,7 +215,7 @@ export async function POST(
 
 export async function GET(
     _req: NextRequest,
-    ctx: { params: Promise<{ id: string; playId: string }> },
+    ctx: RouteContext<"/api/content/[id]/play/[playId]/client-logs">,
 ): Promise<NextResponse<ClientLogsGetResponse>> {
     const { id, playId } = await ctx.params;
     if (!id || !playId) {
@@ -187,23 +223,48 @@ export async function GET(
     }
 
     const content = await prisma.content.findUnique({
-        where: { id: parseInt(id, 10) },
-        select: { game: { select: { publisherId: true } } },
+        where: {
+            id: parseInt(id),
+        },
+        select: {
+            id: true,
+            game: {
+                select: { publisherId: true },
+            },
+        },
     });
     if (!content) {
-        return NextResponse.json({ ok: false, reason: "NotFound" });
+        return NextResponse.json({
+            ok: false,
+            reason: "NotFound",
+        });
     }
 
     const user = await getAuth();
     if (content.game.publisherId !== user?.id) {
-        return NextResponse.json({ ok: false, reason: "Forbidden" });
+        return NextResponse.json({
+            ok: false,
+            reason: "Forbidden",
+        });
     }
 
     const records = await prisma.clientLogRecord.findMany({
-        where: { playId: parseInt(playId, 10), contentId: parseInt(id, 10) },
-        orderBy: { submittedAt: "asc" },
+        where: {
+            playId: parseInt(playId),
+            contentId: content.id,
+        },
+        orderBy: {
+            submittedAt: "asc",
+        },
         distinct: ["clientId"],
-        include: { user: { select: { name: true, image: true } } },
+        include: {
+            user: {
+                select: {
+                    name: true,
+                    image: true,
+                },
+            },
+        },
     });
 
     const submissions = await Promise.all(
@@ -223,7 +284,10 @@ export async function GET(
                 }
             } catch (err) {
                 if ((err as { Code?: string }).Code !== "NoSuchKey") {
-                    console.warn("failed to read client log from S3", err);
+                    console.warn(
+                        `failed to read client log from S3 (contentId = "${id}, playId = "${playId}")`,
+                        err,
+                    );
                 }
             }
             return {
@@ -239,5 +303,8 @@ export async function GET(
         }),
     );
 
-    return NextResponse.json({ ok: true, data: submissions });
+    return NextResponse.json({
+        ok: true,
+        data: submissions,
+    });
 }

@@ -1,8 +1,4 @@
-export interface ClientCapturedLog {
-    timestamp: number;
-    level: "log" | "warn" | "error";
-    message: string;
-}
+import { ClientCapturedLog } from "../types";
 
 const DEFAULT_MAX_ENTRIES = 1000;
 
@@ -13,8 +9,7 @@ export class LogCache {
     constructor() {
         const raw = process.env.NEXT_PUBLIC_LOG_CACHE_MAX_ENTRIES;
         const parsed = raw ? parseInt(raw, 10) : NaN;
-        this._max =
-            !isNaN(parsed) && parsed > 0 ? parsed : DEFAULT_MAX_ENTRIES;
+        this._max = !isNaN(parsed) && parsed > 0 ? parsed : DEFAULT_MAX_ENTRIES;
     }
 
     push(entry: ClientCapturedLog): void {

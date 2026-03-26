@@ -15,8 +15,7 @@ import {
     Typography,
     useTheme,
 } from "@mui/material";
-import { ClientCapturedLog } from "@/lib/client/log-cache";
-import { ClientLogSubmitResponse } from "@/lib/types";
+import { ClientCapturedLog, ClientLogSubmitResponse } from "@/lib/types";
 
 interface ClientLogDialogProps {
     open: boolean;
@@ -62,10 +61,14 @@ export function ClientLogDialog({
                     `しばらく時間をおいてから再送信してください（あと ${json.retryAfterSeconds} 秒）。`,
                 );
             } else {
-                setSubmitError("送信に失敗しました。時間をおいて再試行してください。");
+                setSubmitError(
+                    "送信に失敗しました。時間をおいて再試行してください。",
+                );
             }
         } catch {
-            setSubmitError("送信に失敗しました。時間をおいて再試行してください。");
+            setSubmitError(
+                "送信に失敗しました。時間をおいて再試行してください。",
+            );
         } finally {
             setLoading(false);
         }

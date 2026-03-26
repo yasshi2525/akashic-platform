@@ -124,6 +124,12 @@ export interface ContentLogEntry {
     message: string;
 }
 
+export interface ClientCapturedLog {
+    timestamp: number;
+    level: "log" | "warn" | "error";
+    message: string;
+}
+
 export interface ClientLogEntry {
     timestamp: string;
     level: "log" | "warn" | "error";
@@ -166,8 +172,7 @@ const clientLogsGetErrReasons = [
     "NotFound",
     "InternalError",
 ] as const;
-export type ClientLogsGetErrorType =
-    (typeof clientLogsGetErrReasons)[number];
+export type ClientLogsGetErrorType = (typeof clientLogsGetErrReasons)[number];
 export type ClientLogsGetResponse =
     | { ok: true; data: ClientLogSubmission[] }
     | { ok: false; reason: ClientLogsGetErrorType };
