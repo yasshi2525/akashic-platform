@@ -25,6 +25,7 @@ import {
 import { useAuth } from "@/lib/client/useAuth";
 import { useGame } from "@/lib/client/useGame";
 import { useContentLogList } from "@/lib/client/useContentLogList";
+import { useClientLogList } from "@/lib/client/useClientLogList";
 
 function PlayErrorDetails({
     contentId,
@@ -139,33 +140,14 @@ function ClientLogDetails({
 }) {
     const theme = useTheme();
     const [expanded, setExpanded] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [submissions, setSubmissions] = useState<
-        ClientLogSubmission[] | null
-    >(null);
-    const [fetchError, setFetchError] = useState<string>();
+    const { isLoading, list, error, trigger } = useClientLogList(
+        contentId,
+        playId,
+    );
 
-    async function handleToggle() {
-        if (!expanded && submissions === null && !loading) {
-            setLoading(true);
-            try {
-                const res = await fetch(
-                    `/api/content/${contentId}/play/${playId}/client-logs`,
-                );
-                if (!res.ok) {
-                    throw new Error(res.statusText);
-                }
-                const json = await res.json();
-                if (json.ok) {
-                    setSubmissions(json.data);
-                } else {
-                    setFetchError("クライアントログの取得に失敗しました。");
-                }
-            } catch {
-                setFetchError("クライアントログの取得に失敗しました。");
-            } finally {
-                setLoading(false);
-            }
+    function handleClick() {
+        if (!expanded) {
+            trigger();
         }
         setExpanded((prev) => !prev);
     }
@@ -175,27 +157,25 @@ function ClientLogDetails({
             <Button
                 variant="outlined"
                 size="small"
-                onClick={handleToggle}
+                onClick={handleClick}
                 sx={{
                     borderColor: theme.palette.warning.light,
                     color: theme.palette.warning.light,
                 }}
             >
-                {expanded
-                    ? "▲ クライアントログを隠す"
-                    : "▼ クライアントログを表示"}
+                {expanded ? "▲ 報告されたログを隠す" : "▼ 報告されたログを表示"}
             </Button>
             {expanded && (
                 <Box sx={{ mt: 1 }}>
-                    {loading && <CircularProgress size={20} />}
-                    {fetchError && (
+                    {isLoading && <CircularProgress size={20} />}
+                    {error && (
                         <Alert severity="error" sx={{ mb: 1 }}>
-                            {fetchError}
+                            {error}
                         </Alert>
                     )}
-                    {submissions?.map((sub, si) => (
+                    {list?.map((submission) => (
                         <Box
-                            key={sub.id}
+                            key={submission.id}
                             sx={{
                                 mb: 2,
                                 p: 1,
@@ -209,26 +189,28 @@ function ClientLogDetails({
                                 alignItems="center"
                                 sx={{ mb: 0.5 }}
                             >
-                                <Avatar
-                                    src={sub.reporter?.image ?? undefined}
-                                    sx={{ width: 20, height: 20, fontSize: "0.7rem" }}
-                                >
-                                    {!sub.reporter?.image
-                                        ? (sub.reporter?.name?.[0] ?? "?")
-                                        : undefined}
-                                </Avatar>
+                                {submission.reporter?.image ? (
+                                    <Avatar
+                                        src={submission.reporter.image}
+                                        sx={{
+                                            width: 20,
+                                            height: 20,
+                                            fontSize: "0.7rem",
+                                        }}
+                                    />
+                                ) : null}
                                 <Typography
                                     variant="caption"
                                     color={theme.palette.text.secondary}
                                 >
-                                    {sub.reporter?.name ?? "ゲスト"} —{" "}
-                                    送信 {si + 1} —{" "}
-                                    {new Date(sub.submittedAt).toLocaleString(
-                                        "ja-JP",
-                                    )}
+                                    {submission.reporter?.name ?? "ゲスト"} —
+                                    送信{" "}
+                                    {new Date(
+                                        submission.submittedAt,
+                                    ).toLocaleString("ja-JP")}
                                 </Typography>
                             </Stack>
-                            {sub.entries.length === 0 ? (
+                            {submission.entries.length === 0 ? (
                                 <Typography
                                     variant="body2"
                                     color={theme.palette.text.secondary}
@@ -236,8 +218,8 @@ function ClientLogDetails({
                                     ログはありません。
                                 </Typography>
                             ) : (
-                                sub.entries.map((entry, ei) => (
-                                    <Box key={ei} sx={{ mb: 1 }}>
+                                submission.entries.map((entry, i) => (
+                                    <Box key={i} sx={{ mb: 1 }}>
                                         <Typography
                                             variant="caption"
                                             color={
@@ -322,7 +304,7 @@ function ContentLogCard({ info }: { info: ContentLogInfo }) {
                     )}
                     {info.clientLogCount > 0 && (
                         <Chip
-                            label={`クライアントログ ${info.clientLogCount} 件`}
+                            label={`プレイヤーから報告されたログ ${info.clientLogCount} 件`}
                             color="info"
                             size="small"
                             variant="outlined"
@@ -498,13 +480,6 @@ export default function ContentLogs() {
                 終了した部屋のログのみ表示されます。
                 (反映には若干時間がかかります)
             </Typography>
-
-            {contentLogsError && (
-                <Alert severity="error" variant="outlined" sx={{ mb: 2 }}>
-                    {contentLogsError}
-                </Alert>
-            )}
-
             {isContentLogsLoading ? (
                 <Stack spacing={2}>
                     <Skeleton variant="rectangular" height={120} />
