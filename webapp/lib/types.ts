@@ -140,11 +140,6 @@ export type ClientLogEntry =
     | {
           type: "truncation_marker";
           timestamp: string;
-      }
-    | {
-          type: "comment";
-          timestamp: string;
-          message: string;
       };
 
 export interface ClientLogSubmission {
@@ -154,6 +149,7 @@ export interface ClientLogSubmission {
     reporter: { name: string | null; image: string | null } | null;
     submittedAt: Date;
     entries: ClientLogEntry[];
+    comments: string[];
 }
 
 const clientLogSubmitErrReasons = [

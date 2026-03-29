@@ -171,167 +171,142 @@ function ClientLogDetails({
                             {error}
                         </Alert>
                     )}
-                    {list?.map((submission) => {
-                        const comments = submission.entries.filter(
-                            (e): e is Extract<typeof e, { type: "comment" }> =>
-                                e.type === "comment",
-                        );
-                        const logEntries = submission.entries.filter(
-                            (
-                                e,
-                            ): e is Exclude<
-                                (typeof submission.entries)[number],
-                                { type: "comment" }
-                            > => e.type !== "comment",
-                        );
-                        const concatenatedComment =
-                            comments.length > 0
-                                ? comments.map((c) => c.message).join("\n---\n")
-                                : null;
-                        return (
-                            <Box
-                                key={submission.id}
-                                sx={{
-                                    mb: 2,
-                                    p: 1,
-                                    borderRadius: 1,
-                                    bgcolor: theme.palette.background.default,
-                                }}
+                    {list?.map((submission) => (
+                        <Box
+                            key={submission.id}
+                            sx={{
+                                mb: 2,
+                                p: 1,
+                                borderRadius: 1,
+                                bgcolor: theme.palette.background.default,
+                            }}
+                        >
+                            <Stack
+                                direction="row"
+                                spacing={1}
+                                alignItems="center"
+                                sx={{ mb: 0.5 }}
                             >
-                                <Stack
-                                    direction="row"
-                                    spacing={1}
-                                    alignItems="center"
-                                    sx={{ mb: 0.5 }}
+                                {submission.reporter?.image ? (
+                                    <Avatar
+                                        src={submission.reporter.image}
+                                        sx={{
+                                            width: 20,
+                                            height: 20,
+                                            fontSize: "0.7rem",
+                                        }}
+                                    />
+                                ) : null}
+                                <Typography
+                                    variant="caption"
+                                    color={theme.palette.text.secondary}
                                 >
-                                    {submission.reporter?.image ? (
-                                        <Avatar
-                                            src={submission.reporter.image}
-                                            sx={{
-                                                width: 20,
-                                                height: 20,
-                                                fontSize: "0.7rem",
-                                            }}
-                                        />
-                                    ) : null}
+                                    {submission.reporter?.name ?? "ゲスト"} —
+                                    送信{" "}
+                                    {new Date(
+                                        submission.submittedAt,
+                                    ).toLocaleString("ja-JP")}
+                                </Typography>
+                            </Stack>
+                            {submission.comments.length > 0 && (
+                                <Box sx={{ mb: 1 }}>
                                     <Typography
                                         variant="caption"
                                         color={theme.palette.text.secondary}
+                                        display="block"
                                     >
-                                        {submission.reporter?.name ?? "ゲスト"}{" "}
-                                        — 送信{" "}
-                                        {new Date(
-                                            submission.submittedAt,
-                                        ).toLocaleString("ja-JP")}
+                                        コメント:
                                     </Typography>
-                                </Stack>
-                                {concatenatedComment && (
-                                    <Box sx={{ mb: 1 }}>
-                                        <Typography
-                                            variant="caption"
-                                            color={theme.palette.text.secondary}
-                                            display="block"
-                                        >
-                                            コメント:
-                                        </Typography>
-                                        <Box
-                                            component="pre"
-                                            sx={{
-                                                whiteSpace: "pre-wrap",
-                                                wordBreak: "break-word",
-                                                m: 0,
-                                                p: 1,
-                                                bgcolor:
-                                                    theme.palette.background
-                                                        .paper,
-                                                borderRadius: 1,
-                                                fontSize: "0.8rem",
-                                                border: 1,
-                                                borderColor:
-                                                    theme.palette.info.dark,
-                                            }}
-                                        >
-                                            {concatenatedComment}
-                                        </Box>
+                                    <Box
+                                        component="pre"
+                                        sx={{
+                                            whiteSpace: "pre-wrap",
+                                            wordBreak: "break-word",
+                                            m: 0,
+                                            p: 1,
+                                            bgcolor:
+                                                theme.palette.background.paper,
+                                            borderRadius: 1,
+                                            fontSize: "0.8rem",
+                                            border: 1,
+                                            borderColor:
+                                                theme.palette.info.dark,
+                                        }}
+                                    >
+                                        {submission.comments.join("\n---\n")}
                                     </Box>
-                                )}
-                                {logEntries.length === 0 ? (
-                                    <Typography
-                                        variant="body2"
-                                        color={theme.palette.text.secondary}
-                                    >
-                                        ログはありません。
-                                    </Typography>
-                                ) : (
-                                    logEntries.map((entry, i) => {
-                                        if (
-                                            entry.type === "truncation_marker"
-                                        ) {
-                                            return (
-                                                <Typography
-                                                    key={i}
-                                                    variant="caption"
-                                                    display="block"
-                                                    sx={{
-                                                        my: 0.5,
-                                                        color: theme.palette
-                                                            .warning.light,
-                                                        fontStyle: "italic",
-                                                    }}
-                                                >
-                                                    ※ 以前のログは上限超過により省略されました
-                                                </Typography>
-                                            );
-                                        }
+                                </Box>
+                            )}
+                            {submission.entries.length === 0 ? (
+                                <Typography
+                                    variant="body2"
+                                    color={theme.palette.text.secondary}
+                                >
+                                    ログはありません。
+                                </Typography>
+                            ) : (
+                                submission.entries.map((entry, i) => {
+                                    if (entry.type === "truncation_marker") {
                                         return (
-                                            <Box key={i} sx={{ mb: 1 }}>
-                                                <Typography
-                                                    variant="caption"
-                                                    color={
-                                                        entry.level === "error"
-                                                            ? theme.palette
-                                                                  .error.light
-                                                            : entry.level ===
-                                                                "warn"
-                                                              ? theme.palette
-                                                                    .warning
-                                                                    .light
-                                                              : theme.palette
-                                                                    .text
-                                                                    .secondary
-                                                    }
-                                                    display="block"
-                                                >
-                                                    [{entry.level}]{" "}
-                                                    {new Date(
-                                                        entry.timestamp,
-                                                    ).toLocaleString("ja-JP")}
-                                                </Typography>
-                                                <Box
-                                                    component="pre"
-                                                    sx={{
-                                                        whiteSpace: "pre-wrap",
-                                                        wordBreak: "break-word",
-                                                        m: 0,
-                                                        p: 1,
-                                                        bgcolor:
-                                                            theme.palette
-                                                                .background
-                                                                .paper,
-                                                        borderRadius: 1,
-                                                        fontSize: "0.75rem",
-                                                        fontFamily: "monospace",
-                                                    }}
-                                                >
-                                                    {entry.message}
-                                                </Box>
-                                            </Box>
+                                            <Typography
+                                                key={i}
+                                                variant="caption"
+                                                display="block"
+                                                sx={{
+                                                    my: 0.5,
+                                                    color: theme.palette.warning
+                                                        .light,
+                                                    fontStyle: "italic",
+                                                }}
+                                            >
+                                                ※ 以前のログは上限超過により省略されました
+                                            </Typography>
                                         );
-                                    })
-                                )}
-                            </Box>
-                        );
-                    })}
+                                    }
+                                    return (
+                                        <Box key={i} sx={{ mb: 1 }}>
+                                            <Typography
+                                                variant="caption"
+                                                color={
+                                                    entry.level === "error"
+                                                        ? theme.palette.error
+                                                              .light
+                                                        : entry.level === "warn"
+                                                          ? theme.palette
+                                                                .warning.light
+                                                          : theme.palette.text
+                                                                .secondary
+                                                }
+                                                display="block"
+                                            >
+                                                [{entry.level}]{" "}
+                                                {new Date(
+                                                    entry.timestamp,
+                                                ).toLocaleString("ja-JP")}
+                                            </Typography>
+                                            <Box
+                                                component="pre"
+                                                sx={{
+                                                    whiteSpace: "pre-wrap",
+                                                    wordBreak: "break-word",
+                                                    m: 0,
+                                                    p: 1,
+                                                    bgcolor:
+                                                        theme.palette.background
+                                                            .paper,
+                                                    borderRadius: 1,
+                                                    fontSize: "0.75rem",
+                                                    fontFamily: "monospace",
+                                                }}
+                                            >
+                                                {entry.message}
+                                            </Box>
+                                        </Box>
+                                    );
+                                })
+                            )}
+                        </Box>
+                    ))}
                 </Box>
             )}
         </Box>

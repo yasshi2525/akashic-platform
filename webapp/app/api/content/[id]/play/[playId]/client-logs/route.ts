@@ -120,7 +120,7 @@ export async function POST(
         }
     }
 
-    // ログエントリをS3保存形式に変換
+    // ログエントリをS3保存形式に変換（comment は JSONL に含めず DB に保存）
     const now = new Date().toISOString();
     const logEntries: ClientLogEntry[] = logs
         .filter(
@@ -137,15 +137,11 @@ export async function POST(
             message,
         }));
 
-    // 省略マーカーをログ先頭に追加
     const appendingEntries: ClientLogEntry[] = [
         ...(truncated
             ? [{ type: "truncation_marker" as const, timestamp: now }]
             : []),
         ...logEntries,
-        ...(comment
-            ? [{ type: "comment" as const, timestamp: now, message: comment }]
-            : []),
     ];
 
     const key = s3Key(id, playId, effectiveClientId);
@@ -200,13 +196,14 @@ export async function POST(
         });
     }
 
-    // DBにレコード保存
+    // DBにレコード保存（comment も DB に格納）
     await prisma.clientLogRecord.create({
         data: {
             playId: play.id,
             contentId: play.contentId,
             clientId: effectiveClientId,
             userId: effectiveUserId,
+            comment: comment ?? null,
         },
     });
 
@@ -248,7 +245,8 @@ export async function GET(
         });
     }
 
-    const records = await prisma.clientLogRecord.findMany({
+    // 全レコードを取得してクライアントごとに集約
+    const allRecords = await prisma.clientLogRecord.findMany({
         where: {
             playId: parseInt(playId),
             contentId: content.id,
@@ -256,7 +254,6 @@ export async function GET(
         orderBy: {
             submittedAt: "asc",
         },
-        distinct: ["clientId"],
         include: {
             user: {
                 select: {
@@ -267,9 +264,27 @@ export async function GET(
         },
     });
 
+    // clientId ごとに最初のレコード・全コメントを集約
+    type ClientAgg = {
+        firstRecord: (typeof allRecords)[0];
+        comments: string[];
+    };
+    const clientMap = new Map<string, ClientAgg>();
+    for (const record of allRecords) {
+        if (!clientMap.has(record.clientId)) {
+            clientMap.set(record.clientId, {
+                firstRecord: record,
+                comments: [],
+            });
+        }
+        if (record.comment) {
+            clientMap.get(record.clientId)!.comments.push(record.comment);
+        }
+    }
+
     const submissions = await Promise.all(
-        records.map(async (record) => {
-            const key = s3Key(id, playId, record.clientId);
+        [...clientMap.values()].map(async ({ firstRecord, comments }) => {
+            const key = s3Key(id, playId, firstRecord.clientId);
             let entries: ClientLogEntry[] = [];
             try {
                 const result = await getS3Client().send(
@@ -291,14 +306,18 @@ export async function GET(
                 }
             }
             return {
-                id: record.id,
-                clientId: record.clientId,
-                userId: record.userId,
-                reporter: record.user
-                    ? { name: record.user.name, image: record.user.image }
+                id: firstRecord.id,
+                clientId: firstRecord.clientId,
+                userId: firstRecord.userId,
+                reporter: firstRecord.user
+                    ? {
+                          name: firstRecord.user.name,
+                          image: firstRecord.user.image,
+                      }
                     : null,
-                submittedAt: record.submittedAt,
+                submittedAt: firstRecord.submittedAt,
                 entries,
+                comments,
             };
         }),
     );

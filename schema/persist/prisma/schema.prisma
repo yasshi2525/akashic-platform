@@ -166,6 +166,7 @@ model ClientLogRecord {
   clientId    String // getAuth().id (セッションベース、ゲスト同士の区別用)
   userId      String? // FK to User。OAuth認証済みのときのみ設定、ゲストは null
   user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  comment     String? // ユーザーが任意入力した追加情報
   submittedAt DateTime @default(now())
 
   createdAt DateTime @default(now())
