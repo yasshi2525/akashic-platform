@@ -143,6 +143,8 @@ export function PlayView({
     const [xShareStatus, setXShareStatus] = useState<"shared" | "error">();
     const [isXSharing, setIsXSharing] = useState(false);
     const [troubleshootOpen, setTroubleshootOpen] = useState(false);
+    const [lastSubmittedComment, setLastSubmittedComment] = useState("");
+    const [playEndLogCount, setPlayEndLogCount] = useState(0);
 
     function formatRemaining(ms: number | undefined) {
         if (ms == null) {
@@ -202,7 +204,10 @@ export function PlayView({
             onOpenTroubleshoot: () => {
                 setTroubleshootOpen(true);
             },
-            onPlayEnd: setPlayEndReason,
+            onPlayEnd: (reason) => {
+                setPlayEndLogCount(logCache.getAll().length);
+                setPlayEndReason(reason);
+            },
             onPlayExtend: (payload) => {
                 setExpiresAt(payload.expiresAt);
                 setRemainingMs(payload.remainingMs);
@@ -446,14 +451,23 @@ export function PlayView({
                 contentId={game.contentId}
                 playId={playId}
                 getLogs={() => logCache.getAll()}
+                isTruncated={logCache.truncated}
+                lastSubmittedComment={lastSubmittedComment}
                 onClose={() => setTroubleshootOpen(false)}
-                onSubmitSuccess={() => logCache.clear()}
+                onSubmitSuccess={(comment) => {
+                    logCache.clear();
+                    setLastSubmittedComment(comment);
+                }}
             />
             {requestPlayerInfo ? (
                 <PlayPlayerInfoResolver request={requestPlayerInfo} />
             ) : null}
             {playEndReason ? (
-                <PlayEndNotification reason={playEndReason} />
+                <PlayEndNotification
+                    reason={playEndReason}
+                    logCount={playEndLogCount}
+                    onReportLogs={() => setTroubleshootOpen(true)}
+                />
             ) : null}
             {error ? (
                 <Container maxWidth="md" sx={{ mt: 2 }}>

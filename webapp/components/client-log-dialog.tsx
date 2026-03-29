@@ -10,6 +10,7 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
+    TextField,
     Typography,
     useTheme,
 } from "@mui/material";
@@ -20,8 +21,10 @@ interface ClientLogDialogProps {
     contentId: number;
     playId: string;
     getLogs: () => ClientCapturedLog[];
+    isTruncated: boolean;
+    lastSubmittedComment: string;
     onClose: () => void;
-    onSubmitSuccess: () => void;
+    onSubmitSuccess: (comment: string) => void;
 }
 
 export function ClientLogDialog({
@@ -29,12 +32,15 @@ export function ClientLogDialog({
     contentId,
     playId,
     getLogs,
+    isTruncated,
+    lastSubmittedComment,
     onClose,
     onSubmitSuccess,
 }: ClientLogDialogProps) {
     const theme = useTheme();
     const [loading, setLoading] = useState(false);
     const [submitError, setSubmitError] = useState<string>();
+    const [comment, setComment] = useState("");
 
     async function handleSubmit() {
         setLoading(true);
@@ -45,12 +51,18 @@ export function ClientLogDialog({
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ logs: getLogs() }),
+                    body: JSON.stringify({
+                        logs: getLogs(),
+                        truncated: isTruncated,
+                        comment: comment.trim() || undefined,
+                    }),
                 },
             );
             const json: ClientLogSubmitResponse = await res.json();
             if (json.ok) {
-                onSubmitSuccess();
+                const submittedComment = comment.trim();
+                setComment("");
+                onSubmitSuccess(submittedComment);
                 onClose();
             } else if (json.reason === "RateLimited") {
                 setSubmitError(
@@ -87,18 +99,63 @@ export function ClientLogDialog({
                         投稿主に自身のログデータを送信します。送信した情報は投稿主のみ閲覧できます。
                         (※送信する情報に個人情報は含まれません)
                     </Typography>
+                    {isTruncated && (
+                        <Alert severity="warning" sx={{ py: 0 }}>
+                            ログが上限を超えたため、古いログは省略されています。
+                        </Alert>
+                    )}
                     <Typography
                         variant="body2"
                         sx={{
                             whiteSpace: "pre-wrap",
                             border: 1,
                             height: "4em",
+                            overflow: "auto",
+                            p: 0.5,
+                            fontFamily: "monospace",
+                            fontSize: "0.75rem",
                         }}
                     >
                         {getLogs()
                             .map((entry) => entry.message)
                             .join("\n")}
                     </Typography>
+                    {lastSubmittedComment && (
+                        <Box>
+                            <Typography
+                                variant="caption"
+                                color={theme.palette.text.secondary}
+                            >
+                                前回の送信時のコメント（参考）:
+                            </Typography>
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    whiteSpace: "pre-wrap",
+                                    border: 1,
+                                    borderColor: theme.palette.divider,
+                                    borderRadius: 1,
+                                    p: 0.5,
+                                    color: theme.palette.text.secondary,
+                                    fontSize: "0.8rem",
+                                }}
+                            >
+                                {lastSubmittedComment}
+                            </Typography>
+                        </Box>
+                    )}
+                    <TextField
+                        label="追加情報（任意）"
+                        placeholder="発生状況や再現手順など、気づいたことがあれば記入してください。"
+                        multiline
+                        minRows={2}
+                        maxRows={6}
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                        variant="outlined"
+                        size="small"
+                        disabled={loading}
+                    />
                     {submitError && (
                         <Alert severity="warning">{submitError}</Alert>
                     )}

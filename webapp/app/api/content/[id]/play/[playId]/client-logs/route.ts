@@ -35,8 +35,16 @@ export async function POST(
     }
 
     let logs: ClientCapturedLog[];
+    let truncated: boolean;
+    let comment: string | undefined;
     try {
-        logs = (await req.json()).logs;
+        const body = await req.json();
+        logs = body.logs;
+        truncated = body.truncated === true;
+        comment =
+            typeof body.comment === "string" && body.comment.trim()
+                ? body.comment.trim()
+                : undefined;
         if (!Array.isArray(logs)) {
             return NextResponse.json({ ok: false, reason: "InvalidParams" });
         }
@@ -113,7 +121,8 @@ export async function POST(
     }
 
     // ログエントリをS3保存形式に変換
-    const appendingEntries: ClientLogEntry[] = logs
+    const now = new Date().toISOString();
+    const logEntries: ClientLogEntry[] = logs
         .filter(
             (e) =>
                 typeof e.timestamp === "number" &&
@@ -127,6 +136,17 @@ export async function POST(
             level,
             message,
         }));
+
+    // 省略マーカーをログ先頭に追加
+    const appendingEntries: ClientLogEntry[] = [
+        ...(truncated
+            ? [{ type: "truncation_marker" as const, timestamp: now }]
+            : []),
+        ...logEntries,
+        ...(comment
+            ? [{ type: "comment" as const, timestamp: now, message: comment }]
+            : []),
+    ];
 
     const key = s3Key(id, playId, effectiveClientId);
 

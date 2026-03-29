@@ -130,11 +130,22 @@ export interface ClientCapturedLog {
     message: string;
 }
 
-export interface ClientLogEntry {
-    timestamp: string;
-    level: "log" | "warn" | "error";
-    message: string;
-}
+export type ClientLogEntry =
+    | {
+          type?: "log";
+          timestamp: string;
+          level: "log" | "warn" | "error";
+          message: string;
+      }
+    | {
+          type: "truncation_marker";
+          timestamp: string;
+      }
+    | {
+          type: "comment";
+          timestamp: string;
+          message: string;
+      };
 
 export interface ClientLogSubmission {
     id: number;
