@@ -78,6 +78,7 @@ export async function POST(
         select: {
             id: true,
             contentId: true,
+            isActive: true,
             content: {
                 select: {
                     game: {
@@ -206,6 +207,28 @@ export async function POST(
             comment: comment ?? null,
         },
     });
+
+    // プレイ終了済みの場合: runner は既にチェックを終えているため直接通知する
+    if (!play.isActive) {
+        try {
+            const { game } = play.content;
+            await prisma.notification.create({
+                data: {
+                    userId: game.publisherId,
+                    unread: true,
+                    type: "CLIENT_LOG_SUBMITTED",
+                    body: `「${game.title}」のプレイ終了後にトラブルシュートログが届きました。`,
+                    iconURL: `${process.env.PUBLIC_BASE_URL}/api/game/${game.id}/icon`,
+                    link: `/game/${game.id}/logs#play-${play.id}`,
+                },
+            });
+        } catch (err) {
+            console.warn(
+                `failed to create client log notification (contentId = "${id}", playId = "${playId}")`,
+                err,
+            );
+        }
+    }
 
     return NextResponse.json({ ok: true });
 }
