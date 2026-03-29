@@ -144,7 +144,6 @@ export function PlayView({
     const [isXSharing, setIsXSharing] = useState(false);
     const [troubleshootOpen, setTroubleshootOpen] = useState(false);
     const [lastSubmittedComment, setLastSubmittedComment] = useState("");
-    const [playEndLogCount, setPlayEndLogCount] = useState(0);
 
     function formatRemaining(ms: number | undefined) {
         if (ms == null) {
@@ -204,10 +203,7 @@ export function PlayView({
             onOpenTroubleshoot: () => {
                 setTroubleshootOpen(true);
             },
-            onPlayEnd: (reason) => {
-                setPlayEndLogCount(logCache.getAll().length);
-                setPlayEndReason(reason);
-            },
+            onPlayEnd: setPlayEndReason,
             onPlayExtend: (payload) => {
                 setExpiresAt(payload.expiresAt);
                 setRemainingMs(payload.remainingMs);
@@ -463,11 +459,7 @@ export function PlayView({
                 <PlayPlayerInfoResolver request={requestPlayerInfo} />
             ) : null}
             {playEndReason ? (
-                <PlayEndNotification
-                    reason={playEndReason}
-                    logCount={playEndLogCount}
-                    onReportLogs={() => setTroubleshootOpen(true)}
-                />
+                <PlayEndNotification reason={playEndReason} />
             ) : null}
             {error ? (
                 <Container maxWidth="md" sx={{ mt: 2 }}>

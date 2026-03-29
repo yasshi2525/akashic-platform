@@ -210,26 +210,6 @@ export async function POST(
         },
     });
 
-    // 投稿主に通知
-    try {
-        const { game } = play.content;
-        await prisma.notification.create({
-            data: {
-                userId: game.publisherId,
-                unread: true,
-                type: "CLIENT_LOG_SUBMITTED",
-                body: `「${game.title}」のプレイ中にトラブルシュートログが届きました。`,
-                iconURL: `${process.env.PUBLIC_BASE_URL}/api/game/${game.id}/icon`,
-                link: `/game/${game.id}/logs#play-${play.id}`,
-            },
-        });
-    } catch (err) {
-        console.warn(
-            `failed to create client log notification (contentId = "${id}", playId = "${playId}`,
-            err,
-        );
-    }
-
     return NextResponse.json({ ok: true });
 }
 

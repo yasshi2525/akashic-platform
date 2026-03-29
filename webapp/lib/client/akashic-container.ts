@@ -167,16 +167,6 @@ export class AkashicContainer {
                             return String(v);
                         }
                     };
-                    const MAX_LINE_LENGTH = 1000;
-                    const truncateLines = (s: string) =>
-                        s
-                            .split("\n")
-                            .map((line) =>
-                                line.length > MAX_LINE_LENGTH
-                                    ? line.slice(0, MAX_LINE_LENGTH) + "…"
-                                    : line,
-                            )
-                            .join("\n");
                     const makeOverride =
                         (
                             level: "log" | "warn" | "error",
@@ -185,13 +175,15 @@ export class AkashicContainer {
                         (...args: any[]) => {
                             orig(...args);
                             try {
-                                param.logCache.push({
-                                    level,
-                                    message: truncateLines(
-                                        args.map(toStr).join(" "),
-                                    ),
-                                    timestamp: Date.now(),
-                                });
+                                const full = args.map(toStr).join(" ");
+                                const timestamp = Date.now();
+                                for (const line of full.split("\n")) {
+                                    param.logCache.push({
+                                        level,
+                                        message: line,
+                                        timestamp,
+                                    });
+                                }
                             } catch {
                                 /* ignore */
                             }

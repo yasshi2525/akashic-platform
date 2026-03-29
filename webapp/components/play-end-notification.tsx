@@ -9,21 +9,10 @@ import {
     DialogContent,
     DialogContentText,
     DialogTitle,
-    Stack,
 } from "@mui/material";
 import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
 
-interface PlayEndNotificationProps {
-    reason: PlayEndReason;
-    logCount: number;
-    onReportLogs: () => void;
-}
-
-export function PlayEndNotification({
-    reason,
-    logCount,
-    onReportLogs,
-}: PlayEndNotificationProps) {
+export function PlayEndNotification({ reason }: { reason: PlayEndReason }) {
     const [open, setOpen] = useState(true);
 
     function toMessage(reason: PlayEndReason) {
@@ -46,11 +35,6 @@ export function PlayEndNotification({
         }
     }
 
-    function handleReportLogs() {
-        setOpen(false);
-        onReportLogs();
-    }
-
     return (
         <Dialog
             open={open}
@@ -63,35 +47,10 @@ export function PlayEndNotification({
                 <DialogContentText id="dialog-description">
                     {toMessage(reason)}
                 </DialogContentText>
-                {logCount > 0 && (
-                    <DialogContentText sx={{ mt: 1 }}>
-                        プレイ中に {logCount}{" "}
-                        件のログが記録されました。問題が発生した場合は投稿主に報告できます。
-                    </DialogContentText>
-                )}
                 <DialogActions>
-                    <Stack
-                        direction="row"
-                        spacing={1}
-                        justifyContent="flex-end"
-                        flexWrap="wrap"
-                    >
-                        {logCount > 0 && (
-                            <Button
-                                variant="outlined"
-                                onClick={handleReportLogs}
-                            >
-                                ログを報告する
-                            </Button>
-                        )}
-                        <Button
-                            variant="contained"
-                            component={Link}
-                            href="/"
-                        >
-                            退出する
-                        </Button>
-                    </Stack>
+                    <Button variant="contained" component={Link} href="/">
+                        退出する
+                    </Button>
                 </DialogActions>
             </DialogContent>
         </Dialog>
