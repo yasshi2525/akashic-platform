@@ -1,15 +1,14 @@
 import { ClientCapturedLog } from "../types";
 
-const DEFAULT_MAX_ENTRIES = 1000;
-
 export class LogCache {
-    private _entries: ClientCapturedLog[] = [];
+    private _entries: ClientCapturedLog[];
     private _max: number;
 
     constructor() {
-        const raw = process.env.NEXT_PUBLIC_LOG_CACHE_MAX_ENTRIES;
-        const parsed = raw ? parseInt(raw, 10) : NaN;
-        this._max = !isNaN(parsed) && parsed > 0 ? parsed : DEFAULT_MAX_ENTRIES;
+        this._entries = [];
+        this._max = parseInt(
+            process.env.CLIENT_LOG_CACHE_MAX_ENTRIES ?? "1000",
+        );
     }
 
     push(entry: ClientCapturedLog): void {

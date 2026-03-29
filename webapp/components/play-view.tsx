@@ -186,7 +186,6 @@ export function PlayView({
         if (!ref.current) {
             return;
         }
-        logCache.clear();
         container.create({
             parent: ref.current,
             user,

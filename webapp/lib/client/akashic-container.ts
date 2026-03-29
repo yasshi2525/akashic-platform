@@ -135,12 +135,12 @@ export class AkashicContainer {
         });
         content.addErrorListener({
             onError: (err) => {
-                const errMsg =
-                    "予期しないエラーが発生しました。画面を更新してください。";
-                param.onError(errMsg);
-                param.onOpenTroubleshoot();
+                param.onError(
+                    "予期しないエラーが発生したため、ゲームを停止しました。ゲームの再開を試みる場合は画面を更新してください。",
+                );
                 console.error(err);
                 content.pause();
+                param.onOpenTroubleshoot();
             },
         });
         content.addContentLoadListener({
@@ -151,22 +151,39 @@ export class AkashicContainer {
                 const win = content._element?.getContentWindow();
                 if (win) {
                     win.document.body.children[0].id = "container";
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const c = (win as any).console as Console;
-                    const toStr = (a: unknown): string => {
-                        if (typeof a === "string") return a;
-                        if (a instanceof Error) return a.message;
-                        try { return JSON.stringify(a); } catch { return String(a); }
-                    };
-                    const makeOverride = (
-                        level: "log" | "warn" | "error",
-                        orig: (...args: any[]) => void,
-                    ) => (...args: any[]) => {
-                        orig(...args);
+                    const c: Console = (win as any).console;
+                    const toStr = (v: unknown) => {
+                        if (typeof v === "string") return v;
+                        if (v instanceof Error) {
+                            if (v.stack) {
+                                return `${v.message}\n${v.stack}`;
+                            } else {
+                                return v.toString();
+                            }
+                        }
                         try {
-                            param.logCache.push({ level, message: (args as unknown[]).map(toStr).join(" "), timestamp: Date.now() });
-                        } catch { /* ignore */ }
+                            return JSON.stringify(v);
+                        } catch {
+                            return String(v);
+                        }
                     };
+                    const makeOverride =
+                        (
+                            level: "log" | "warn" | "error",
+                            orig: (...args: any[]) => void,
+                        ) =>
+                        (...args: any[]) => {
+                            orig(...args);
+                            try {
+                                param.logCache.push({
+                                    level,
+                                    message: args.map(toStr).join(" "),
+                                    timestamp: Date.now(),
+                                });
+                            } catch {
+                                /* ignore */
+                            }
+                        };
                     c.log = makeOverride("log", c.log.bind(c));
                     c.warn = makeOverride("warn", c.warn.bind(c));
                     c.error = makeOverride("error", c.error.bind(c));

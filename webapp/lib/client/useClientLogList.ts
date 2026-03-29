@@ -25,11 +25,7 @@ const fetcher = async (url: string) => {
     return res.data;
 };
 
-export function useClientLogList(
-    contentId: number,
-    playId: number,
-    preventPrefetch?: boolean,
-) {
+export function useClientLogList(contentId: number, playId: number) {
     const { isMutating, data, error, trigger } = useSWRMutation(
         `/api/content/${contentId}/play/${playId}/client-logs`,
         fetcher,

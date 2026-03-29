@@ -5,13 +5,11 @@ import {
     Alert,
     Box,
     Button,
-    Checkbox,
     CircularProgress,
     Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
-    FormControlLabel,
     Typography,
     useTheme,
 } from "@mui/material";
@@ -35,7 +33,6 @@ export function ClientLogDialog({
     onSubmitSuccess,
 }: ClientLogDialogProps) {
     const theme = useTheme();
-    const [includeLogs, setIncludeLogs] = useState(true);
     const [loading, setLoading] = useState(false);
     const [submitError, setSubmitError] = useState<string>();
 
@@ -43,13 +40,12 @@ export function ClientLogDialog({
         setLoading(true);
         setSubmitError(undefined);
         try {
-            const logs = includeLogs ? getLogs() : [];
             const res = await fetch(
                 `/api/content/${contentId}/play/${playId}/client-logs`,
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ logs }),
+                    body: JSON.stringify({ logs: getLogs() }),
                 },
             );
             const json: ClientLogSubmitResponse = await res.json();
@@ -75,35 +71,34 @@ export function ClientLogDialog({
     }
 
     function handleClose() {
-        if (loading) return;
+        if (loading) {
+            return;
+        }
         setSubmitError(undefined);
         onClose();
     }
 
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-            <DialogTitle>不具合を投稿主に報告する</DialogTitle>
+            <DialogTitle>投稿主にデバッグ情報を報告する</DialogTitle>
             <DialogContent>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                     <Typography variant="body2">
-                        投稿主にトラブルシュート情報を送信します。送信した情報は投稿主のみ閲覧できます。
+                        投稿主に自身のログデータを送信します。送信した情報は投稿主のみ閲覧できます。
+                        (※送信する情報に個人情報は含まれません)
                     </Typography>
-                    <FormControlLabel
-                        control={
-                            <Checkbox
-                                checked={includeLogs}
-                                onChange={(e) =>
-                                    setIncludeLogs(e.target.checked)
-                                }
-                                disabled={loading}
-                            />
-                        }
-                        label={
-                            <Typography variant="body2">
-                                直近のログを添付する
-                            </Typography>
-                        }
-                    />
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            whiteSpace: "pre-wrap",
+                            border: 1,
+                            height: "4em",
+                        }}
+                    >
+                        {getLogs()
+                            .map((entry) => entry.message)
+                            .join("\n")}
+                    </Typography>
                     {submitError && (
                         <Alert severity="warning">{submitError}</Alert>
                     )}

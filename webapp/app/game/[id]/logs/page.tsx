@@ -17,11 +17,7 @@ import {
     useTheme,
 } from "@mui/material";
 import { ArrowBack, Download } from "@mui/icons-material";
-import {
-    ClientLogSubmission,
-    ContentLogEntry,
-    ContentLogInfo,
-} from "@/lib/types";
+import { ContentLogEntry, ContentLogInfo } from "@/lib/types";
 import { useAuth } from "@/lib/client/useAuth";
 import { useGame } from "@/lib/client/useGame";
 import { useContentLogList } from "@/lib/client/useContentLogList";
@@ -43,6 +39,8 @@ function PlayErrorDetails({
     async function handleToggle() {
         if (!expanded && entries === null && !loading) {
             setLoading(true);
+            // clientLog のように useSWRMutation を使った方がシンプル。
+            // 優先度低いためそのままにしている。治すならいつか治す。
             try {
                 const res = await fetch(
                     `/api/content/${contentId}/play/${playId}/logs?filter=error&format=json`,
