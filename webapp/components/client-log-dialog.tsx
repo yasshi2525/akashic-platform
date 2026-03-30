@@ -99,7 +99,11 @@ export function ClientLogDialog({
                         (※送信する情報に個人情報は含まれません)
                     </Typography>
                     {isTruncated && (
-                        <Alert severity="warning" sx={{ py: 0 }}>
+                        <Alert
+                            variant="outlined"
+                            severity="warning"
+                            sx={{ py: 0 }}
+                        >
                             ログの長さが上限を超えたため、古いログは省略されています。
                         </Alert>
                     )}

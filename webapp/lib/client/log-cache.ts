@@ -7,10 +7,12 @@ export class LogCache {
 
     constructor() {
         this._entries = [];
-        this._max = parseInt(
-            process.env.CLIENT_LOG_CACHE_MAX_ENTRIES ?? "1000",
-        );
+        this._max = 1000;
         this._truncated = false;
+    }
+
+    setMaxEntries(max: number): void {
+        this._max = max;
     }
 
     push(entry: ClientCapturedLog): void {

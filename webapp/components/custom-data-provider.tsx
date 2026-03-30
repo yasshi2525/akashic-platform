@@ -9,6 +9,7 @@ export function CustomDataProvider({
     customFooterImagePath,
     customFooterImageWidth,
     niconicommonsWorkUrl,
+    clientLogCacheMaxEntries,
     children,
 }: {
     customFooterHref?: string;
@@ -16,6 +17,7 @@ export function CustomDataProvider({
     customFooterImagePath?: string;
     customFooterImageWidth?: number;
     niconicommonsWorkUrl?: string;
+    clientLogCacheMaxEntries: number;
     children: ReactNode;
 }) {
     return (
@@ -26,6 +28,7 @@ export function CustomDataProvider({
                 customFooterImagePath,
                 customFooterImageWidth,
                 niconicommonsWorkUrl,
+                clientLogCacheMaxEntries,
             }}
         >
             {children}

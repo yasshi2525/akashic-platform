@@ -6,4 +6,5 @@ export const CustomDataContext = createContext<{
     customFooterImagePath?: string;
     customFooterImageWidth?: number;
     niconicommonsWorkUrl?: string;
+    clientLogCacheMaxEntries: number;
 } | null>(null);

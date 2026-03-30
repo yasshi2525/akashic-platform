@@ -115,7 +115,10 @@ export function PlayView({
 }) {
     const theme = useTheme();
     const { playlogServerUrl } = useAkashic();
-    const { niconicommonsWorkUrl } = useCustomData();
+    const { niconicommonsWorkUrl, clientLogCacheMaxEntries } = useCustomData();
+    useEffect(() => {
+        logCache.setMaxEntries(clientLogCacheMaxEntries);
+    }, [clientLogCacheMaxEntries]);
     const [skipping, setSkipping] = useState(false);
     const [warning, setWarning] = useState<WarningType>();
     const [error, setError] = useState<string>();
