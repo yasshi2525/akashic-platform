@@ -175,9 +175,11 @@ export class AkashicContainer {
                         (...args: any[]) => {
                             orig(...args);
                             try {
-                                const full = args.map(toStr).join(" ");
                                 const timestamp = Date.now();
-                                for (const line of full.split("\n")) {
+                                for (const line of args
+                                    .map(toStr)
+                                    .join(" ")
+                                    .split("\n")) {
                                     param.logCache.push({
                                         level,
                                         message: line,

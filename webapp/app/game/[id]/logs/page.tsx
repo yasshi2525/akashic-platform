@@ -215,7 +215,7 @@ function ClientLogDetails({
                                         color={theme.palette.text.secondary}
                                         display="block"
                                     >
-                                        コメント:
+                                        報告者からの補足説明:
                                     </Typography>
                                     <Box
                                         component="pre"
@@ -259,7 +259,8 @@ function ClientLogDetails({
                                                     fontStyle: "italic",
                                                 }}
                                             >
-                                                ※ 以前のログは上限超過により省略されました
+                                                ※
+                                                以前のログは上限超過により省略されました
                                             </Typography>
                                         );
                                     }

@@ -453,7 +453,9 @@ export function PlayView({
                 onClose={() => setTroubleshootOpen(false)}
                 onSubmitSuccess={(comment) => {
                     logCache.clear();
-                    setLastSubmittedComment(comment);
+                    setLastSubmittedComment(
+                        (prev) => `${prev}\n---\n${comment}`,
+                    );
                 }}
             />
             {requestPlayerInfo ? (

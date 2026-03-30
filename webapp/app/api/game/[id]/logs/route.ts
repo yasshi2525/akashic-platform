@@ -79,7 +79,6 @@ export async function GET(
         },
     });
 
-    // playId × clientId の組み合わせでグループ化し、ユニークな報告者数を算出
     const clientLogGroups = await prisma.clientLogRecord.groupBy({
         by: ["playId", "clientId"],
         where: {

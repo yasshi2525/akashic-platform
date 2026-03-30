@@ -326,19 +326,24 @@ export class Runner {
             );
         }
 
-        const clientLogCount = await prisma.clientLogRecord
-            .count({ where: { playId } })
-            .catch(() => 0);
-        if (clientLogCount > 0) {
-            await this._createClientLogSubmittedNotification(
-                playId,
-                clientLogCount,
-            ).catch((err) => {
-                console.warn(
-                    `failed to create CLIENT_LOG_SUBMITTED notification (playId = "${playId}")`,
-                    err,
+        try {
+            const clientLogCount = (
+                await prisma.clientLogRecord.groupBy({
+                    by: ["clientId"],
+                    where: { playId },
+                })
+            ).length;
+            if (clientLogCount > 0) {
+                await this._createClientLogSubmittedNotification(
+                    playId,
+                    clientLogCount,
                 );
-            });
+            }
+        } catch (err) {
+            console.warn(
+                `failed to create CLIENT_LOG_SUBMITTED notification (playId = "${playId}")`,
+                err,
+            );
         }
     }
 
@@ -562,7 +567,7 @@ export class Runner {
                 userId: content.game.publisherId,
                 unread: true,
                 type: "CLIENT_LOG_SUBMITTED",
-                body: `「${content.game.title}」のプレイ終了後にトラブルシュートログが ${count} 件届いています。`,
+                body: `「${content.game.title}」について、プレイヤーから不具合の詳細情報が ${count} 件報告されました。`,
                 iconURL: `${this._param.publicWebappUrl}/api/game/${content.game.id}/icon`,
                 link: `/game/${content.game.id}/logs#play-${playId}`,
             },

@@ -54,15 +54,14 @@ export function ClientLogDialog({
                     body: JSON.stringify({
                         logs: getLogs(),
                         truncated: isTruncated,
-                        comment: comment.trim() || undefined,
+                        comment,
                     }),
                 },
             );
             const json: ClientLogSubmitResponse = await res.json();
             if (json.ok) {
-                const submittedComment = comment.trim();
                 setComment("");
-                onSubmitSuccess(submittedComment);
+                onSubmitSuccess(comment);
                 onClose();
             } else if (json.reason === "RateLimited") {
                 setSubmitError(
@@ -101,7 +100,7 @@ export function ClientLogDialog({
                     </Typography>
                     {isTruncated && (
                         <Alert severity="warning" sx={{ py: 0 }}>
-                            ログが上限を超えたため、古いログは省略されています。
+                            ログの長さが上限を超えたため、古いログは省略されています。
                         </Alert>
                     )}
                     <Typography
