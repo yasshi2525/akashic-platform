@@ -325,6 +325,26 @@ export class Runner {
                 },
             );
         }
+
+        try {
+            const clientLogCount = (
+                await prisma.clientLogRecord.groupBy({
+                    by: ["clientId"],
+                    where: { playId },
+                })
+            ).length;
+            if (clientLogCount > 0) {
+                await this._createClientLogSubmittedNotification(
+                    playId,
+                    clientLogCount,
+                );
+            }
+        } catch (err) {
+            console.warn(
+                `failed to create CLIENT_LOG_SUBMITTED notification (playId = "${playId}")`,
+                err,
+            );
+        }
     }
 
     async _fetchPlayToken(playId: number) {
@@ -528,6 +548,30 @@ export class Runner {
             this._timeoutId = undefined;
         }
         this._expiresAt = undefined;
+    }
+
+    async _createClientLogSubmittedNotification(
+        playId: number,
+        count: number,
+    ): Promise<void> {
+        const content = await prisma.content.findUniqueOrThrow({
+            where: { id: this._param.contentId },
+            select: {
+                game: {
+                    select: { id: true, title: true, publisherId: true },
+                },
+            },
+        });
+        await prisma.notification.create({
+            data: {
+                userId: content.game.publisherId,
+                unread: true,
+                type: "CLIENT_LOG_SUBMITTED",
+                body: `「${content.game.title}」について、プレイヤーから不具合の詳細情報が ${count} 件報告されました。`,
+                iconURL: `${this._param.publicWebappUrl}/api/game/${content.game.id}/icon`,
+                link: `/game/${content.game.id}/logs#play-${playId}`,
+            },
+        });
     }
 
     async _createGameCrashedNortification(playId: number): Promise<void> {

@@ -10,6 +10,7 @@ import {
 } from "@yasshi2525/agvw-like";
 import { User } from "../types";
 import { destroyAkashicGameView } from "./akashic-gameview-destroyer";
+import { LogCache } from "./log-cache";
 import {
     CoeLimitedPlugin,
     ResolvingPlayerInfoRequest,
@@ -27,8 +28,10 @@ interface AkashicContainerCreateParameterObject {
     initialMasterVolume?: number;
     isGameMaster: boolean;
     external: string[];
+    logCache: LogCache;
     onSkip: (skip: boolean) => void;
     onError: (errMsg: string) => void;
+    onOpenTroubleshoot: () => void;
     onPlayEnd: (reason: PlayEndReason) => void;
     onPlayExtend: (payload: PlayExtendPayload) => void;
     onRequestPlayerInfo: (
@@ -130,24 +133,71 @@ export class AkashicContainer {
                 param.onSkip(isSkipping);
             },
         });
+        const handleError = (err: unknown) => {
+            param.onError(
+                "予期しないエラーが発生したため、ゲームを停止しました。ゲームの再開を試みる場合は画面を更新してください。",
+            );
+            console.error(err);
+            content.pause();
+            param.onOpenTroubleshoot();
+        };
         content.addErrorListener({
-            onError: (err) => {
-                param.onError(
-                    "予期しないエラーが発生しました。画面を更新してください。",
-                );
-                console.error(err);
-                content.pause();
-            },
+            onError: handleError,
         });
         content.addContentLoadListener({
             onLoad: () => {
                 if (param.initialMasterVolume != null) {
                     content.setMasterVolume(param.initialMasterVolume);
                 }
-                content._element!.getContentWindow()!.document.body.children[0].id =
-                    "container";
-                const amflowcontent = content.getGameDriver()!._platform
-                    .amflow as AMFlowClient;
+                const win = content._element?.getContentWindow();
+                if (win) {
+                    win.document.body.children[0].id = "container";
+                    const c: Console = (win as any).console;
+                    const toStr = (v: unknown) => {
+                        if (typeof v === "string") return v;
+                        if (v instanceof Error) {
+                            if (v.stack) {
+                                return `${v.message}\n${v.stack}`;
+                            } else {
+                                return v.toString();
+                            }
+                        }
+                        try {
+                            return JSON.stringify(v);
+                        } catch {
+                            return String(v);
+                        }
+                    };
+                    const makeOverride =
+                        (
+                            level: "log" | "warn" | "error",
+                            orig: (...args: any[]) => void,
+                        ) =>
+                        (...args: any[]) => {
+                            orig(...args);
+                            try {
+                                const timestamp = Date.now();
+                                for (const line of args
+                                    .map(toStr)
+                                    .join(" ")
+                                    .split("\n")) {
+                                    param.logCache.push({
+                                        level,
+                                        message: line,
+                                        timestamp,
+                                    });
+                                }
+                            } catch {
+                                /* ignore */
+                            }
+                        };
+                    c.log = makeOverride("log", c.log.bind(c));
+                    c.warn = makeOverride("warn", c.warn.bind(c));
+                    c.error = makeOverride("error", c.error.bind(c));
+                }
+                const driver = content.getGameDriver()!;
+                driver.errorTrigger.add(handleError);
+                const amflowcontent = driver._platform.amflow as AMFlowClient;
                 amflowcontent.onPlayEnd((reason) => param.onPlayEnd(reason));
                 amflowcontent.onPlayExtend((payload) =>
                     param.onPlayExtend(payload),

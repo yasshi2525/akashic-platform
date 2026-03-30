@@ -8,9 +8,9 @@ datasource db {
 }
 
 model User {
-  id            String          @id @default(cuid())
+  id            String            @id @default(cuid())
   name          String?
-  email         String?         @unique
+  email         String?           @unique
   emailVerified DateTime?
   image         String?
   accounts      Account[]
@@ -20,6 +20,7 @@ model User {
   plays         Play[]
   fbPosts       FeedbackPost[]
   fbReplies     FeedbackReply[]
+  clientLogs    ClientLogRecord[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -158,9 +159,23 @@ model Notification {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model ClientLogRecord {
+  id          Int      @id @default(autoincrement())
+  playId      Int
+  contentId   Int
+  clientId    String
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  comment     String?
+  submittedAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+}
+
 enum NotificationType {
   FEEDBACKED
   FEEDBACK_REPLIED
   GAME_CRASHED
   GAME_ERROR_LOGGED
+  CLIENT_LOG_SUBMITTED
 }

@@ -21,6 +21,7 @@ import { ContentLogEntry, ContentLogInfo } from "@/lib/types";
 import { useAuth } from "@/lib/client/useAuth";
 import { useGame } from "@/lib/client/useGame";
 import { useContentLogList } from "@/lib/client/useContentLogList";
+import { useClientLogList } from "@/lib/client/useClientLogList";
 
 function PlayErrorDetails({
     contentId,
@@ -38,6 +39,8 @@ function PlayErrorDetails({
     async function handleToggle() {
         if (!expanded && entries === null && !loading) {
             setLoading(true);
+            // clientLog のように useSWRMutation を使った方がシンプル。
+            // 優先度低いためそのままにしている。治すならいつか治す。
             try {
                 const res = await fetch(
                     `/api/content/${contentId}/play/${playId}/logs?filter=error&format=json`,
@@ -70,8 +73,8 @@ function PlayErrorDetails({
                 size="small"
                 onClick={handleToggle}
                 sx={{
-                    borderColor: theme.palette.primary.light,
-                    color: theme.palette.primary.light,
+                    borderColor: theme.palette.warning.dark,
+                    color: theme.palette.warning.dark,
                 }}
             >
                 {expanded ? "▲ エラーログを隠す" : "▼ エラーログを表示"}
@@ -126,6 +129,209 @@ function PlayErrorDetails({
     );
 }
 
+function ClientLogDetails({
+    contentId,
+    playId,
+}: {
+    contentId: number;
+    playId: number;
+}) {
+    const theme = useTheme();
+    const [expanded, setExpanded] = useState(false);
+    const { isLoading, list, error, trigger } = useClientLogList(
+        contentId,
+        playId,
+    );
+
+    function handleClick() {
+        if (!expanded) {
+            trigger();
+        }
+        setExpanded((prev) => !prev);
+    }
+
+    return (
+        <Box>
+            <Button
+                variant="outlined"
+                size="small"
+                onClick={handleClick}
+                sx={{
+                    borderColor: theme.palette.warning.dark,
+                    color: theme.palette.warning.dark,
+                }}
+            >
+                {expanded
+                    ? "▲ プレイヤーから報告されたログを隠す"
+                    : "▼ プレイヤーから報告されたログを表示"}
+            </Button>
+            {expanded && (
+                <Box sx={{ mt: 1 }}>
+                    {isLoading && <CircularProgress size={20} />}
+                    {error && (
+                        <Alert severity="error" sx={{ mb: 1 }}>
+                            {error}
+                        </Alert>
+                    )}
+                    {list?.map((submission) => (
+                        <Box
+                            key={submission.id}
+                            sx={{
+                                mb: 2,
+                                p: 1,
+                                borderRadius: 1,
+                                bgcolor: theme.palette.background.default,
+                            }}
+                        >
+                            <Stack
+                                direction="row"
+                                spacing={1}
+                                alignItems="center"
+                                sx={{ mb: 0.5 }}
+                            >
+                                {submission.reporter?.image ? (
+                                    <Avatar
+                                        src={submission.reporter.image}
+                                        sx={{
+                                            width: 20,
+                                            height: 20,
+                                            fontSize: "0.7rem",
+                                        }}
+                                    />
+                                ) : null}
+                                <Typography
+                                    variant="caption"
+                                    color={theme.palette.text.secondary}
+                                >
+                                    {submission.reporter?.name ?? "ゲスト"} —
+                                    送信{" "}
+                                    {new Date(
+                                        submission.submittedAt,
+                                    ).toLocaleString("ja-JP")}
+                                </Typography>
+                            </Stack>
+                            {submission.comments.length > 0 && (
+                                <Box sx={{ mb: 1 }}>
+                                    <Typography
+                                        variant="caption"
+                                        color={theme.palette.text.secondary}
+                                        display="block"
+                                    >
+                                        コメント
+                                    </Typography>
+                                    <Box
+                                        component="pre"
+                                        sx={{
+                                            whiteSpace: "pre-wrap",
+                                            wordBreak: "break-word",
+                                            m: 0,
+                                            p: 1,
+                                            bgcolor:
+                                                theme.palette.background.paper,
+                                            borderRadius: 1,
+                                            fontSize: "0.8rem",
+                                        }}
+                                    >
+                                        {submission.comments.join("\n---\n")}
+                                    </Box>
+                                </Box>
+                            )}
+                            {submission.entries.length === 0 ? (
+                                <Typography
+                                    variant="body2"
+                                    color={theme.palette.text.secondary}
+                                >
+                                    出力されたログがありません。
+                                </Typography>
+                            ) : (
+                                <Box
+                                    component="pre"
+                                    sx={{
+                                        bgcolor: theme.palette.background.paper,
+                                        borderRadius: 1,
+                                        p: 1,
+                                    }}
+                                >
+                                    {submission.entries.map((entry, i) => {
+                                        if (
+                                            entry.type === "truncation_marker"
+                                        ) {
+                                            return (
+                                                <Typography
+                                                    key={i}
+                                                    variant="caption"
+                                                    display="block"
+                                                    align="center"
+                                                    color={
+                                                        theme.palette.text
+                                                            .secondary
+                                                    }
+                                                    fontSize="0.75rem"
+                                                    fontStyle="italic"
+                                                >
+                                                    ※
+                                                    以前のログは上限超過により省略されました
+                                                </Typography>
+                                            );
+                                        }
+                                        return (
+                                            <Stack
+                                                key={i}
+                                                direction="row"
+                                                spacing={1}
+                                            >
+                                                <Typography
+                                                    variant="caption"
+                                                    color={
+                                                        entry.level === "error"
+                                                            ? theme.palette
+                                                                  .error.light
+                                                            : entry.level ===
+                                                                "warn"
+                                                              ? theme.palette
+                                                                    .warning
+                                                                    .light
+                                                              : theme.palette
+                                                                    .text
+                                                                    .secondary
+                                                    }
+                                                    fontSize="0.75rem"
+                                                    fontFamily="monospace"
+                                                >
+                                                    [{entry.level.padEnd(5)}]
+                                                </Typography>
+                                                <Typography
+                                                    fontSize="0.75rem"
+                                                    fontFamily="monospace"
+                                                >
+                                                    {new Date(
+                                                        entry.timestamp,
+                                                    ).toLocaleString("ja-JP")}
+                                                </Typography>
+                                                <Typography
+                                                    component="pre"
+                                                    whiteSpace="pre-wrap"
+                                                    sx={{
+                                                        wordBreak: "break-word",
+                                                    }}
+                                                    fontSize="0.75rem"
+                                                    fontFamily="monospace"
+                                                >
+                                                    {entry.message}
+                                                </Typography>
+                                            </Stack>
+                                        );
+                                    })}
+                                </Box>
+                            )}
+                        </Box>
+                    ))}
+                </Box>
+            )}
+        </Box>
+    );
+}
+
 function ContentLogCard({ info }: { info: ContentLogInfo }) {
     const theme = useTheme();
     const hasError = info.crashed || info.errorLogged;
@@ -158,6 +364,14 @@ function ContentLogCard({ info }: { info: ContentLogInfo }) {
                     {!hasError && (
                         <Chip
                             label="エラーなし"
+                            size="small"
+                            variant="outlined"
+                        />
+                    )}
+                    {info.clientLogCount > 0 && (
+                        <Chip
+                            label={`プレイヤーから報告されたログ ${info.clientLogCount} 件`}
+                            color="info"
                             size="small"
                             variant="outlined"
                         />
@@ -199,6 +413,12 @@ function ContentLogCard({ info }: { info: ContentLogInfo }) {
 
                 {hasError && (
                     <PlayErrorDetails
+                        contentId={info.contentId}
+                        playId={info.playId}
+                    />
+                )}
+                {info.clientLogCount > 0 && (
+                    <ClientLogDetails
                         contentId={info.contentId}
                         playId={info.playId}
                     />
@@ -326,13 +546,6 @@ export default function ContentLogs() {
                 終了した部屋のログのみ表示されます。
                 (反映には若干時間がかかります)
             </Typography>
-
-            {contentLogsError && (
-                <Alert severity="error" variant="outlined" sx={{ mb: 2 }}>
-                    {contentLogsError}
-                </Alert>
-            )}
-
             {isContentLogsLoading ? (
                 <Stack spacing={2}>
                     <Skeleton variant="rectangular" height={120} />

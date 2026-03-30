@@ -1,6 +1,11 @@
 # CHANGELOG
 
-## 1.2.0
+## 1.4.0
+
+- Feature
+  - `ClientLogRecord` を追加
+
+## 1.2.0, 1.3.0
 
 - Feature
   - `Play` にログアップロードおよびエラー有無フィールド追加

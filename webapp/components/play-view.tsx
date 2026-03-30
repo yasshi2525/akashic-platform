@@ -39,11 +39,14 @@ import { ResolvingPlayerInfoRequest } from "@/lib/client/akashic-plugins/coe-lim
 import { AkashicContainer } from "@/lib/client/akashic-container";
 import { extendPlay } from "@/lib/server/play-extend";
 import { uploadPlayShareScreenshot } from "@/lib/server/play-share";
+import { LogCache } from "@/lib/client/log-cache";
 import { PlayCloseDialog } from "./play-close-dialog";
 import { PlayEndNotification } from "./play-end-notification";
 import { PlayPlayerInfoResolver } from "./play-player-info-resolver";
 import { CreditPanel } from "./credit-panel";
 import { UserInline } from "./user-inline";
+import { ClientLogDialog } from "./client-log-dialog";
+import { TroubleshootButton } from "./troubleshoot-button";
 
 const warnings = ["EVENT_ON_SKIPPING"] as const;
 type WarningType = (typeof warnings)[number];
@@ -66,6 +69,7 @@ const toMessage = (typ?: WarningType) => {
 // 破棄に Promise が必要 → useEffect 内で破棄が完了しない
 // 同時に2インスタンス存在するとロードがとまり、破棄に必要なステップを踏めない
 const container = new AkashicContainer();
+const logCache = new LogCache();
 const EXTEND_WINDOW_MS = 10 * 60 * 1000;
 
 export function PlayView({
@@ -111,7 +115,10 @@ export function PlayView({
 }) {
     const theme = useTheme();
     const { playlogServerUrl } = useAkashic();
-    const { niconicommonsWorkUrl } = useCustomData();
+    const { niconicommonsWorkUrl, clientLogCacheMaxEntries } = useCustomData();
+    useEffect(() => {
+        logCache.setMaxEntries(clientLogCacheMaxEntries);
+    }, [clientLogCacheMaxEntries]);
     const [skipping, setSkipping] = useState(false);
     const [warning, setWarning] = useState<WarningType>();
     const [error, setError] = useState<string>();
@@ -138,6 +145,8 @@ export function PlayView({
     >();
     const [xShareStatus, setXShareStatus] = useState<"shared" | "error">();
     const [isXSharing, setIsXSharing] = useState(false);
+    const [troubleshootOpen, setTroubleshootOpen] = useState(false);
+    const [lastSubmittedComment, setLastSubmittedComment] = useState("");
 
     function formatRemaining(ms: number | undefined) {
         if (ms == null) {
@@ -181,6 +190,7 @@ export function PlayView({
         if (!ref.current) {
             return;
         }
+        logCache.clear();
         container.create({
             parent: ref.current,
             user,
@@ -191,8 +201,12 @@ export function PlayView({
             initialMasterVolume: MASTER_VOLUME_MAX,
             isGameMaster,
             external: contentExternal,
+            logCache,
             onSkip: setSkipping,
             onError: setError,
+            onOpenTroubleshoot: () => {
+                setTroubleshootOpen(true);
+            },
             onPlayEnd: setPlayEndReason,
             onPlayExtend: (payload) => {
                 setExpiresAt(payload.expiresAt);
@@ -431,6 +445,27 @@ export function PlayView({
                 onTouchMove={handleTouchEvent}
                 onTouchEnd={handleTouchEvent}
                 onClick={handleMouseEvent}
+            />
+            <ClientLogDialog
+                open={troubleshootOpen}
+                contentId={game.contentId}
+                playId={playId}
+                getLogs={() => logCache.getAll()}
+                isTruncated={logCache.truncated}
+                lastSubmittedComment={lastSubmittedComment}
+                onClose={() => setTroubleshootOpen(false)}
+                onSubmitSuccess={(comment) => {
+                    logCache.clear();
+                    setLastSubmittedComment((prev) => {
+                        if (!comment) {
+                            return prev;
+                        }
+                        if (!prev) {
+                            return comment;
+                        }
+                        return `${prev}\n---\n${comment}`;
+                    });
+                }}
             />
             {requestPlayerInfo ? (
                 <PlayPlayerInfoResolver request={requestPlayerInfo} />
@@ -681,6 +716,11 @@ export function PlayView({
                                             >
                                                 <X fontSize="large" />
                                             </IconButton>
+                                            <TroubleshootButton
+                                                onClick={() => {
+                                                    setTroubleshootOpen(true);
+                                                }}
+                                            />
                                         </Stack>
                                         <Stack
                                             alignItems="center"

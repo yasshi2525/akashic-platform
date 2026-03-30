@@ -15,6 +15,7 @@ import {
     customFooterImageWidth,
     customFooterHref,
     niconicommonsWorkUrl,
+    clientLogCacheMaxEntries,
 } from "@/lib/server/custom-data";
 import { theme } from "@/lib/client/theme";
 import { AkashicProvider } from "@/components/akashic-provider";
@@ -61,6 +62,7 @@ export default async function RootLayout({
                             customFooterImagePath={customFooterImagePath}
                             customFooterImageWidth={customFooterImageWidth}
                             niconicommonsWorkUrl={niconicommonsWorkUrl}
+                            clientLogCacheMaxEntries={clientLogCacheMaxEntries}
                         >
                             <AuthProvider user={user}>
                                 <ThemeProvider theme={theme}>
