@@ -91,7 +91,7 @@ export function ClientLogDialog({
 
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-            <DialogTitle>投稿主にデバッグ情報を報告する</DialogTitle>
+            <DialogTitle>投稿主に不具合を報告する</DialogTitle>
             <DialogContent>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                     <Typography variant="body2">
@@ -105,19 +105,23 @@ export function ClientLogDialog({
                     )}
                     <Typography
                         variant="body2"
+                        color={theme.palette.text.secondary}
                         sx={{
                             whiteSpace: "pre-wrap",
                             border: 1,
-                            height: "4em",
+                            borderColor: theme.palette.divider,
+                            height: "6em",
                             overflow: "auto",
                             p: 0.5,
                             fontFamily: "monospace",
                             fontSize: "0.75rem",
                         }}
                     >
-                        {getLogs()
-                            .map((entry) => entry.message)
-                            .join("\n")}
+                        {getLogs().length === 0
+                            ? "出力されたログがありません。"
+                            : getLogs()
+                                  .map((entry) => entry.message)
+                                  .join("\n")}
                     </Typography>
                     {lastSubmittedComment && (
                         <Box>
@@ -156,7 +160,9 @@ export function ClientLogDialog({
                         disabled={loading}
                     />
                     {submitError && (
-                        <Alert severity="warning">{submitError}</Alert>
+                        <Alert variant="outlined" severity="warning">
+                            {submitError}
+                        </Alert>
                     )}
                 </Box>
             </DialogContent>

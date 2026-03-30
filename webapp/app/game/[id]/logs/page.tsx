@@ -73,8 +73,8 @@ function PlayErrorDetails({
                 size="small"
                 onClick={handleToggle}
                 sx={{
-                    borderColor: theme.palette.primary.light,
-                    color: theme.palette.primary.light,
+                    borderColor: theme.palette.warning.dark,
+                    color: theme.palette.warning.dark,
                 }}
             >
                 {expanded ? "▲ エラーログを隠す" : "▼ エラーログを表示"}
@@ -157,11 +157,13 @@ function ClientLogDetails({
                 size="small"
                 onClick={handleClick}
                 sx={{
-                    borderColor: theme.palette.warning.light,
-                    color: theme.palette.warning.light,
+                    borderColor: theme.palette.warning.dark,
+                    color: theme.palette.warning.dark,
                 }}
             >
-                {expanded ? "▲ 報告されたログを隠す" : "▼ 報告されたログを表示"}
+                {expanded
+                    ? "▲ プレイヤーから報告されたログを隠す"
+                    : "▼ プレイヤーから報告されたログを表示"}
             </Button>
             {expanded && (
                 <Box sx={{ mt: 1 }}>
@@ -215,7 +217,7 @@ function ClientLogDetails({
                                         color={theme.palette.text.secondary}
                                         display="block"
                                     >
-                                        報告者からの補足説明:
+                                        コメント
                                     </Typography>
                                     <Box
                                         component="pre"
@@ -228,9 +230,6 @@ function ClientLogDetails({
                                                 theme.palette.background.paper,
                                             borderRadius: 1,
                                             fontSize: "0.8rem",
-                                            border: 1,
-                                            borderColor:
-                                                theme.palette.info.dark,
                                         }}
                                     >
                                         {submission.comments.join("\n---\n")}
@@ -242,69 +241,88 @@ function ClientLogDetails({
                                     variant="body2"
                                     color={theme.palette.text.secondary}
                                 >
-                                    ログはありません。
+                                    出力されたログがありません。
                                 </Typography>
                             ) : (
-                                submission.entries.map((entry, i) => {
-                                    if (entry.type === "truncation_marker") {
+                                <Box
+                                    component="pre"
+                                    sx={{
+                                        bgcolor: theme.palette.background.paper,
+                                        borderRadius: 1,
+                                        p: 1,
+                                    }}
+                                >
+                                    {submission.entries.map((entry, i) => {
+                                        if (
+                                            entry.type === "truncation_marker"
+                                        ) {
+                                            return (
+                                                <Typography
+                                                    key={i}
+                                                    variant="caption"
+                                                    display="block"
+                                                    align="center"
+                                                    color={
+                                                        theme.palette.text
+                                                            .secondary
+                                                    }
+                                                    fontSize="0.75rem"
+                                                    fontStyle="italic"
+                                                >
+                                                    ※
+                                                    以前のログは上限超過により省略されました
+                                                </Typography>
+                                            );
+                                        }
                                         return (
-                                            <Typography
+                                            <Stack
                                                 key={i}
-                                                variant="caption"
-                                                display="block"
-                                                sx={{
-                                                    my: 0.5,
-                                                    color: theme.palette.warning
-                                                        .light,
-                                                    fontStyle: "italic",
-                                                }}
+                                                direction="row"
+                                                spacing={1}
                                             >
-                                                ※
-                                                以前のログは上限超過により省略されました
-                                            </Typography>
+                                                <Typography
+                                                    variant="caption"
+                                                    color={
+                                                        entry.level === "error"
+                                                            ? theme.palette
+                                                                  .error.light
+                                                            : entry.level ===
+                                                                "warn"
+                                                              ? theme.palette
+                                                                    .warning
+                                                                    .light
+                                                              : theme.palette
+                                                                    .text
+                                                                    .secondary
+                                                    }
+                                                    fontSize="0.75rem"
+                                                    fontFamily="monospace"
+                                                >
+                                                    [{entry.level.padEnd(5)}]
+                                                </Typography>
+                                                <Typography
+                                                    fontSize="0.75rem"
+                                                    fontFamily="monospace"
+                                                >
+                                                    {new Date(
+                                                        entry.timestamp,
+                                                    ).toLocaleString("ja-JP")}
+                                                </Typography>
+                                                <Typography
+                                                    component="pre"
+                                                    whiteSpace="pre-wrap"
+                                                    sx={{
+                                                        wordBreak: "break-word",
+                                                    }}
+                                                    fontSize="0.75rem"
+                                                    fontFamily="monospace"
+                                                >
+                                                    {entry.message}
+                                                </Typography>
+                                            </Stack>
                                         );
-                                    }
-                                    return (
-                                        <Box key={i} sx={{ mb: 1 }}>
-                                            <Typography
-                                                variant="caption"
-                                                color={
-                                                    entry.level === "error"
-                                                        ? theme.palette.error
-                                                              .light
-                                                        : entry.level === "warn"
-                                                          ? theme.palette
-                                                                .warning.light
-                                                          : theme.palette.text
-                                                                .secondary
-                                                }
-                                                display="block"
-                                            >
-                                                [{entry.level}]{" "}
-                                                {new Date(
-                                                    entry.timestamp,
-                                                ).toLocaleString("ja-JP")}
-                                            </Typography>
-                                            <Box
-                                                component="pre"
-                                                sx={{
-                                                    whiteSpace: "pre-wrap",
-                                                    wordBreak: "break-word",
-                                                    m: 0,
-                                                    p: 1,
-                                                    bgcolor:
-                                                        theme.palette.background
-                                                            .paper,
-                                                    borderRadius: 1,
-                                                    fontSize: "0.75rem",
-                                                    fontFamily: "monospace",
-                                                }}
-                                            >
-                                                {entry.message}
-                                            </Box>
-                                        </Box>
-                                    );
-                                })
+                                    })}
+                                </Box>
                             )}
                         </Box>
                     ))}
