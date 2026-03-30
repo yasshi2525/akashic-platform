@@ -1,16 +1,16 @@
 "use client";
 
 import { IconButton, Tooltip } from "@mui/material";
-import { BugReport } from "@mui/icons-material";
+import { Report } from "@mui/icons-material";
 
 export function TroubleshootButton({ onClick }: { onClick: () => void }) {
     return (
         <Tooltip
             arrow
-            title="投稿主に詳細情報を送ることで、意図しない挙動の原因特定に役立つかもしれません"
+            title="プレイ中に意図しない動作が発生したことを投稿主に報告します。詳細情報を添付して送ります。"
         >
-            <IconButton aria-label="詳細ログを送信" onClick={onClick}>
-                <BugReport fontSize="large" />
+            <IconButton aria-label="不具合を報告" onClick={onClick}>
+                <Report fontSize="large" />
             </IconButton>
         </Tooltip>
     );

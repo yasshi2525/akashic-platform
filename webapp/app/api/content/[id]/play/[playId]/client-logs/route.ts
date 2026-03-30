@@ -13,6 +13,7 @@ import {
     getS3Client,
     s3KeyPrefix,
 } from "@/lib/server/content-utils";
+import { publicBaseUrl } from "@/lib/server/akashic";
 
 const RATE_LIMIT_SECONDS = parseInt(
     process.env.CLIENT_LOG_RATE_LIMIT_SECONDS ?? "30",
@@ -35,8 +36,13 @@ export async function POST(
     }
 
     let logs: ClientCapturedLog[];
+    let truncated: boolean;
+    let comment: string | undefined;
     try {
-        logs = (await req.json()).logs;
+        const body = await req.json();
+        logs = body.logs;
+        truncated = body.truncated === true;
+        comment = body.comment;
         if (!Array.isArray(logs)) {
             return NextResponse.json({ ok: false, reason: "InvalidParams" });
         }
@@ -70,6 +76,7 @@ export async function POST(
         select: {
             id: true,
             contentId: true,
+            isActive: true,
             content: {
                 select: {
                     game: {
@@ -127,6 +134,12 @@ export async function POST(
             level,
             message,
         }));
+    if (truncated) {
+        appendingEntries.unshift({
+            type: "truncation_marker",
+            timestamp: new Date().toISOString(),
+        });
+    }
 
     const key = s3Key(id, playId, effectiveClientId);
 
@@ -187,27 +200,31 @@ export async function POST(
             contentId: play.contentId,
             clientId: effectiveClientId,
             userId: effectiveUserId,
+            comment,
         },
     });
 
-    // 投稿主に通知
-    try {
-        const { game } = play.content;
-        await prisma.notification.create({
-            data: {
-                userId: game.publisherId,
-                unread: true,
-                type: "CLIENT_LOG_SUBMITTED",
-                body: `「${game.title}」のプレイ中にトラブルシュートログが届きました。`,
-                iconURL: `${process.env.PUBLIC_BASE_URL}/api/game/${game.id}/icon`,
-                link: `/game/${game.id}/logs#play-${play.id}`,
-            },
-        });
-    } catch (err) {
-        console.warn(
-            `failed to create client log notification (contentId = "${id}", playId = "${playId}`,
-            err,
-        );
+    // 投稿主への通知は akashic-server が play 終了時に行う。
+    // play 終了後の報告を漏らさず通知できるよう、終了しているかどうかをチェックする。
+    if (!play.isActive) {
+        try {
+            const { game } = play.content;
+            await prisma.notification.create({
+                data: {
+                    userId: game.publisherId,
+                    unread: true,
+                    type: "CLIENT_LOG_SUBMITTED",
+                    body: `「${game.title}」について、プレイヤーから不具合の詳細情報が報告されました。`,
+                    iconURL: `${publicBaseUrl}/api/game/${game.id}/icon`,
+                    link: `/game/${game.id}/logs#play-${play.id}`,
+                },
+            });
+        } catch (err) {
+            console.warn(
+                `failed to create client log notification (contentId = "${id}", playId = "${playId}")`,
+                err,
+            );
+        }
     }
 
     return NextResponse.json({ ok: true });
@@ -256,8 +273,12 @@ export async function GET(
         orderBy: {
             submittedAt: "asc",
         },
-        distinct: ["clientId"],
-        include: {
+        select: {
+            id: true,
+            clientId: true,
+            submittedAt: true,
+            comment: true,
+            userId: true,
             user: {
                 select: {
                     name: true,
@@ -267,40 +288,67 @@ export async function GET(
         },
     });
 
+    // clientId ごとに全コメントを集約
+    type ClientAgg = {
+        record: (typeof records)[0];
+        comments: string[];
+    };
+    const clientMap = new Map<string, ClientAgg>();
+    for (const record of records) {
+        if (!clientMap.has(record.clientId)) {
+            clientMap.set(record.clientId, {
+                record,
+                comments: [],
+            });
+        }
+        if (record.comment) {
+            clientMap.get(record.clientId)!.comments.push(record.comment);
+        }
+    }
+
     const submissions = await Promise.all(
-        records.map(async (record) => {
-            const key = s3Key(id, playId, record.clientId);
-            let entries: ClientLogEntry[] = [];
-            try {
-                const result = await getS3Client().send(
-                    new GetObjectCommand({ Bucket: getBucket(), Key: key }),
-                );
-                const text = await result.Body?.transformToString("utf-8");
-                if (text) {
-                    entries = text
-                        .split("\n")
-                        .filter((l) => l.trim())
-                        .map((l) => JSON.parse(l) as ClientLogEntry);
-                }
-            } catch (err) {
-                if ((err as { Code?: string }).Code !== "NoSuchKey") {
-                    console.warn(
-                        `failed to read client log from S3 (contentId = "${id}, playId = "${playId}")`,
-                        err,
+        [...clientMap.values()].map(
+            async ({
+                record: { id: sid, clientId, userId, user, submittedAt },
+                comments,
+            }) => {
+                const key = s3Key(id, playId, clientId);
+                let entries: ClientLogEntry[] = [];
+                try {
+                    const result = await getS3Client().send(
+                        new GetObjectCommand({ Bucket: getBucket(), Key: key }),
                     );
+                    const text = await result.Body?.transformToString("utf-8");
+                    if (text) {
+                        entries = text
+                            .split("\n")
+                            .filter((l) => l.trim())
+                            .map((l) => JSON.parse(l) as ClientLogEntry);
+                    }
+                } catch (err) {
+                    if ((err as { Code?: string }).Code !== "NoSuchKey") {
+                        console.warn(
+                            `failed to read client log from S3 (contentId = "${id}, playId = "${playId}")`,
+                            err,
+                        );
+                    }
                 }
-            }
-            return {
-                id: record.id,
-                clientId: record.clientId,
-                userId: record.userId,
-                reporter: record.user
-                    ? { name: record.user.name, image: record.user.image }
-                    : null,
-                submittedAt: record.submittedAt,
-                entries,
-            };
-        }),
+                return {
+                    id: sid,
+                    clientId,
+                    userId,
+                    reporter: user
+                        ? {
+                              name: user.name,
+                              image: user.image,
+                          }
+                        : null,
+                    submittedAt,
+                    entries,
+                    comments,
+                };
+            },
+        ),
     );
 
     return NextResponse.json({

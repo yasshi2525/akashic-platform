@@ -115,7 +115,10 @@ export function PlayView({
 }) {
     const theme = useTheme();
     const { playlogServerUrl } = useAkashic();
-    const { niconicommonsWorkUrl } = useCustomData();
+    const { niconicommonsWorkUrl, clientLogCacheMaxEntries } = useCustomData();
+    useEffect(() => {
+        logCache.setMaxEntries(clientLogCacheMaxEntries);
+    }, [clientLogCacheMaxEntries]);
     const [skipping, setSkipping] = useState(false);
     const [warning, setWarning] = useState<WarningType>();
     const [error, setError] = useState<string>();
@@ -143,6 +146,7 @@ export function PlayView({
     const [xShareStatus, setXShareStatus] = useState<"shared" | "error">();
     const [isXSharing, setIsXSharing] = useState(false);
     const [troubleshootOpen, setTroubleshootOpen] = useState(false);
+    const [lastSubmittedComment, setLastSubmittedComment] = useState("");
 
     function formatRemaining(ms: number | undefined) {
         if (ms == null) {
@@ -186,6 +190,7 @@ export function PlayView({
         if (!ref.current) {
             return;
         }
+        logCache.clear();
         container.create({
             parent: ref.current,
             user,
@@ -446,8 +451,21 @@ export function PlayView({
                 contentId={game.contentId}
                 playId={playId}
                 getLogs={() => logCache.getAll()}
+                isTruncated={logCache.truncated}
+                lastSubmittedComment={lastSubmittedComment}
                 onClose={() => setTroubleshootOpen(false)}
-                onSubmitSuccess={() => logCache.clear()}
+                onSubmitSuccess={(comment) => {
+                    logCache.clear();
+                    setLastSubmittedComment((prev) => {
+                        if (!comment) {
+                            return prev;
+                        }
+                        if (!prev) {
+                            return comment;
+                        }
+                        return `${prev}\n---\n${comment}`;
+                    });
+                }}
             />
             {requestPlayerInfo ? (
                 <PlayPlayerInfoResolver request={requestPlayerInfo} />

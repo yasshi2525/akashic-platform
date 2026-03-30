@@ -130,11 +130,17 @@ export interface ClientCapturedLog {
     message: string;
 }
 
-export interface ClientLogEntry {
-    timestamp: string;
-    level: "log" | "warn" | "error";
-    message: string;
-}
+export type ClientLogEntry =
+    | {
+          type?: "log";
+          timestamp: string;
+          level: "log" | "warn" | "error";
+          message: string;
+      }
+    | {
+          type: "truncation_marker";
+          timestamp: string;
+      };
 
 export interface ClientLogSubmission {
     id: number;
@@ -143,6 +149,7 @@ export interface ClientLogSubmission {
     reporter: { name: string | null; image: string | null } | null;
     submittedAt: Date;
     entries: ClientLogEntry[];
+    comments: string[];
 }
 
 const clientLogSubmitErrReasons = [

@@ -133,15 +133,16 @@ export class AkashicContainer {
                 param.onSkip(isSkipping);
             },
         });
+        const handleError = (err: unknown) => {
+            param.onError(
+                "予期しないエラーが発生したため、ゲームを停止しました。ゲームの再開を試みる場合は画面を更新してください。",
+            );
+            console.error(err);
+            content.pause();
+            param.onOpenTroubleshoot();
+        };
         content.addErrorListener({
-            onError: (err) => {
-                param.onError(
-                    "予期しないエラーが発生したため、ゲームを停止しました。ゲームの再開を試みる場合は画面を更新してください。",
-                );
-                console.error(err);
-                content.pause();
-                param.onOpenTroubleshoot();
-            },
+            onError: handleError,
         });
         content.addContentLoadListener({
             onLoad: () => {
@@ -175,11 +176,17 @@ export class AkashicContainer {
                         (...args: any[]) => {
                             orig(...args);
                             try {
-                                param.logCache.push({
-                                    level,
-                                    message: args.map(toStr).join(" "),
-                                    timestamp: Date.now(),
-                                });
+                                const timestamp = Date.now();
+                                for (const line of args
+                                    .map(toStr)
+                                    .join(" ")
+                                    .split("\n")) {
+                                    param.logCache.push({
+                                        level,
+                                        message: line,
+                                        timestamp,
+                                    });
+                                }
                             } catch {
                                 /* ignore */
                             }
@@ -188,8 +195,9 @@ export class AkashicContainer {
                     c.warn = makeOverride("warn", c.warn.bind(c));
                     c.error = makeOverride("error", c.error.bind(c));
                 }
-                const amflowcontent = content.getGameDriver()!._platform
-                    .amflow as AMFlowClient;
+                const driver = content.getGameDriver()!;
+                driver.errorTrigger.add(handleError);
+                const amflowcontent = driver._platform.amflow as AMFlowClient;
                 amflowcontent.onPlayEnd((reason) => param.onPlayEnd(reason));
                 amflowcontent.onPlayExtend((payload) =>
                     param.onPlayExtend(payload),

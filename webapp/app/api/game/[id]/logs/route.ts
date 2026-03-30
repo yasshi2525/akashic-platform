@@ -79,20 +79,18 @@ export async function GET(
         },
     });
 
-    const clientLogCounts = await prisma.clientLogRecord.groupBy({
-        by: ["playId"],
+    const clientLogGroups = await prisma.clientLogRecord.groupBy({
+        by: ["playId", "clientId"],
         where: {
             playId: {
                 in: plays.map((p) => p.id),
             },
         },
-        _count: {
-            _all: true,
-        },
     });
-    const clientLogCountMap = new Map(
-        clientLogCounts.map((r) => [r.playId, r._count._all]),
-    );
+    const clientLogCountMap = new Map<number, number>();
+    for (const { playId } of clientLogGroups) {
+        clientLogCountMap.set(playId, (clientLogCountMap.get(playId) ?? 0) + 1);
+    }
 
     return NextResponse.json({
         ok: true,

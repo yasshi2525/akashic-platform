@@ -163,9 +163,10 @@ model ClientLogRecord {
   id          Int      @id @default(autoincrement())
   playId      Int
   contentId   Int
-  clientId    String // getAuth().id (セッションベース、ゲスト同士の区別用)
-  userId      String? // FK to User。OAuth認証済みのときのみ設定、ゲストは null
+  clientId    String
+  userId      String?
   user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  comment     String?
   submittedAt DateTime @default(now())
 
   createdAt DateTime @default(now())
