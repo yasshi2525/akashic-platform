@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.4.2
+
+- Improve
+  - プレイヤーによるログ送信時、console.error または Error が報告された場合、スタックトレースを含めるよう修正
+
 ## 1.4.1
 
 - Feature

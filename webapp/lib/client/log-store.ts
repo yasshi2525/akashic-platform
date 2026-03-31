@@ -1,6 +1,6 @@
 import { ClientCapturedLog } from "../types";
 
-export class LogCache {
+export class LogStore {
     private _entries: ClientCapturedLog[];
     private _max: number;
     private _truncated: boolean;
