@@ -26,12 +26,21 @@ export function installConsoleOverride(): void {
             output(util.format(...args));
             return;
         }
+        let message = util.format(...args);
+        if (level === "error" && !args.some((a) => a instanceof Error)) {
+            const callStack = new Error().stack;
+            if (callStack) {
+                // 先頭2行（"Error"ヘッダーとこのオーバーライド関数自身のフレーム）を除去
+                const trimmed = callStack.split("\n").slice(2).join("\n");
+                message += "\n" + trimmed;
+            }
+        }
         const line = JSON.stringify({
             timestamp: new Date().toISOString(),
             level,
             playId: ctx.playId,
             contentId: ctx.contentId,
-            message: util.format(...args),
+            message,
         });
         if (ctx.logStream && !ctx.logStream.writableEnded) {
             ctx.logStream.write(line + "\n");

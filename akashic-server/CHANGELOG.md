@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.3.3
+
+- Improve
+  - `console.error` 出力の場合、スタックトレースを追加出力するよう修正
+
 ## 1.3.2
 
 - Feature
