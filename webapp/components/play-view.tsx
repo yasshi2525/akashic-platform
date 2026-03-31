@@ -69,7 +69,6 @@ const toMessage = (typ?: WarningType) => {
 // 破棄に Promise が必要 → useEffect 内で破棄が完了しない
 // 同時に2インスタンス存在するとロードがとまり、破棄に必要なステップを踏めない
 const container = new AkashicContainer();
-const logStore = new LogStore();
 const EXTEND_WINDOW_MS = 10 * 60 * 1000;
 
 export function PlayView({
@@ -117,7 +116,7 @@ export function PlayView({
     const { playlogServerUrl } = useAkashic();
     const { niconicommonsWorkUrl, clientLogCacheMaxEntries } = useCustomData();
     useEffect(() => {
-        logStore.setMaxEntries(clientLogCacheMaxEntries);
+        container.setClientLogMaxEntries(clientLogCacheMaxEntries);
     }, [clientLogCacheMaxEntries]);
     const [skipping, setSkipping] = useState(false);
     const [warning, setWarning] = useState<WarningType>();
@@ -190,7 +189,6 @@ export function PlayView({
         if (!ref.current) {
             return;
         }
-        logStore.clear();
         container.create({
             parent: ref.current,
             user,
@@ -201,7 +199,6 @@ export function PlayView({
             initialMasterVolume: MASTER_VOLUME_MAX,
             isGameMaster,
             external: contentExternal,
-            logStore: logStore,
             onSkip: setSkipping,
             onError: setError,
             onOpenTroubleshoot: () => {
@@ -450,12 +447,12 @@ export function PlayView({
                 open={troubleshootOpen}
                 contentId={game.contentId}
                 playId={playId}
-                getLogs={() => logStore.getAll()}
-                isTruncated={logStore.truncated}
+                getLogs={() => container.getClientLogs()}
+                isTruncated={container.isClientLogTruncated()}
                 lastSubmittedComment={lastSubmittedComment}
                 onClose={() => setTroubleshootOpen(false)}
                 onSubmitSuccess={(comment) => {
-                    logStore.clear();
+                    container.clearClientLogs();
                     setLastSubmittedComment((prev) => {
                         if (!comment) {
                             return prev;

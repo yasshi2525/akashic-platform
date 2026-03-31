@@ -39,13 +39,6 @@ export class LogHandler {
         try {
             const timestamp = Date.now();
             let message = this._formatMessage(...args);
-            console.log(
-                "level",
-                level,
-                "args",
-                ...args,
-                args.map((a) => a instanceof Error),
-            );
             // console.error は解析しやすくするため stacktrace を生成する
             if (level === "error" && !args.some((a) => a instanceof Error)) {
                 message += this._generateCurrentTrace();
@@ -80,8 +73,15 @@ export class LogHandler {
         if (typeof v === "string") {
             return v;
         }
-        if (v instanceof Error) {
-            if (v.stack) {
+        if (
+            v instanceof Error ||
+            (typeof v === "object" &&
+                v &&
+                "name" in v &&
+                v.name === "Error" &&
+                "message" in v)
+        ) {
+            if ("stack" in v && v.stack) {
                 return `${v.message}\n${v.stack}`;
             } else {
                 return v.toString();

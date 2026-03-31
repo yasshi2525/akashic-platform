@@ -29,7 +29,6 @@ interface AkashicContainerCreateParameterObject {
     initialMasterVolume?: number;
     isGameMaster: boolean;
     external: string[];
-    logStore: LogStore;
     onSkip: (skip: boolean) => void;
     onError: (errMsg: string) => void;
     onOpenTroubleshoot: () => void;
@@ -45,9 +44,11 @@ export class AkashicContainer {
         view: AkashicGameView;
         resizeObserver: ResizeObserver;
         content: GameContent;
+        logStore: LogStore;
         logHandler: LogHandler;
     };
     _creationQueue: AkashicContainerCreateParameterObject[];
+    _clientLogMaxEntries?: number;
 
     constructor() {
         this._creationQueue = [];
@@ -77,13 +78,15 @@ export class AkashicContainer {
                     onRequest: param.onRequestPlayerInfo,
                 }),
             );
-            const logHandler = new LogHandler(param.logStore);
+            const logStore = new LogStore(this._clientLogMaxEntries);
+            const logHandler = new LogHandler(logStore);
             const content = this._createContent(param, logHandler);
             view.addContent(content);
             this._current = {
                 view,
                 resizeObserver,
                 content,
+                logStore,
                 logHandler,
             };
         }
@@ -93,6 +96,7 @@ export class AkashicContainer {
         if (this._current) {
             this._current.resizeObserver.disconnect();
             await destroyAkashicGameView(this._current.view);
+            this._current.logStore.clear();
             this._current = undefined;
             const next = this._creationQueue.shift();
             if (next) {
@@ -105,6 +109,25 @@ export class AkashicContainer {
         if (this._current) {
             this._current.content.setMasterVolume(volume);
         }
+    }
+
+    setClientLogMaxEntries(max: number) {
+        this._clientLogMaxEntries = max;
+        if (this._current) {
+            this._current.logStore.setMaxEntries(max);
+        }
+    }
+
+    isClientLogTruncated() {
+        return this._current?.logStore.truncated ?? false;
+    }
+
+    getClientLogs() {
+        return this._current?.logStore.getAll() ?? [];
+    }
+
+    clearClientLogs() {
+        this._current?.logStore.clear();
     }
 
     getGameContentCanvas(): HTMLCanvasElement | undefined {
