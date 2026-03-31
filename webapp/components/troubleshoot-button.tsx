@@ -10,7 +10,7 @@ export function TroubleshootButton({ onClick }: { onClick: () => void }) {
             title="プレイ中に意図しない動作が発生したことを投稿主に報告します。詳細情報を添付して送ります。"
         >
             <IconButton aria-label="不具合を報告" onClick={onClick}>
-                <Report fontSize="large" />
+                <Report fontSize="large" color="warning" />
             </IconButton>
         </Tooltip>
     );

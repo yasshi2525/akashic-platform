@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.4.3
+
+- Improve
+  - `./webapp`
+    - プレイヤーによるログ送信時、 `console.error` または `Error` が報告された場合、スタックトレースを含めるよう修正
+  - `./akashic-server`
+    - `console.error` 出力の場合、スタックトレースを追加出力するよう修正
+
 ## 1.4.2
 
 - Feature

@@ -1,21 +1,21 @@
 import { ClientCapturedLog } from "../types";
 
-export class LogCache {
+export class LogStore {
     private _entries: ClientCapturedLog[];
     private _max: number;
     private _truncated: boolean;
 
-    constructor() {
+    constructor(maxEntries: number = 1000) {
         this._entries = [];
-        this._max = 1000;
+        this._max = maxEntries;
         this._truncated = false;
     }
 
-    setMaxEntries(max: number): void {
+    setMaxEntries(max: number) {
         this._max = max;
     }
 
-    push(entry: ClientCapturedLog): void {
+    push(entry: ClientCapturedLog) {
         this._entries.push(entry);
         if (this._entries.length > this._max) {
             this._entries.shift();
@@ -23,15 +23,15 @@ export class LogCache {
         }
     }
 
-    get truncated(): boolean {
+    get truncated() {
         return this._truncated;
     }
 
-    getAll(): ClientCapturedLog[] {
+    getAll() {
         return [...this._entries];
     }
 
-    clear(): void {
+    clear() {
         this._entries = [];
         this._truncated = false;
     }

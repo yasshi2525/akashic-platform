@@ -10,7 +10,8 @@ import {
 } from "@yasshi2525/agvw-like";
 import { User } from "../types";
 import { destroyAkashicGameView } from "./akashic-gameview-destroyer";
-import { LogCache } from "./log-cache";
+import { LogStore } from "./log-store";
+import { LogHandler } from "./log-handler";
 import {
     CoeLimitedPlugin,
     ResolvingPlayerInfoRequest,
@@ -28,7 +29,6 @@ interface AkashicContainerCreateParameterObject {
     initialMasterVolume?: number;
     isGameMaster: boolean;
     external: string[];
-    logCache: LogCache;
     onSkip: (skip: boolean) => void;
     onError: (errMsg: string) => void;
     onOpenTroubleshoot: () => void;
@@ -44,8 +44,11 @@ export class AkashicContainer {
         view: AkashicGameView;
         resizeObserver: ResizeObserver;
         content: GameContent;
+        logStore: LogStore;
+        logHandler: LogHandler;
     };
     _creationQueue: AkashicContainerCreateParameterObject[];
+    _clientLogMaxEntries?: number;
 
     constructor() {
         this._creationQueue = [];
@@ -75,12 +78,16 @@ export class AkashicContainer {
                     onRequest: param.onRequestPlayerInfo,
                 }),
             );
-            const content = this._createContent(param);
+            const logStore = new LogStore(this._clientLogMaxEntries);
+            const logHandler = new LogHandler(logStore);
+            const content = this._createContent(param, logHandler);
             view.addContent(content);
             this._current = {
                 view,
                 resizeObserver,
                 content,
+                logStore,
+                logHandler,
             };
         }
     }
@@ -89,6 +96,7 @@ export class AkashicContainer {
         if (this._current) {
             this._current.resizeObserver.disconnect();
             await destroyAkashicGameView(this._current.view);
+            this._current.logStore.clear();
             this._current = undefined;
             const next = this._creationQueue.shift();
             if (next) {
@@ -103,6 +111,25 @@ export class AkashicContainer {
         }
     }
 
+    setClientLogMaxEntries(max: number) {
+        this._clientLogMaxEntries = max;
+        if (this._current) {
+            this._current.logStore.setMaxEntries(max);
+        }
+    }
+
+    isClientLogTruncated() {
+        return this._current?.logStore.truncated ?? false;
+    }
+
+    getClientLogs() {
+        return this._current?.logStore.getAll() ?? [];
+    }
+
+    clearClientLogs() {
+        this._current?.logStore.clear();
+    }
+
     getGameContentCanvas(): HTMLCanvasElement | undefined {
         return (
             this._current?.content._element
@@ -112,7 +139,10 @@ export class AkashicContainer {
         );
     }
 
-    _createContent(param: AkashicContainerCreateParameterObject) {
+    _createContent(
+        param: AkashicContainerCreateParameterObject,
+        logHandler: LogHandler,
+    ) {
         const content = new GameContent({
             player: {
                 id: param.user.id,
@@ -152,48 +182,11 @@ export class AkashicContainer {
                 const win = content._element?.getContentWindow();
                 if (win) {
                     win.document.body.children[0].id = "container";
-                    const c: Console = (win as any).console;
-                    const toStr = (v: unknown) => {
-                        if (typeof v === "string") return v;
-                        if (v instanceof Error) {
-                            if (v.stack) {
-                                return `${v.message}\n${v.stack}`;
-                            } else {
-                                return v.toString();
-                            }
-                        }
-                        try {
-                            return JSON.stringify(v);
-                        } catch {
-                            return String(v);
-                        }
-                    };
-                    const makeOverride =
-                        (
-                            level: "log" | "warn" | "error",
-                            orig: (...args: any[]) => void,
-                        ) =>
-                        (...args: any[]) => {
-                            orig(...args);
-                            try {
-                                const timestamp = Date.now();
-                                for (const line of args
-                                    .map(toStr)
-                                    .join(" ")
-                                    .split("\n")) {
-                                    param.logCache.push({
-                                        level,
-                                        message: line,
-                                        timestamp,
-                                    });
-                                }
-                            } catch {
-                                /* ignore */
-                            }
-                        };
-                    c.log = makeOverride("log", c.log.bind(c));
-                    c.warn = makeOverride("warn", c.warn.bind(c));
-                    c.error = makeOverride("error", c.error.bind(c));
+                    logHandler.captureUncaughtError(win);
+                    logHandler.captureConsole((win as any).console);
+                    win.addEventListener("error", (event) =>
+                        handleError(event.error || event.message),
+                    );
                 }
                 const driver = content.getGameDriver()!;
                 driver.errorTrigger.add(handleError);
