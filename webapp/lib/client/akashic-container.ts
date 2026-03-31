@@ -177,10 +177,22 @@ export class AkashicContainer {
                             orig(...args);
                             try {
                                 const timestamp = Date.now();
-                                for (const line of args
-                                    .map(toStr)
-                                    .join(" ")
-                                    .split("\n")) {
+                                let message = args.map(toStr).join(" ");
+                                if (
+                                    level === "error" &&
+                                    !args.some((a) => a instanceof Error)
+                                ) {
+                                    const callStack = new Error().stack;
+                                    if (callStack) {
+                                        // 先頭2行（"Error"ヘッダーとこのオーバーライド関数自身のフレーム）を除去
+                                        const trimmed = callStack
+                                            .split("\n")
+                                            .slice(2)
+                                            .join("\n");
+                                        message += "\n" + trimmed;
+                                    }
+                                }
+                                for (const line of message.split("\n")) {
                                     param.logCache.push({
                                         level,
                                         message: line,
