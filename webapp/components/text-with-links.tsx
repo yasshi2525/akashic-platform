@@ -1,8 +1,11 @@
-import { MouseEvent } from "react";
+"use client";
+
+import { MouseEvent, useLayoutEffect, useRef, useState } from "react";
 import { Button, Link, Stack, Typography, useTheme } from "@mui/material";
 import { OpenInNew } from "@mui/icons-material";
 
 const URL_REGEX = /(https?:\/\/[^\s\u3000-\u9fff\uff00-\uffef<>'"]+)/g;
+const TRAILING_PUNCT = /[.,;:!?)>\]'"」）。、！？…]+$/;
 
 export function GameDescription({
     description,
@@ -16,11 +19,27 @@ export function GameDescription({
     onToggle: (e: MouseEvent, id: number) => void;
 }) {
     const theme = useTheme();
-    const needsToggle = description.includes("\n") || description.length > 120;
+    const textRef = useRef<HTMLElement>(null);
+    const [isTruncated, setIsTruncated] = useState(false);
+
+    useLayoutEffect(() => {
+        const el = textRef.current;
+        if (!el || expanded) return;
+
+        function check() {
+            if (el) setIsTruncated(el.scrollHeight > el.clientHeight);
+        }
+        check();
+
+        const observer = new ResizeObserver(check);
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, [expanded, description]);
 
     return (
         <Stack spacing={0.5}>
             <Typography
+                ref={textRef}
                 variant="body2"
                 sx={{
                     color: theme.palette.text.secondary,
@@ -38,7 +57,7 @@ export function GameDescription({
             >
                 {renderTextWithLinks(description)}
             </Typography>
-            {needsToggle && (
+            {isTruncated && (
                 <Button
                     size="small"
                     onClick={(e) => onToggle(e, gameId)}
@@ -58,26 +77,35 @@ export function GameDescription({
 
 export function renderTextWithLinks(text: string) {
     const parts = text.split(URL_REGEX);
-    return parts.map((part, i) =>
-        i % 2 === 1 ? (
-            <Link
-                key={i}
-                href={part}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                sx={{
-                    wordBreak: "break-all",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 0.25,
-                }}
-            >
-                {part}
-                <OpenInNew sx={{ fontSize: "0.9em", flexShrink: 0 }} />
-            </Link>
-        ) : (
-            part
-        ),
-    );
+    const result: React.ReactNode[] = [];
+
+    parts.forEach((part, i) => {
+        if (i % 2 === 1) {
+            const url = part.replace(TRAILING_PUNCT, "");
+            const trailing = part.slice(url.length);
+            result.push(
+                <Link
+                    key={i}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    sx={{
+                        wordBreak: "break-all",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 0.25,
+                    }}
+                >
+                    {url}
+                    <OpenInNew sx={{ fontSize: "0.9em", flexShrink: 0 }} />
+                </Link>,
+            );
+            if (trailing) result.push(trailing);
+        } else {
+            result.push(part);
+        }
+    });
+
+    return result;
 }
