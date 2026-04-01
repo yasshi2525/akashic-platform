@@ -1,5 +1,6 @@
 "use client";
 
+import { MouseEvent, useState } from "react";
 import { useDebounce } from "use-debounce";
 import {
     Avatar,
@@ -21,6 +22,7 @@ import { CheckBox } from "@mui/icons-material";
 import { GameInfo } from "@/lib/types";
 import { useGameList } from "@/lib/client/useGameList";
 import { UserInline } from "./user-inline";
+import { GameDescription } from "./text-with-links";
 
 function Loading() {
     return (
@@ -54,11 +56,15 @@ function GameTableCells({
     selected,
     setSelected,
     setGameTitle,
+    expandedSet,
+    onToggleDescription,
 }: {
     list: GameInfo[];
     selected?: number;
     setSelected: (selected?: number) => void;
     setGameTitle: (title?: string) => void;
+    expandedSet: Set<number>;
+    onToggleDescription: (e: MouseEvent, id: number) => void;
 }) {
     const theme = useTheme();
     function handleClick(id: number, title: string) {
@@ -105,16 +111,12 @@ function GameTableCells({
                                 </Typography>
                             ) : null}
                         </Stack>
-                        <Typography
-                            variant="body2"
-                            sx={{
-                                color: theme.palette.text.secondary,
-                                overflowWrap: "anywhere",
-                                wordBreak: "break-word",
-                            }}
-                        >
-                            {game.description}
-                        </Typography>
+                        <GameDescription
+                            description={game.description}
+                            gameId={game.contentId}
+                            expanded={expandedSet.has(game.contentId)}
+                            onToggle={onToggleDescription}
+                        />
                     </Stack>
                 </Stack>
             </TableCell>
@@ -162,6 +164,17 @@ export function GameList({
     const [debouncedKeyword] = useDebounce(keyword, 500);
     const { isLoading, list, page, setPage, isEmpty, isEnd } =
         useGameList(debouncedKeyword);
+    const [expandedSet, setExpandedSet] = useState<Set<number>>(new Set());
+
+    function handleToggleDescription(e: MouseEvent, id: number) {
+        e.stopPropagation();
+        setExpandedSet((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    }
 
     function handleClick(id: number, title: string) {
         if (id === selected) {
@@ -218,7 +231,10 @@ export function GameList({
                                                 height: 72,
                                             }}
                                         />
-                                        <Stack spacing={0.5}>
+                                        <Stack
+                                            spacing={0.5}
+                                            sx={{ minWidth: 0, flex: 1 }}
+                                        >
                                             <Stack
                                                 direction="row"
                                                 spacing={1}
@@ -239,17 +255,16 @@ export function GameList({
                                                     <CheckBox fontSize="small" />
                                                 ) : null}
                                             </Stack>
-                                            <Typography
-                                                variant="body2"
-                                                sx={{
-                                                    color: theme.palette.text
-                                                        .secondary,
-                                                    overflowWrap: "anywhere",
-                                                    wordBreak: "break-word",
-                                                }}
-                                            >
-                                                {game.description}
-                                            </Typography>
+                                            <GameDescription
+                                                description={game.description}
+                                                gameId={game.contentId}
+                                                expanded={expandedSet.has(
+                                                    game.contentId,
+                                                )}
+                                                onToggle={
+                                                    handleToggleDescription
+                                                }
+                                            />
                                         </Stack>
                                     </Stack>
                                     <Stack
@@ -329,6 +344,8 @@ export function GameList({
                             selected={selected}
                             setSelected={setSelected}
                             setGameTitle={setGameTitle}
+                            expandedSet={expandedSet}
+                            onToggleDescription={handleToggleDescription}
                         />
                         {!isEnd ? (
                             <TableRow>

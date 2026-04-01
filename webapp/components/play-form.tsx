@@ -107,6 +107,7 @@ export function PlayForm() {
             maxWidth="md"
             sx={{
                 mt: 4,
+                mb: selectedContent ? 10 : 4,
                 display: "flex",
                 flexFlow: "column",
                 alignItems: "center",
@@ -245,6 +246,73 @@ export function PlayForm() {
                     {error}
                 </Alert>
             ) : null}
+            {selectedContent && (
+                <Box
+                    sx={{
+                        position: "fixed",
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        zIndex: 1200,
+                        bgcolor: "background.paper",
+                        borderTop: 1,
+                        borderColor: "divider",
+                        boxShadow: 4,
+                        px: { xs: 2, sm: 3 },
+                        py: 1.5,
+                    }}
+                >
+                    <Container maxWidth="md" disableGutters>
+                        <Stack spacing={1}>
+                            {error && (
+                                <Alert
+                                    variant="outlined"
+                                    severity="error"
+                                    sx={{ py: 0.5 }}
+                                >
+                                    {error}
+                                </Alert>
+                            )}
+                            <Stack
+                                direction="row"
+                                spacing={2}
+                                alignItems="center"
+                            >
+                                <Stack
+                                    flex={1}
+                                    spacing={0}
+                                    sx={{ minWidth: 0 }}
+                                >
+                                    <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                    >
+                                        選択中のゲーム
+                                    </Typography>
+                                    <Typography
+                                        variant="body1"
+                                        noWrap
+                                        fontWeight="medium"
+                                    >
+                                        {selectedGameTitle}
+                                    </Typography>
+                                </Stack>
+                                <Button
+                                    type="submit"
+                                    variant="contained"
+                                    size="large"
+                                    color="primary"
+                                    loading={sending}
+                                    disabled={sending}
+                                    sx={{ flexShrink: 0 }}
+                                >
+                                    部屋を作成する
+                                </Button>
+                            </Stack>
+                        </Stack>
+                    </Container>
+                </Box>
+            )}
         </Container>
     );
 }
