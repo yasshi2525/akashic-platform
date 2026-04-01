@@ -263,33 +263,52 @@ export function PlayForm() {
                     }}
                 >
                     <Container maxWidth="md" disableGutters>
-                        <Stack direction="row" spacing={2} alignItems="center">
-                            <Stack flex={1} spacing={0} sx={{ minWidth: 0 }}>
-                                <Typography
-                                    variant="caption"
-                                    color="text.secondary"
+                        <Stack spacing={1}>
+                            {error && (
+                                <Alert
+                                    variant="outlined"
+                                    severity="error"
+                                    sx={{ py: 0.5 }}
                                 >
-                                    選択中のゲーム
-                                </Typography>
-                                <Typography
-                                    variant="body1"
-                                    noWrap
-                                    fontWeight="medium"
-                                >
-                                    {selectedGameTitle}
-                                </Typography>
-                            </Stack>
-                            <Button
-                                type="submit"
-                                variant="contained"
-                                size="large"
-                                color="primary"
-                                loading={sending}
-                                disabled={sending}
-                                sx={{ flexShrink: 0 }}
+                                    {error}
+                                </Alert>
+                            )}
+                            <Stack
+                                direction="row"
+                                spacing={2}
+                                alignItems="center"
                             >
-                                部屋を作成する
-                            </Button>
+                                <Stack
+                                    flex={1}
+                                    spacing={0}
+                                    sx={{ minWidth: 0 }}
+                                >
+                                    <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                    >
+                                        選択中のゲーム
+                                    </Typography>
+                                    <Typography
+                                        variant="body1"
+                                        noWrap
+                                        fontWeight="medium"
+                                    >
+                                        {selectedGameTitle}
+                                    </Typography>
+                                </Stack>
+                                <Button
+                                    type="submit"
+                                    variant="contained"
+                                    size="large"
+                                    color="primary"
+                                    loading={sending}
+                                    disabled={sending}
+                                    sx={{ flexShrink: 0 }}
+                                >
+                                    部屋を作成する
+                                </Button>
+                            </Stack>
                         </Stack>
                     </Container>
                 </Box>
