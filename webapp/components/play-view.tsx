@@ -39,7 +39,6 @@ import { ResolvingPlayerInfoRequest } from "@/lib/client/akashic-plugins/coe-lim
 import { AkashicContainer } from "@/lib/client/akashic-container";
 import { extendPlay } from "@/lib/server/play-extend";
 import { uploadPlayShareScreenshot } from "@/lib/server/play-share";
-import { LogStore } from "@/lib/client/log-store";
 import { PlayCloseDialog } from "./play-close-dialog";
 import { PlayEndNotification } from "./play-end-notification";
 import { PlayPlayerInfoResolver } from "./play-player-info-resolver";
@@ -47,6 +46,7 @@ import { CreditPanel } from "./credit-panel";
 import { UserInline } from "./user-inline";
 import { ClientLogDialog } from "./client-log-dialog";
 import { TroubleshootButton } from "./troubleshoot-button";
+import { renderTextWithLinks } from "./text-with-links";
 
 const warnings = ["EVENT_ON_SKIPPING"] as const;
 type WarningType = (typeof warnings)[number];
@@ -989,7 +989,9 @@ export function PlayView({
                                             variant="body1"
                                             sx={{ whiteSpace: "pre-wrap" }}
                                         >
-                                            {game.description}
+                                            {renderTextWithLinks(
+                                                game.description,
+                                            )}
                                         </Typography>
                                         <CreditPanel
                                             credit={game.credit}

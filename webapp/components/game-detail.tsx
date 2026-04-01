@@ -18,6 +18,7 @@ import { FeedbackPost, GameInfo, User } from "@/lib/types";
 import { FeedbackPanel } from "./feedback-panel";
 import { CreditPanel } from "./credit-panel";
 import { UserInline } from "./user-inline";
+import { renderTextWithLinks } from "./text-with-links";
 import { PlayCreateDialog } from "./play-create-dialog";
 
 export function GameDetailClient({
@@ -114,7 +115,7 @@ export function GameDetailClient({
                                     variant="body1"
                                     sx={{ whiteSpace: "pre-wrap" }}
                                 >
-                                    {gameInfo.description}
+                                    {renderTextWithLinks(gameInfo.description)}
                                 </Typography>
                                 <Stack direction="row" spacing={1}>
                                     <Button

@@ -22,6 +22,7 @@ import { CheckBox } from "@mui/icons-material";
 import { GameInfo } from "@/lib/types";
 import { useGameList } from "@/lib/client/useGameList";
 import { UserInline } from "./user-inline";
+import { GameDescription } from "./text-with-links";
 
 function Loading() {
     return (
@@ -47,53 +48,6 @@ function NoResult() {
                 </Typography>
             </TableCell>
         </TableRow>
-    );
-}
-
-function GameDescription({
-    description,
-    gameId,
-    expanded,
-    onToggle,
-}: {
-    description: string;
-    gameId: number;
-    expanded: boolean;
-    onToggle: (e: MouseEvent, id: number) => void;
-}) {
-    const theme = useTheme();
-    const needsToggle = description.includes("\n") || description.length > 120;
-
-    return (
-        <Stack spacing={0.5}>
-            <Typography
-                variant="body2"
-                sx={{
-                    color: theme.palette.text.secondary,
-                    overflowWrap: "anywhere",
-                    wordBreak: "break-word",
-                    ...(expanded
-                        ? { whiteSpace: "pre-wrap" }
-                        : {
-                              display: "-webkit-box",
-                              WebkitLineClamp: 3,
-                              WebkitBoxOrient: "vertical",
-                              overflow: "hidden",
-                          }),
-                }}
-            >
-                {description}
-            </Typography>
-            {needsToggle && (
-                <Button
-                    size="small"
-                    onClick={(e) => onToggle(e, gameId)}
-                    sx={{ alignSelf: "flex-start", p: 0, minWidth: 0 }}
-                >
-                    {expanded ? "折りたたむ" : "もっと見る"}
-                </Button>
-            )}
-        </Stack>
     );
 }
 

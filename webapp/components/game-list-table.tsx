@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import { MouseEvent, ReactNode, useState } from "react";
 import { format } from "date-fns";
 import {
     Avatar,
@@ -19,6 +19,7 @@ import {
     useTheme,
 } from "@mui/material";
 import { GameInfo } from "@/lib/types";
+import { GameDescription } from "./text-with-links";
 
 function Loading() {
     return (
@@ -50,9 +51,13 @@ function NoResult() {
 function GameTableCells({
     list,
     renderActions,
+    expandedSet,
+    onToggleDescription,
 }: {
     list: GameInfo[];
     renderActions?: (game: GameInfo, isTable: boolean) => ReactNode;
+    expandedSet: Set<number>;
+    onToggleDescription: (e: MouseEvent, id: number) => void;
 }) {
     const theme = useTheme();
 
@@ -70,16 +75,12 @@ function GameTableCells({
                     />
                     <Stack spacing={1}>
                         <Typography variant="body1">{game.title}</Typography>
-                        <Typography
-                            variant="body2"
-                            sx={{
-                                color: theme.palette.text.secondary,
-                                overflowWrap: "anywhere",
-                                wordBreak: "break-word",
-                            }}
-                        >
-                            {game.description}
-                        </Typography>
+                        <GameDescription
+                            description={game.description}
+                            gameId={game.contentId}
+                            expanded={expandedSet.has(game.contentId)}
+                            onToggle={onToggleDescription}
+                        />
                     </Stack>
                 </Stack>
             </TableCell>
@@ -136,6 +137,17 @@ export function GameListTable({
 }) {
     const theme = useTheme();
     const isTable = useMediaQuery(theme.breakpoints.up("md"));
+    const [expandedSet, setExpandedSet] = useState<Set<number>>(new Set());
+
+    function handleToggleDescription(e: MouseEvent, id: number) {
+        e.stopPropagation();
+        setExpandedSet((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    }
 
     if (!isTable) {
         return (
@@ -168,21 +180,23 @@ export function GameListTable({
                                                 height: 72,
                                             }}
                                         />
-                                        <Stack spacing={0.5}>
+                                        <Stack
+                                            spacing={0.5}
+                                            sx={{ minWidth: 0, flex: 1 }}
+                                        >
                                             <Typography variant="body1">
                                                 {game.title}
                                             </Typography>
-                                            <Typography
-                                                variant="body2"
-                                                sx={{
-                                                    color: theme.palette.text
-                                                        .secondary,
-                                                    overflowWrap: "anywhere",
-                                                    wordBreak: "break-word",
-                                                }}
-                                            >
-                                                {game.description}
-                                            </Typography>
+                                            <GameDescription
+                                                description={game.description}
+                                                gameId={game.contentId}
+                                                expanded={expandedSet.has(
+                                                    game.contentId,
+                                                )}
+                                                onToggle={
+                                                    handleToggleDescription
+                                                }
+                                            />
                                         </Stack>
                                     </Stack>
                                     <Stack
@@ -273,6 +287,8 @@ export function GameListTable({
                         <GameTableCells
                             list={list}
                             renderActions={renderActions}
+                            expandedSet={expandedSet}
+                            onToggleDescription={handleToggleDescription}
                         />
                         {!isEnd ? (
                             <TableRow>
