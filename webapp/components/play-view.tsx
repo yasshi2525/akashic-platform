@@ -380,11 +380,18 @@ export function PlayView({
         if (isXSharing) {
             return;
         }
+        if (typeof window === "undefined") {
+            setXShareStatus("error");
+            return;
+        }
         setIsXSharing(true);
         setXShareStatus(undefined);
+        // Safariはawait後のwindow.openをブロックするため、同期処理中にウィンドウを先に開く
+        const newWindow = window.open("");
         try {
             const fileRes = await createScreenshotFile();
             if (!fileRes) {
+                newWindow?.close();
                 setXShareStatus("error");
                 return;
             }
@@ -393,34 +400,33 @@ export function PlayView({
             formData.append("image", fileRes.file);
             const res = await uploadPlayShareScreenshot(formData);
             if (!res.ok) {
+                newWindow?.close();
                 setXShareStatus("error");
                 return;
             }
-            if (typeof window !== "undefined") {
-                const shareUrl = new URL(
-                    `/play/${playId}`,
-                    window.location.origin,
-                );
-                if (isLimited) {
-                    shareUrl.searchParams.set("inviteHash", inviteHash!);
-                }
-                shareUrl.searchParams.set("shareId", res.shareId);
-                const params = new URLSearchParams([
-                    [
-                        "text",
-                        `ただいまゲームプレイ中！一緒に遊ぼう！\n${playName ?? ""}`,
-                    ],
-                    ["url", shareUrl.toString()],
-                    ["hashtags", ["みんなでゲーム", game.title].join(",")],
-                ]);
-                const intentUrl = `https://x.com/intent/tweet?${params.toString()}`;
-                window.open(intentUrl, "_blank", "noopener,noreferrer");
-                setXShareStatus("shared");
-            } else {
-                setXShareStatus("error");
+            const shareUrl = new URL(`/play/${playId}`, window.location.origin);
+            if (isLimited) {
+                shareUrl.searchParams.set("inviteHash", inviteHash!);
             }
+            shareUrl.searchParams.set("shareId", res.shareId);
+            const params = new URLSearchParams([
+                [
+                    "text",
+                    `ただいまゲームプレイ中！一緒に遊ぼう！\n${playName ?? ""}`,
+                ],
+                ["url", shareUrl.toString()],
+                ["hashtags", ["みんなでゲーム", game.title].join(",")],
+            ]);
+            const intentUrl = `https://x.com/intent/tweet?${params.toString()}`;
+            if (newWindow) {
+                newWindow.location.href = intentUrl;
+            } else {
+                window.open(intentUrl, "_blank", "noopener,noreferrer");
+            }
+            setXShareStatus("shared");
         } catch (err) {
             console.warn("failed to open X intent", err);
+            newWindow?.close();
             setXShareStatus("error");
         } finally {
             setIsXSharing(false);
