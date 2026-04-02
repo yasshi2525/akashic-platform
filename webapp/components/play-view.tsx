@@ -388,6 +388,10 @@ export function PlayView({
         setXShareStatus(undefined);
         // Safariはawait後のwindow.openをブロックするため、同期処理中にウィンドウを先に開く
         const newWindow = window.open("");
+        // noopenerをwindow.openに渡すと戻り値がnullになるため、opener参照を手動で切る（リバースタブナビング対策）
+        if (newWindow) {
+            newWindow.opener = null;
+        }
         try {
             const fileRes = await createScreenshotFile();
             if (!fileRes) {
