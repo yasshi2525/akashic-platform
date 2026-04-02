@@ -10,7 +10,7 @@ export class LogHandler {
 
     captureUncaughtError(win: Window) {
         win.addEventListener("error", (event) => {
-            this.append("error", event.error || event.message);
+            this.append("error", event.error ?? event.message ?? event);
         });
     }
 
@@ -70,25 +70,60 @@ export class LogHandler {
     }
 
     _formatValue(v: unknown) {
-        if (typeof v === "string") {
-            return v;
-        }
-        if (
-            v instanceof Error ||
-            (typeof v === "object" &&
-                v &&
-                "name" in v &&
-                v.name === "Error" &&
-                "message" in v)
-        ) {
-            if ("stack" in v && v.stack) {
-                return `${v.message}\n${v.stack}`;
-            } else {
-                return v.toString();
-            }
-        }
         try {
-            return JSON.stringify(v);
+            if (typeof v === "string") {
+                return v;
+            }
+            if (this._isError(v)) {
+                return this._formatError(v);
+            }
+            return this._formatObject(v);
+        } catch {
+            return String(v);
+        }
+    }
+
+    _isError(v: unknown): v is Error {
+        return (
+            typeof v === "object" &&
+            v != null &&
+            "name" in v &&
+            v.name === "Error" &&
+            "message" in v
+        );
+    }
+
+    _formatError(v: Error) {
+        if (v.stack != null) {
+            return `${v.message}\n${v.stack}`;
+        } else {
+            return String(v);
+        }
+    }
+
+    _isTracable(v: unknown): v is { stack: string } {
+        return (
+            typeof v === "object" &&
+            v != null &&
+            "stack" in v &&
+            v.stack != null
+        );
+    }
+
+    _formatTracable(v: { stack: string }) {
+        return `${v.toString()}\n${v.stack}`;
+    }
+
+    _formatObject(v: unknown) {
+        try {
+            const result = JSON.stringify(v);
+            if (result === "{}") {
+                if (this._isTracable(v)) {
+                    return this._formatTracable(v);
+                }
+                return String(v);
+            }
+            return result;
         } catch {
             return String(v);
         }
