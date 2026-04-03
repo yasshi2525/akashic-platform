@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.4.6
+
+- Fix
+  - `akashic-storage`
+    - broadcast する Tick の順序が subscribe 順と一致しない場合がある問題を修正 (#57)
+
 ## 1.4.5
 
 - Fix

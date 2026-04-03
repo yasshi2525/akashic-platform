@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.1.6
+
+- Fix
+  - broadcast する Tick の順序が subscribe 順と一致しない場合がある問題を修正
+
 ## 1.1.5
 
 - Improve
