@@ -41,6 +41,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
     _hashPlayId: string;
     _keyList: string[];
     _tickQueue: Promise<void>;
+    _startPointQueue: Promise<void>;
 
     constructor(param: ValkeyAMFlowStoreParameterObject) {
         super(param.playId);
@@ -52,6 +53,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         this._hashPlayId = `{${this.playId}}`;
         this._keyList = [];
         this._tickQueue = Promise.resolve();
+        this._startPointQueue = Promise.resolve();
     }
 
     async authenticate(token: string) {
@@ -149,7 +151,14 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         return [from, to, this._toTickList(from, to, evList)];
     }
 
-    async putStartPoint(startPoint: StartPoint) {
+    putStartPoint(startPoint: StartPoint): Promise<void> {
+        this._startPointQueue = this._startPointQueue
+            .catch(() => {})
+            .then(() => this._doPutStartPoint(startPoint));
+        return this._startPointQueue;
+    }
+
+    private async _doPutStartPoint(startPoint: StartPoint): Promise<void> {
         const startPointKey = genKey(
             ValkeyKey.StartPoint,
             this._hashPlayId,
