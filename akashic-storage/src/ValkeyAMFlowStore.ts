@@ -40,6 +40,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
     _isDestroyed: boolean;
     _hashPlayId: string;
     _keyList: string[];
+    _tickQueue: Promise<void>;
 
     constructor(param: ValkeyAMFlowStoreParameterObject) {
         super(param.playId);
@@ -50,6 +51,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         this._isDestroyed = false;
         this._hashPlayId = `{${this.playId}}`;
         this._keyList = [];
+        this._tickQueue = Promise.resolve();
     }
 
     async authenticate(token: string) {
@@ -62,7 +64,14 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         return toPermission(permissionType as PermissionType);
     }
 
-    async sendTickPack(tickPack: TickPack) {
+    sendTickPack(tickPack: TickPack): Promise<void> {
+        this._tickQueue = this._tickQueue
+            .catch(() => {})
+            .then(() => this._doSendTickPack(tickPack));
+        return this._tickQueue;
+    }
+
+    private async _doSendTickPack(tickPack: TickPack): Promise<void> {
         await this._pushTick(tickPack);
         for (const tick of toTickList(tickPack)) {
             this.sendTick(tick);
