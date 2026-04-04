@@ -444,6 +444,9 @@ export function PlayView({
                 ref={ref}
                 sx={{
                     aspectRatio: contentWidth / contentHeight,
+                    "@media (orientation: landscape) and (max-height: 600px)": {
+                        width: `min(100%, calc(100svh * ${contentWidth / contentHeight}))`,
+                    },
                 }}
                 onMouseDown={handleMouseEvent}
                 onMouseMove={handleMouseEvent}
