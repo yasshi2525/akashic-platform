@@ -182,6 +182,10 @@ export class AkashicContainer {
                 const win = content._element?.getContentWindow();
                 if (win) {
                     win.document.body.children[0].id = "container";
+                    const style = win.document.createElement("style");
+                    style.textContent =
+                        "* { user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; touch-action: none; }";
+                    win.document.head.appendChild(style);
                     logHandler.captureUncaughtError(win);
                     logHandler.captureConsole((win as any).console);
                     win.addEventListener("error", (event) =>
