@@ -10,10 +10,8 @@ const fetcher = async (url: string) => {
                 throw new Error(
                     "内部エラーが発生しました。トップページから部屋に入り直してください。",
                 );
-            case "ClosedPlay":
-                throw new Error(
-                    "この部屋は存在しないか、すでに終了しています。",
-                );
+            case "NotFound":
+                throw new Error("この部屋は存在しません。");
             case "InvalidJoinWord": {
                 const err = new Error("入室の言葉が正しくありません。");
                 err.name = res.reason;
@@ -58,20 +56,8 @@ export function usePlay(
         isLoading,
         data: data
             ? {
-                  playToken: data.playToken,
-                  playName: data.playName,
-                  isLimited: data.isLimited,
-                  joinWord: data.joinWord,
-                  inviteHash: data.inviteHash,
-                  gameMaster: data.gameMaster,
-                  game: data.game,
+                  ...data,
                   isGameMaster: !!user && user.id === data.gameMaster.id,
-                  contentWidth: data.width,
-                  contentHeight: data.height,
-                  contentExternal: data.external,
-                  createdAt: data.createdAt,
-                  remainingMs: data.remainingMs,
-                  expiresAt: data.expiresAt,
               }
             : undefined,
         requiresJoinWork: requiresJoinWork(error),

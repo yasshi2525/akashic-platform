@@ -16,6 +16,7 @@ import {
 import { usePlay } from "@/lib/client/usePlay";
 import { useAuth } from "@/lib/client/useAuth";
 import { PlayView } from "@/components/play-view";
+import { ClosedPlayView } from "@/components/play-view-closed";
 
 export function PlayContainer() {
     const { id } = useParams<{ id: string }>();
@@ -92,7 +93,19 @@ export function PlayContainer() {
             </Container>
         );
     }
-
+    if (!data.isActive) {
+        return (
+            <ClosedPlayView
+                playName={data.playName}
+                isLimited={data.isLimited}
+                createdAt={data.createdAt}
+                endedAt={data.endedAt}
+                gameMaster={data.gameMaster}
+                game={data.game}
+                user={user ?? null}
+            />
+        );
+    }
     return (
         <PlayView
             playId={id}
@@ -102,9 +115,9 @@ export function PlayContainer() {
             joinWord={data.joinWord}
             inviteHash={data.inviteHash}
             isGameMaster={data.isGameMaster}
-            contentWidth={data.contentWidth}
-            contentHeight={data.contentHeight}
-            contentExternal={data.contentExternal}
+            contentWidth={data.width}
+            contentHeight={data.height}
+            contentExternal={data.external}
             createdAt={data.createdAt}
             remainingMs={data.remainingMs}
             expiresAt={data.expiresAt}

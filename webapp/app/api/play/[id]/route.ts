@@ -1,30 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GameConfiguration } from "@akashic/game-configuration";
 import { Play, prisma } from "@yasshi2525/persist-schema";
 import { GUEST_NAME, PlayResponse } from "@/lib/types";
 import { getAuth } from "@/lib/server/auth";
 import {
     akashicServerUrl,
-    internalContentBaseUrl,
     internalPlaylogServerUrl,
     publicContentBaseUrl,
     withAkashicServerAuth,
 } from "@/lib/server/akashic";
 import { fetchLicense } from "@/lib/server/game-info";
 import { getContentExternal } from "@/lib/server/content-get-external";
-
-async function fetchGameJson(contentId: number) {
-    return (await (
-        await fetch(`${internalContentBaseUrl}/${contentId}/game.json`)
-    ).json()) as GameConfiguration;
-}
-
-function getViewSize(gameJson: GameConfiguration) {
-    return {
-        width: gameJson.width ?? 1280,
-        height: gameJson.height ?? 720,
-    };
-}
+import { fetchGameJson, getContentViewSize } from "@/lib/server/play-utils";
 
 async function fetchPlayToken(play: Pick<Play, "id" | "contentId">) {
     const res = await fetch(
@@ -68,9 +54,11 @@ export async function GET(
                 gameMasterId: true,
                 name: true,
                 isLimited: true,
+                isActive: true,
                 joinWord: true,
                 inviteHash: true,
                 createdAt: true,
+                endedAt: true,
                 gmUser: {
                     select: {
                         id: true,
@@ -107,7 +95,44 @@ export async function GET(
         if (!play) {
             return NextResponse.json({
                 ok: false,
-                reason: "ClosedPlay",
+                reason: "NotFound",
+            });
+        }
+        if (!play.isActive) {
+            const iconURL = `${publicContentBaseUrl}/${play.contentId}/${play.content.icon}`;
+            return NextResponse.json({
+                ok: true,
+                data: {
+                    isActive: play.isActive,
+                    playName: play.name,
+                    isLimited: play.isLimited,
+                    createdAt: play.createdAt,
+                    endedAt: play.endedAt ?? undefined,
+                    gameMaster: {
+                        id: play.gameMasterId,
+                        userId: play.gmUser?.id ?? undefined,
+                        name: play.gmUser?.name ?? GUEST_NAME,
+                        iconURL: play.gmUser?.image ?? undefined,
+                    },
+                    game: {
+                        id: play.content.game.id,
+                        title: play.content.game.title,
+                        iconURL,
+                        description: play.content.game.description,
+                        credit: play.content.game.credit,
+                        streaming: play.content.game.streaming,
+                        playCount: play.content.game.playCount,
+                        publisher: {
+                            id: play.content.game.publisher.id,
+                            name: play.content.game.publisher.name!,
+                            image:
+                                play.content.game.publisher.image ?? undefined,
+                        },
+                        contentId: play.contentId,
+                        createdAt: play.content.game.createdAt,
+                        updatedAt: play.content.game.updatedAt,
+                    },
+                },
             });
         }
         if (play.isLimited) {
@@ -151,6 +176,7 @@ export async function GET(
         return NextResponse.json({
             ok: true,
             data: {
+                isActive: play.isActive,
                 playToken: await fetchPlayToken(play),
                 playName: play.name,
                 isLimited: play.isLimited,
@@ -184,7 +210,7 @@ export async function GET(
                 expiresAt,
                 remainingMs,
                 external: await getContentExternal(gameJson),
-                ...getViewSize(gameJson),
+                ...(await getContentViewSize(gameJson)),
             },
         });
     } catch (err) {

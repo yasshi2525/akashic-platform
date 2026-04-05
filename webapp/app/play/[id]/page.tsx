@@ -1,18 +1,22 @@
 import type { Metadata } from "next";
 import { cache } from "react";
 import { prisma } from "@yasshi2525/persist-schema";
-import { publicBaseUrl } from "@/lib/server/akashic";
+import { publicBaseUrl, publicContentBaseUrl } from "@/lib/server/akashic";
 import { getShareImageUrl } from "@/lib/server/play-share";
+import { fetchGameJson, getContentViewSize } from "@/lib/server/play-utils";
 import { PlayContainer } from "@/components/play-container";
 
-const getShareData = cache(async (playId: number) => {
+const getPlayInfo = cache(async (playId: number) => {
     return await prisma.play.findUnique({
         where: { id: playId },
         select: {
             id: true,
             name: true,
+            isActive: true,
+            contentId: true,
             content: {
                 select: {
+                    icon: true,
                     game: {
                         select: {
                             title: true,
@@ -24,6 +28,14 @@ const getShareData = cache(async (playId: number) => {
         },
     });
 });
+
+async function getImageSize(contentId: number, withScreenshot: boolean) {
+    if (withScreenshot) {
+        return await getContentViewSize(await fetchGameJson(contentId));
+    } else {
+        return { width: 400, height: 400 };
+    }
+}
 
 export async function generateMetadata({
     params,
@@ -38,22 +50,28 @@ export async function generateMetadata({
     }
     const playId = parseInt(id);
     const { shareId } = (await searchParams) ?? {};
-    if (!shareId) {
+    const info = await getPlayInfo(playId);
+    if (!info) {
         return {};
     }
-    const shareData = await getShareData(playId);
-    if (!shareData) {
-        return {};
+    const title = info.isActive
+        ? `${info.content.game.title}をプレイ中`
+        : `${info.content.game.title}で遊んでいたよ`;
+    const description = info.isActive
+        ? `ただいまゲームプレイ中！ ${info.name}`
+        : `みんなで一緒に遊んでいたよ！また新しい部屋を作ろう！`;
+    const imageUrl = shareId
+        ? await getShareImageUrl(playId, shareId)
+        : `${publicContentBaseUrl}/${info.contentId}/${info.content.icon}`;
+    const { width, height } = await getImageSize(info.contentId, !!shareId);
+    const canonicalQuery = new URLSearchParams();
+    if (shareId) {
+        canonicalQuery.set("shareId", shareId);
     }
-    const title = `${shareData.content.game.title}をプレイ中`;
-    const description = shareData.name
-        ? `ただいまゲームプレイ中！一緒に遊ぼう！ ${shareData.name}`
-        : "ただいまゲームプレイ中！一緒に遊ぼう！";
-    const imageUrl = await getShareImageUrl(playId, shareId);
-    const canonical = `/play/${playId}?shareId=${shareId}`;
+    const canonical = `/play/${playId}?${canonicalQuery.toString()}`;
     return {
         metadataBase: new URL(publicBaseUrl),
-        title,
+        title: `${info.name}${info.isActive ? "" : " (終了)"} - みんなでゲーム! 自作ゲーム投稿・プレイサイト`,
         description,
         alternates: {
             canonical,
@@ -66,9 +84,11 @@ export async function generateMetadata({
             images: [
                 {
                     url: imageUrl,
-                    width: 1280,
-                    height: 720,
-                    alt: `${shareData.content.game.title}のスクリーンショット`,
+                    width,
+                    height,
+                    alt: shareId
+                        ? `${info.content.game.title}のスクリーンショット`
+                        : `${info.content.game.title}`,
                 },
             ],
         },

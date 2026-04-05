@@ -35,8 +35,8 @@ export function CreditPanel({
                 endIcon={open ? <ExpandLess /> : <ExpandMore />}
                 sx={{
                     alignSelf: "flex-start",
-                    borderColor: theme.palette.primary.light,
-                    color: theme.palette.primary.light,
+                    borderColor: theme.palette.text.secondary,
+                    color: theme.palette.text.secondary,
                 }}
             >
                 {open ? "クレジットを閉じる" : "クレジットを表示"}

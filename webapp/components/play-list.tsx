@@ -107,16 +107,21 @@ function PlayGrid({ list }: { list: PlayInfo[] }) {
                                     arrow
                                     title="この部屋に入室するには「入室の言葉」が必要です。"
                                 >
-                                    <Stack spacing={0.5} direction="row">
-                                        <Lock fontSize="small" />
+                                    <Stack
+                                        spacing={1}
+                                        direction="row"
+                                        alignItems="center"
+                                    >
+                                        <Lock
+                                            fontSize="small"
+                                            sx={{
+                                                color: theme.palette.text
+                                                    .secondary,
+                                            }}
+                                        />
                                         <Typography
                                             variant="body2"
                                             color={theme.palette.text.secondary}
-                                            sx={{
-                                                px: 1,
-                                                py: 0.5,
-                                                borderRadius: 1,
-                                            }}
                                         >
                                             限定
                                         </Typography>
