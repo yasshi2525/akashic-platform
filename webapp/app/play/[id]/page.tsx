@@ -58,7 +58,7 @@ export async function generateMetadata({
         ? `${info.content.game.title}をプレイ中`
         : `${info.content.game.title}で遊んでいたよ`;
     const description = info.isActive
-        ? `ただいまゲームプレイ中！一緒に遊ぼう！ ${info.name}`
+        ? `ただいまゲームプレイ中！ ${info.name}`
         : `みんなで一緒に遊んでいたよ！また新しい部屋を作ろう！`;
     const imageUrl = shareId
         ? await getShareImageUrl(playId, shareId)
@@ -86,7 +86,9 @@ export async function generateMetadata({
                     url: imageUrl,
                     width,
                     height,
-                    alt: `$${info.content.game.title}のスクリーンショット`,
+                    alt: shareId
+                        ? `${info.content.game.title}のスクリーンショット`
+                        : `${info.content.game.title}`,
                 },
             ],
         },
