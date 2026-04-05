@@ -171,7 +171,12 @@ export function ClientLogDialog({
                 </Box>
             </DialogContent>
             <DialogActions>
-                <Button onClick={handleClose} disabled={loading}>
+                <Button
+                    variant="outlined"
+                    color="inherit"
+                    onClick={handleClose}
+                    disabled={loading}
+                >
                     キャンセル
                 </Button>
                 <Button
