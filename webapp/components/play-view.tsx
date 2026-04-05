@@ -604,10 +604,18 @@ export function PlayView({
                                                 >
                                                     <Stack
                                                         direction="row"
-                                                        spacing={0.5}
+                                                        spacing={1}
                                                         alignItems="center"
                                                     >
-                                                        <Lock fontSize="small" />
+                                                        <Lock
+                                                            fontSize="small"
+                                                            sx={{
+                                                                color: theme
+                                                                    .palette
+                                                                    .text
+                                                                    .secondary,
+                                                            }}
+                                                        />
                                                         <Typography
                                                             variant="body2"
                                                             color={
@@ -615,11 +623,6 @@ export function PlayView({
                                                                     .text
                                                                     .secondary
                                                             }
-                                                            sx={{
-                                                                px: 1,
-                                                                py: 0.5,
-                                                                borderRadius: 1,
-                                                            }}
                                                         >
                                                             限定
                                                         </Typography>
