@@ -447,6 +447,10 @@ export function PlayView({
                     "@media (orientation: landscape) and (max-height: 600px)": {
                         width: `min(100%, calc(100svh * ${contentWidth / contentHeight}))`,
                     },
+                    userSelect: "none",
+                    WebkitUserSelect: "none",
+                    WebkitTapHighlightColor: "transparent",
+                    touchAction: "none",
                 }}
                 onMouseDown={handleMouseEvent}
                 onMouseMove={handleMouseEvent}
