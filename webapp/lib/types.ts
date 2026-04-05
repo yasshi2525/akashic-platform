@@ -250,36 +250,47 @@ export type GameResponse =
 
 const playErrReasons = [
     "InvalidParams",
-    "ClosedPlay",
+    "NotFound",
     "JoinWordRequired",
     "InvalidJoinWord",
     "InternalError",
 ] as const;
 export type PlayErrorType = (typeof playErrReasons)[number];
+
+type PlayViewInfo =
+    | ({ isActive: true } & ActivePlayViewInfo)
+    | ({ isActive: false } & ClosedPlayViewInfo);
+
+interface BasePlayViewInfo {
+    playName: string;
+    isLimited: boolean;
+    game: GameInfo;
+    gameMaster: {
+        id: string;
+        userId?: string;
+        name: string;
+        iconURL?: string;
+    };
+    createdAt: Date;
+}
+
+export interface ActivePlayViewInfo extends BasePlayViewInfo {
+    playToken: string;
+    joinWord?: string;
+    inviteHash?: string;
+    width: number;
+    height: number;
+    external: string[];
+    remainingMs: number;
+    expiresAt: number;
+}
+
+export interface ClosedPlayViewInfo extends BasePlayViewInfo {
+    endedAt?: Date;
+}
+
 export type PlayResponse =
-    | {
-          ok: true;
-          data: {
-              playToken: string;
-              playName: string;
-              isLimited: boolean;
-              joinWord?: string;
-              inviteHash?: string;
-              game: GameInfo;
-              gameMaster: {
-                  id: string;
-                  userId?: string;
-                  name: string;
-                  iconURL?: string;
-              };
-              width: number;
-              height: number;
-              external: string[];
-              createdAt: Date;
-              remainingMs: number;
-              expiresAt: number;
-          };
-      }
+    | { ok: true; data: PlayViewInfo }
     | { ok: false; reason: PlayErrorType };
 
 const feedbackErrReasons = [
