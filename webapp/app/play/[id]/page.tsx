@@ -64,7 +64,11 @@ export async function generateMetadata({
         ? await getShareImageUrl(playId, shareId)
         : `${publicContentBaseUrl}/${info.contentId}/${info.content.icon}`;
     const { width, height } = await getImageSize(info.contentId, !!shareId);
-    const canonical = `/play/${playId}?shareId=${shareId}`;
+    const canonicalQuery = new URLSearchParams();
+    if (shareId) {
+        canonicalQuery.set("shareId", shareId);
+    }
+    const canonical = `/play/${playId}?${canonicalQuery.toString()}`;
     return {
         metadataBase: new URL(publicBaseUrl),
         title: `${info.name}${info.isActive ? "" : " (終了)"} - みんなでゲーム! 自作ゲーム投稿・プレイサイト`,
