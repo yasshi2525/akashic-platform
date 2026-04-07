@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.0.3
+
+- Bug Fix
+  - `SessionManager` のエラーハンドラに引き渡す関数の指定誤りを修正
+
 ## 1.0.2
 
 - Bug Fix

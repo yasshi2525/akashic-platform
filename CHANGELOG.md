@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.4.10
+
+- Fix
+  - `agvw-like`
+    - `SessionManager` のエラーハンドラに引き渡す関数の指定誤りを修正
+
 ## 1.4.9
 
 - Improve

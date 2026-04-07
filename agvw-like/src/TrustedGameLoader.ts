@@ -62,7 +62,7 @@ export class TrustedGameLoader extends TrustedGameLoaderBase {
                 } else {
                     this._shared.sessionManager.addErrorHandler(
                         info.playlogServerUrl,
-                        this._onSessionManagerError,
+                        this._onSessionManagerError_bound,
                     );
                     session!.createClient(
                         {
