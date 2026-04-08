@@ -74,11 +74,21 @@ export function GameForm({
     const [streaming, setStreaming] = useState(initialStreaming ?? true);
     const [license, setLicense] = useState<string>();
     const [sending, setIsSending] = useOptimistic(false, () => true);
-    const [titleError, setTitleError] = useState<string>();
-    const [gameFileError, setGameFileError] = useState<string>();
-    const [iconFileError, setIconFileError] = useState<string>();
-    const [descriptionError, setDescriptionError] = useState<string>();
-    const [serverError, setServerError] = useState<string>();
+    const [titleError, setTitleError] = useState<string | undefined>(
+        "hogeTitle",
+    );
+    const [gameFileError, setGameFileError] = useState<string | undefined>(
+        "hogeGameFile",
+    );
+    const [iconFileError, setIconFileError] = useState<string | undefined>(
+        "hogeIconFile",
+    );
+    const [descriptionError, setDescriptionError] = useState<
+        string | undefined
+    >("hogeDescription");
+    const [serverError, setServerError] = useState<string | undefined>(
+        "hogeServerError",
+    );
     const [unsupportedExternals, setUnsupportedExternals] =
         useState<string[]>();
 
@@ -296,21 +306,21 @@ export function GameForm({
                                         *
                                     </Typography>
                                 </Typography>
+                                {titleError && (
+                                    <Alert
+                                        variant="outlined"
+                                        severity="error"
+                                        sx={{ mb: 1 }}
+                                    >
+                                        {titleError}
+                                    </Alert>
+                                )}
                                 <TextField
                                     fullWidth
                                     placeholder="例: みんなと遊ぶゲーム"
                                     value={title}
                                     onChange={handleInputTitle}
                                 />
-                                {titleError ? (
-                                    <Alert
-                                        variant="outlined"
-                                        severity="error"
-                                        sx={{ mt: 1 }}
-                                    >
-                                        {titleError}
-                                    </Alert>
-                                ) : null}
                             </Box>
                             <Box>
                                 <Typography variant="h6" gutterBottom>
@@ -319,6 +329,15 @@ export function GameForm({
                                         *
                                     </Typography>
                                 </Typography>
+                                {gameFileError && (
+                                    <Alert
+                                        variant="outlined"
+                                        severity="error"
+                                        sx={{ mb: 1 }}
+                                    >
+                                        {gameFileError}
+                                    </Alert>
+                                )}
                                 <Box
                                     component="label"
                                     sx={{
@@ -356,20 +375,11 @@ export function GameForm({
                                             : "クリックしてZIPファイルを選択 または ファイルをドロップ"}
                                     </Typography>
                                 </Box>
-                                {gameFileError ? (
-                                    <Alert
-                                        variant="outlined"
-                                        severity="error"
-                                        sx={{ mt: 1 }}
-                                    >
-                                        {gameFileError}
-                                    </Alert>
-                                ) : null}
-                                {unsupportedExternals ? (
+                                {unsupportedExternals && (
                                     <Alert
                                         variant="outlined"
                                         severity="warning"
-                                        sx={{ mt: 1 }}
+                                        sx={{ mb: 1 }}
                                     >
                                         <Typography variant="body2">
                                             以下のプラグインは動作しないのでご注意ください
@@ -401,7 +411,7 @@ export function GameForm({
                                             )}
                                         </List>
                                     </Alert>
-                                ) : null}
+                                )}
                             </Box>
                             <Box>
                                 <Typography variant="h6" gutterBottom>
@@ -410,6 +420,15 @@ export function GameForm({
                                         *
                                     </Typography>
                                 </Typography>
+                                {iconFileError && (
+                                    <Alert
+                                        variant="outlined"
+                                        severity="error"
+                                        sx={{ mb: 1 }}
+                                    >
+                                        {iconFileError}
+                                    </Alert>
+                                )}
                                 <Stack
                                     direction="row"
                                     spacing={2}
@@ -476,15 +495,6 @@ export function GameForm({
                                                     : "クリックして画像を選択 または ファイルをドロップ"}
                                             </Typography>
                                         </Box>
-                                        {iconFileError ? (
-                                            <Alert
-                                                variant="outlined"
-                                                severity="error"
-                                                sx={{ mt: 1 }}
-                                            >
-                                                {iconFileError}
-                                            </Alert>
-                                        ) : null}
                                     </Box>
                                 </Stack>
                             </Box>
@@ -495,6 +505,15 @@ export function GameForm({
                                         *
                                     </Typography>
                                 </Typography>
+                                {descriptionError && (
+                                    <Alert
+                                        variant="outlined"
+                                        severity="error"
+                                        sx={{ mb: 1 }}
+                                    >
+                                        {descriptionError}
+                                    </Alert>
+                                )}
                                 <TextField
                                     fullWidth
                                     multiline
@@ -503,15 +522,6 @@ export function GameForm({
                                     value={description}
                                     onChange={handleInputDescription}
                                 />
-                                {descriptionError ? (
-                                    <Alert
-                                        variant="outlined"
-                                        severity="error"
-                                        sx={{ mt: 1 }}
-                                    >
-                                        {descriptionError}
-                                    </Alert>
-                                ) : null}
                             </Box>
                             <Box>
                                 <Typography variant="h6" gutterBottom>
@@ -526,7 +536,7 @@ export function GameForm({
                                     onChange={handleInputCredit}
                                 />
                             </Box>
-                            {license ? (
+                            {license && (
                                 <Box>
                                     <Typography variant="h6" gutterBottom>
                                         ライブラリライセンス
@@ -554,7 +564,7 @@ export function GameForm({
                                         }}
                                     />
                                 </Box>
-                            ) : null}
+                            )}
                             <Box>
                                 <Typography variant="h6" gutterBottom>
                                     実況可否
@@ -577,17 +587,22 @@ export function GameForm({
                                         }
                                         label="このゲームの実況動画・配信を許可する"
                                     />
-                                    {!streaming ? (
+                                    {!streaming && (
                                         <Typography
                                             variant="body2"
                                             color="error"
                                         >
                                             プレイされるとき、実況不可として表示します。
                                         </Typography>
-                                    ) : null}
+                                    )}
                                 </Stack>
                             </Box>
                             <GameTermsAndConditions />
+                            {serverError && (
+                                <Alert variant="outlined" severity="error">
+                                    {serverError}
+                                </Alert>
+                            )}
                             <Box>
                                 <Button
                                     type="submit"
@@ -609,7 +624,7 @@ export function GameForm({
                                     ゲームを{gameId == null ? "投稿" : "更新"}
                                 </Button>
                             </Box>
-                            {gameId != null ? (
+                            {gameId != null && (
                                 <Box
                                     sx={{
                                         display: "flex",
@@ -621,16 +636,7 @@ export function GameForm({
                                         publisherId={user.id}
                                     />
                                 </Box>
-                            ) : null}
-                            {serverError ? (
-                                <Alert
-                                    variant="outlined"
-                                    severity="error"
-                                    sx={{ mt: 1 }}
-                                >
-                                    {serverError}
-                                </Alert>
-                            ) : null}
+                            )}
                         </Stack>
                     </Box>
                 </CardContent>

@@ -34,7 +34,7 @@ function PlayErrorDetails({
     const [expanded, setExpanded] = useState(false);
     const [loading, setLoading] = useState(false);
     const [entries, setEntries] = useState<ContentLogEntry[] | null>(null);
-    const [fetchError, setFetchError] = useState<string>();
+    const [fetchError, setFetchError] = useState<string>("error");
 
     async function handleToggle() {
         if (!expanded && entries === null && !loading) {
@@ -189,7 +189,7 @@ function ClientLogDetails({
                                 alignItems="center"
                                 sx={{ mb: 0.5 }}
                             >
-                                {submission.reporter?.image ? (
+                                {submission.reporter?.image && (
                                     <Avatar
                                         src={submission.reporter.image}
                                         sx={{
@@ -198,7 +198,7 @@ function ClientLogDetails({
                                             fontSize: "0.7rem",
                                         }}
                                     />
-                                ) : null}
+                                )}
                                 <Typography
                                     variant="caption"
                                     color={theme.palette.text.secondary}

@@ -104,16 +104,16 @@ function UserNameForm({
                     onChange={(event) => setName(event.target.value)}
                     fullWidth
                 />
-                {!state.ok && state.submitted ? (
+                {(true || (!state.ok && state.submitted)) && (
                     <Alert severity="error" variant="outlined">
                         {state.message}
                     </Alert>
-                ) : null}
-                {state.ok && state.submitted ? (
+                )}
+                {state.ok && state.submitted && (
                     <Alert severity="success" variant="outlined">
                         ユーザー名を更新しました。
                     </Alert>
-                ) : null}
+                )}
                 <UserNameSubmitButton />
             </Stack>
         </form>
@@ -246,13 +246,13 @@ export default function UserPage() {
                                 <Typography variant="h4" component="h1">
                                     {profile.name}
                                 </Typography>
-                                {isOwner ? (
+                                {isOwner && (
                                     <UserAuthProvider
                                         provider={profile.provider}
                                     />
-                                ) : null}
+                                )}
                             </Stack>
-                            {isOwner ? (
+                            {isOwner && (
                                 <>
                                     <Divider />
                                     <Stack spacing={2}>
@@ -282,7 +282,7 @@ export default function UserPage() {
                                         </Box>
                                     </Stack>
                                 </>
-                            ) : null}
+                            )}
                         </Stack>
                     </CardContent>
                 </Card>
@@ -316,7 +316,7 @@ export default function UserPage() {
                             >
                                 部屋を作る
                             </Button>
-                            {isOwner ? (
+                            {isOwner && (
                                 <Button
                                     variant="contained"
                                     component={Link}
@@ -324,12 +324,12 @@ export default function UserPage() {
                                 >
                                     編集
                                 </Button>
-                            ) : null}
+                            )}
                         </Stack>
                     )}
                 />
 
-                {isOwner ? <OwnerFeedbackSection userId={profile.id} /> : null}
+                {isOwner && <OwnerFeedbackSection userId={profile.id} />}
             </Stack>
             <PlayCreateDialog
                 open={dialogOpen}

@@ -108,14 +108,14 @@ export function NotificationBell() {
                     <Box sx={{ px: 2, py: 2 }}>
                         <Typography variant="body2">読み込み中...</Typography>
                     </Box>
-                ) : error ? (
+                ) : error || true ? (
                     <Box sx={{ px: 2, py: 2 }}>
                         <Alert severity="error" variant="outlined">
-                            {error}
+                            {error} エラー
                         </Alert>
                     </Box>
-                ) : list && list.length ? (
-                    list.map((notice) => (
+                ) : list && list?.length ? (
+                    list?.map((notice) => (
                         <MenuItem
                             key={notice.id}
                             onClick={() =>
@@ -154,7 +154,7 @@ export function NotificationBell() {
                                         { addSuffix: true, locale: ja },
                                     )}
                                 </Typography>
-                                {notice.link ? (
+                                {notice.link && (
                                     <Typography
                                         variant="caption"
                                         color="primary"
@@ -166,7 +166,7 @@ export function NotificationBell() {
                                     >
                                         詳細を見る
                                     </Typography>
-                                ) : null}
+                                )}
                             </Stack>
                         </MenuItem>
                     ))

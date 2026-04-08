@@ -39,7 +39,7 @@ export function ClientLogDialog({
 }: ClientLogDialogProps) {
     const theme = useTheme();
     const [loading, setLoading] = useState(false);
-    const [submitError, setSubmitError] = useState<string>();
+    const [submitError, setSubmitError] = useState<string | undefined>("error");
     const [comment, setComment] = useState("");
 
     async function handleSubmit() {
@@ -184,9 +184,9 @@ export function ClientLogDialog({
                     onClick={handleSubmit}
                     disabled={loading}
                     startIcon={
-                        loading ? (
+                        loading && (
                             <CircularProgress size={16} color="inherit" />
-                        ) : undefined
+                        )
                     }
                     sx={{
                         backgroundColor: theme.palette.primary.main,
