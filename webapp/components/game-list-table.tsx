@@ -100,7 +100,7 @@ function GameTableCells({
                         width: "max-content",
                     }}
                 >
-                    {game.playCount} 回
+                    {game.playCount.toLocaleString()} 回
                 </Typography>
             </TableCell>
             <TableCell
@@ -224,7 +224,8 @@ export function GameListTable({
                                                     .secondary,
                                             }}
                                         >
-                                            プレイ数: {game.playCount} 回
+                                            プレイ数:{" "}
+                                            {game.playCount.toLocaleString()} 回
                                         </Typography>
                                     </Stack>
                                     {renderActions ? (

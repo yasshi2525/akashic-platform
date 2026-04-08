@@ -136,7 +136,7 @@ function GameTableCells({
                     variant="body2"
                     sx={{ color: theme.palette.text.secondary }}
                 >
-                    {game.playCount} 回
+                    {game.playCount.toLocaleString()} 回
                 </Typography>
             </TableCell>
             <TableCell width={100}>
@@ -288,7 +288,8 @@ export function GameList({
                                                     .secondary,
                                             }}
                                         >
-                                            プレイ数: {game.playCount} 回
+                                            プレイ数:{" "}
+                                            {game.playCount.toLocaleString()} 回
                                         </Typography>
                                     </Stack>
                                 </Stack>

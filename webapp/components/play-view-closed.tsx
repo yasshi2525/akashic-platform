@@ -265,7 +265,8 @@ export function ClosedPlayView({
                                             variant="body2"
                                             color={theme.palette.text.secondary}
                                         >
-                                            プレイ数: {game.playCount} 回
+                                            プレイ数:{" "}
+                                            {game.playCount.toLocaleString()} 回
                                         </Typography>
                                         <UserInline
                                             user={{
