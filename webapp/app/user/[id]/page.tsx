@@ -104,7 +104,7 @@ function UserNameForm({
                     onChange={(event) => setName(event.target.value)}
                     fullWidth
                 />
-                {(true || (!state.ok && state.submitted)) && (
+                {!state.ok && state.submitted && (
                     <Alert severity="error" variant="outlined">
                         {state.message}
                     </Alert>

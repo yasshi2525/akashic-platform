@@ -33,7 +33,7 @@ export function PlayForm() {
     const [isLimited, setIsLimited] = useState(false);
     const [joinWord, setJoinWord] = useState("");
     const [sending, setIsSending] = useOptimistic(false, () => true);
-    const [error, setError] = useState<string>("hoge");
+    const [error, setError] = useState<string>();
 
     function handleSearch(event: ChangeEvent<HTMLInputElement>) {
         setKeyword(event.target.value);

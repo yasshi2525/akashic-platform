@@ -22,13 +22,13 @@ export function UserInline({
 }) {
     const content = (
         <Stack direction="row" spacing={1} alignItems="center">
-            {user.image ? (
+            {user.image && (
                 <Avatar
                     src={user.image}
                     alt={user.name}
                     sx={{ width: avatarSize, height: avatarSize }}
                 />
-            ) : null}
+            )}
             <Typography variant={textVariant}>{user.name}</Typography>
         </Stack>
     );

@@ -43,7 +43,7 @@ export function SiteCustomFooter() {
             <Typography variant="body2" component="span">
                 Sponsored by
             </Typography>
-            {customFooterImagePath ? (
+            {customFooterImagePath && (
                 <LinkIf href={customFooterHref}>
                     <Box
                         component="img"
@@ -56,9 +56,9 @@ export function SiteCustomFooter() {
                         }}
                     />
                 </LinkIf>
-            ) : null}
-            {customFooterLabel ? (
-                customFooterHref ? (
+            )}
+            {customFooterLabel &&
+                (customFooterHref ? (
                     <Link
                         href={customFooterHref}
                         target="_blank"
@@ -71,8 +71,7 @@ export function SiteCustomFooter() {
                     <Typography variant="body1" component="span">
                         {customFooterLabel}
                     </Typography>
-                )
-            ) : null}
+                ))}
         </Stack>
     );
 }

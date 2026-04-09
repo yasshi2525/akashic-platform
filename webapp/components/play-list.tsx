@@ -102,7 +102,7 @@ function PlayGrid({ list }: { list: PlayInfo[] }) {
                             <Typography variant="h6" component="h2">
                                 {info.playName}
                             </Typography>
-                            {info.isLimited ? (
+                            {info.isLimited && (
                                 <Tooltip
                                     arrow
                                     title="この部屋に入室するには「入室の言葉」が必要です。"
@@ -127,7 +127,7 @@ function PlayGrid({ list }: { list: PlayInfo[] }) {
                                         </Typography>
                                     </Stack>
                                 </Tooltip>
-                            ) : null}
+                            )}
                             <Typography
                                 variant="body2"
                                 color={theme.palette.text.secondary}
@@ -357,7 +357,7 @@ export function PlayList({
                     </Alert>
                 </Stack>
                 <PlayGrid list={list.flat()} />
-                {!isEnd ? <LoadMore handleClickMore={handleClickMore} /> : null}
+                {!isEnd && <LoadMore handleClickMore={handleClickMore} />}
             </Container>
         );
     }
@@ -438,9 +438,7 @@ export function PlayList({
             ) : (
                 <>
                     <PlayGrid list={list.flat()} />
-                    {!isEnd ? (
-                        <LoadMore handleClickMore={handleClickMore} />
-                    ) : null}
+                    {!isEnd && <LoadMore handleClickMore={handleClickMore} />}
                 </>
             )}
         </Container>

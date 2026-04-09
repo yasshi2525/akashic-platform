@@ -74,21 +74,11 @@ export function GameForm({
     const [streaming, setStreaming] = useState(initialStreaming ?? true);
     const [license, setLicense] = useState<string>();
     const [sending, setIsSending] = useOptimistic(false, () => true);
-    const [titleError, setTitleError] = useState<string | undefined>(
-        "hogeTitle",
-    );
-    const [gameFileError, setGameFileError] = useState<string | undefined>(
-        "hogeGameFile",
-    );
-    const [iconFileError, setIconFileError] = useState<string | undefined>(
-        "hogeIconFile",
-    );
-    const [descriptionError, setDescriptionError] = useState<
-        string | undefined
-    >("hogeDescription");
-    const [serverError, setServerError] = useState<string | undefined>(
-        "hogeServerError",
-    );
+    const [titleError, setTitleError] = useState<string>();
+    const [gameFileError, setGameFileError] = useState<string>();
+    const [iconFileError, setIconFileError] = useState<string>();
+    const [descriptionError, setDescriptionError] = useState<string>();
+    const [serverError, setServerError] = useState<string>();
     const [unsupportedExternals, setUnsupportedExternals] =
         useState<string[]>();
 

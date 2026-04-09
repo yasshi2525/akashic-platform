@@ -108,14 +108,14 @@ export function NotificationBell() {
                     <Box sx={{ px: 2, py: 2 }}>
                         <Typography variant="body2">読み込み中...</Typography>
                     </Box>
-                ) : error || true ? (
+                ) : error ? (
                     <Box sx={{ px: 2, py: 2 }}>
                         <Alert severity="error" variant="outlined">
-                            {error} エラー
+                            {error}
                         </Alert>
                     </Box>
-                ) : list && list?.length ? (
-                    list?.map((notice) => (
+                ) : list && list.length ? (
+                    list.map((notice) => (
                         <MenuItem
                             key={notice.id}
                             onClick={() =>

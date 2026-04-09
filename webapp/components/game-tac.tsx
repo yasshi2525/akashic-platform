@@ -150,7 +150,7 @@ export function GameTermsAndConditions() {
                     label="投稿規約に同意する"
                     sx={{ mt: 2, alignSelf: "center" }}
                 />
-                {!agreed ? (
+                {!agreed && (
                     <Box maxWidth="md" alignSelf="center" textAlign="center">
                         <Typography color="error" variant="body2" gutterBottom>
                             投稿規約に同意してください。
@@ -159,7 +159,7 @@ export function GameTermsAndConditions() {
                             ニコニコ関連サービスでのみ利用可能な素材を使用していないか確認してください
                         </Alert>
                     </Box>
-                ) : null}
+                )}
             </Stack>
         </Container>
     );

@@ -17,7 +17,7 @@ import { endPlay } from "@/lib/server/play-end";
 export function PlayCloseDialog({ playId }: { playId: string }) {
     const [open, setOpen] = useState(false);
     const [sending, setIsSending] = useOptimistic(false, () => true);
-    const [error, setError] = useState<string>("hoge");
+    const [error, setError] = useState<string>();
 
     async function handleSubmit() {
         startTransition(() => {

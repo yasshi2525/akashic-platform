@@ -39,7 +39,7 @@ export function ClientLogDialog({
 }: ClientLogDialogProps) {
     const theme = useTheme();
     const [loading, setLoading] = useState(false);
-    const [submitError, setSubmitError] = useState<string | undefined>("error");
+    const [submitError, setSubmitError] = useState<string>();
     const [comment, setComment] = useState("");
 
     async function handleSubmit() {

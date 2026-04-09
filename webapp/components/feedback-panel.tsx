@@ -65,7 +65,7 @@ function PostForm({
                     <Stack spacing={2}>
                         <Typography variant="h6">フィードバックする</Typography>
                         <input type="hidden" name="gameId" value={gameId} />
-                        {user?.authType !== "oauth" ? (
+                        {user?.authType !== "oauth" && (
                             <TextField
                                 label="名前"
                                 name="authorName"
@@ -75,7 +75,7 @@ function PostForm({
                                 }
                                 fullWidth
                             />
-                        ) : null}
+                        )}
                         <TextField
                             label="フィードバック"
                             name="body"
@@ -85,11 +85,11 @@ function PostForm({
                             multiline
                             minRows={3}
                         />
-                        {!state.ok && state.submitted ? (
+                        {!state.ok && state.submitted && (
                             <Alert severity="error" variant="outlined">
                                 {state.message}
                             </Alert>
-                        ) : null}
+                        )}
                         <SubmitButton label="送信する" />
                     </Stack>
                 </form>
@@ -114,9 +114,9 @@ export function FeedbackPanel({
     const theme = useTheme();
     return (
         <>
-            {!isPublisher ? (
+            {!isPublisher && (
                 <PostForm gameId={gameId} user={user} onRefresh={onRefresh} />
-            ) : null}
+            )}
             {feedbackList.length ? (
                 <Stack spacing={2}>
                     {feedbackList.map((post) => (
@@ -256,15 +256,17 @@ export function FeedbackPanel({
                                                 </Typography>
                                             </Stack>
                                         </>
-                                    ) : isPublisher ? (
-                                        <>
-                                            <Divider />
-                                            <FeedbackReplyForm
-                                                postId={post.id}
-                                                onRefresh={onRefresh}
-                                            />
-                                        </>
-                                    ) : null}
+                                    ) : (
+                                        isPublisher && (
+                                            <>
+                                                <Divider />
+                                                <FeedbackReplyForm
+                                                    postId={post.id}
+                                                    onRefresh={onRefresh}
+                                                />
+                                            </>
+                                        )
+                                    )}
                                 </Stack>
                             </CardContent>
                         </Card>

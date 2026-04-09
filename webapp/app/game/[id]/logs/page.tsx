@@ -34,7 +34,7 @@ function PlayErrorDetails({
     const [expanded, setExpanded] = useState(false);
     const [loading, setLoading] = useState(false);
     const [entries, setEntries] = useState<ContentLogEntry[] | null>(null);
-    const [fetchError, setFetchError] = useState<string>("error");
+    const [fetchError, setFetchError] = useState<string>();
 
     async function handleToggle() {
         if (!expanded && entries === null && !loading) {
@@ -83,7 +83,11 @@ function PlayErrorDetails({
                 <Box sx={{ mt: 1 }}>
                     {loading && <CircularProgress size={20} />}
                     {fetchError && (
-                        <Alert severity="error" sx={{ mb: 1 }}>
+                        <Alert
+                            severity="error"
+                            variant="outlined"
+                            sx={{ mb: 1 }}
+                        >
                             {fetchError}
                         </Alert>
                     )}

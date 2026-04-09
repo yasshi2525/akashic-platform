@@ -56,11 +56,11 @@ export function FeedbackReplyForm({
                     multiline
                     minRows={2}
                 />
-                {!state.ok && state.submitted ? (
+                {!state.ok && state.submitted && (
                     <Alert severity="error" variant="outlined">
                         {state.message}
                     </Alert>
-                ) : null}
+                )}
                 <SubmitButton label="返信する" />
             </Stack>
         </form>

@@ -120,7 +120,7 @@ export function PlayView({
     }, [clientLogCacheMaxEntries]);
     const [skipping, setSkipping] = useState(false);
     const [warning, setWarning] = useState<WarningType>();
-    const [error, setError] = useState<string>("hoge");
+    const [error, setError] = useState<string>();
     const [playEndReason, setPlayEndReason] = useState<PlayEndReason>();
     const [requestPlayerInfo, setRequestPlayerInfo] =
         useState<ResolvingPlayerInfoRequest>();
@@ -130,7 +130,7 @@ export function PlayView({
     const [remainingMs, setRemainingMs] = useState<number | undefined>(
         initialRemainingMs,
     );
-    const [extendError, setExtendError] = useState<string | undefined>("hoge");
+    const [extendError, setExtendError] = useState<string>();
     const [extendLoading, setExtendLoading] = useState(false);
     const [inviteUrl, setInviteUrl] = useState<string>();
     const [inviteCopyStatus, setInviteCopyStatus] = useState<
@@ -769,12 +769,12 @@ export function PlayView({
                                             <Button
                                                 variant="contained"
                                                 onClick={handleExtend}
-                                                // disabled={
-                                                //     remainingMs == null ||
-                                                //     remainingMs >
-                                                //         EXTEND_WINDOW_MS ||
-                                                //     extendLoading
-                                                // }
+                                                disabled={
+                                                    remainingMs == null ||
+                                                    remainingMs >
+                                                        EXTEND_WINDOW_MS ||
+                                                    extendLoading
+                                                }
                                             >
                                                 30分延長する
                                             </Button>
