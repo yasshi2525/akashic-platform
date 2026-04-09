@@ -439,6 +439,13 @@ export function PlayView({
 
     return (
         <>
+            {error && (
+                <Container maxWidth="md" sx={{ mt: 2 }}>
+                    <Alert variant="filled" severity="error">
+                        {error}
+                    </Alert>
+                </Container>
+            )}
             <Container
                 component="div"
                 ref={ref}
@@ -481,20 +488,11 @@ export function PlayView({
                     });
                 }}
             />
-            {requestPlayerInfo ? (
+            {requestPlayerInfo && (
                 <PlayPlayerInfoResolver request={requestPlayerInfo} />
-            ) : null}
-            {playEndReason ? (
-                <PlayEndNotification reason={playEndReason} />
-            ) : null}
-            {error ? (
-                <Container maxWidth="md" sx={{ mt: 2 }}>
-                    <Alert variant="filled" severity="error">
-                        {error}
-                    </Alert>
-                </Container>
-            ) : null}
-            {warning ? (
+            )}
+            {playEndReason && <PlayEndNotification reason={playEndReason} />}
+            {warning && (
                 <Snackbar
                     open={!!warning}
                     anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
@@ -511,8 +509,8 @@ export function PlayView({
                 >
                     <Alert severity="warning">{toMessage(warning)}</Alert>
                 </Snackbar>
-            ) : null}
-            {inviteCopyStatus ? (
+            )}
+            {inviteCopyStatus && (
                 <Snackbar
                     open={!!inviteCopyStatus}
                     anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
@@ -529,8 +527,8 @@ export function PlayView({
                             : "クリップボードへのコピーに失敗しました。"}
                     </Alert>
                 </Snackbar>
-            ) : null}
-            {screenshotStatus ? (
+            )}
+            {screenshotStatus && (
                 <Snackbar
                     open={!!screenshotStatus}
                     anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
@@ -555,8 +553,8 @@ export function PlayView({
                                 : "スクリーンショットの保存に失敗しました。"}
                     </Alert>
                 </Snackbar>
-            ) : null}
-            {xShareStatus ? (
+            )}
+            {xShareStatus && (
                 <Snackbar
                     open={!!xShareStatus}
                     anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
@@ -573,7 +571,7 @@ export function PlayView({
                             : "Xへの投稿に失敗しました。"}
                     </Alert>
                 </Snackbar>
-            ) : null}
+            )}
             <Container maxWidth="md" sx={{ mt: 2 }}>
                 <Stack spacing={2}>
                     <Card>
@@ -597,7 +595,7 @@ export function PlayView({
                                             <Typography variant="h6">
                                                 {playName}
                                             </Typography>
-                                            {isLimited ? (
+                                            {isLimited && (
                                                 <Tooltip
                                                     arrow
                                                     title="この部屋は招待リンクまたは入室の言葉を知っている人だけが参加できます。"
@@ -628,7 +626,7 @@ export function PlayView({
                                                         </Typography>
                                                     </Stack>
                                                 </Tooltip>
-                                            ) : null}
+                                            )}
                                         </Stack>
                                         <Stack
                                             direction="row"
@@ -739,6 +737,14 @@ export function PlayView({
                                                 }}
                                             />
                                         </Stack>
+                                        {extendError && (
+                                            <Alert
+                                                severity="warning"
+                                                variant="outlined"
+                                            >
+                                                {extendError}
+                                            </Alert>
+                                        )}
                                         <Stack
                                             alignItems="center"
                                             direction="row"
@@ -775,11 +781,6 @@ export function PlayView({
                                         </Stack>
                                     </Stack>
                                 </Stack>
-                                {extendError ? (
-                                    <Alert severity="warning">
-                                        {extendError}
-                                    </Alert>
-                                ) : null}
                                 <Stack spacing={1}>
                                     <Typography variant="body1">
                                         招待リンク
@@ -833,7 +834,7 @@ export function PlayView({
                                             ? "このリンクを知っている人は誰でも無条件で入室できます。共有先にご注意ください。"
                                             : "この部屋に招待したい人に上のリンクを共有してください。"}
                                     </Typography>
-                                    {isLimited ? (
+                                    {isLimited && (
                                         <Stack
                                             direction="row"
                                             spacing={1}
@@ -874,13 +875,13 @@ export function PlayView({
                                                 {joinWord}
                                             </Typography>
                                         </Stack>
-                                    ) : null}
+                                    )}
                                 </Stack>
-                                {isGameMaster ? (
+                                {isGameMaster && (
                                     <Stack sx={{ justifyContent: "center" }}>
                                         <PlayCloseDialog playId={playId} />
                                     </Stack>
-                                ) : null}
+                                )}
                             </Stack>
                         </CardContent>
                     </Card>
@@ -919,7 +920,7 @@ export function PlayView({
                                                             <Typography variant="body2">
                                                                 このゲームはプレイ中の画面を配信したり、動画投稿することが許可されています。
                                                             </Typography>
-                                                            {niconicommonsWorkUrl ? (
+                                                            {niconicommonsWorkUrl && (
                                                                 <Typography variant="body2">
                                                                     ニコニコ動画・生放送では
                                                                     <Link
@@ -940,7 +941,7 @@ export function PlayView({
                                                                     </Link>
                                                                     を推奨しています（任意）。登録いただくとサーバー稼働維持に役立ちます。
                                                                 </Typography>
-                                                            ) : null}
+                                                            )}
                                                         </Stack>
                                                     ) : (
                                                         <Typography variant="body2">

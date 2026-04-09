@@ -83,7 +83,11 @@ function PlayErrorDetails({
                 <Box sx={{ mt: 1 }}>
                     {loading && <CircularProgress size={20} />}
                     {fetchError && (
-                        <Alert severity="error" sx={{ mb: 1 }}>
+                        <Alert
+                            severity="error"
+                            variant="outlined"
+                            sx={{ mb: 1 }}
+                        >
                             {fetchError}
                         </Alert>
                     )}
@@ -189,7 +193,7 @@ function ClientLogDetails({
                                 alignItems="center"
                                 sx={{ mb: 0.5 }}
                             >
-                                {submission.reporter?.image ? (
+                                {submission.reporter?.image && (
                                     <Avatar
                                         src={submission.reporter.image}
                                         sx={{
@@ -198,7 +202,7 @@ function ClientLogDetails({
                                             fontSize: "0.7rem",
                                         }}
                                     />
-                                ) : null}
+                                )}
                                 <Typography
                                     variant="caption"
                                     color={theme.palette.text.secondary}

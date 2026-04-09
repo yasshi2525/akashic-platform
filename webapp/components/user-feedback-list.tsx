@@ -278,11 +278,11 @@ export function UserFeedbackList({
                             </Card>
                         ))}
                     </Stack>
-                    {!isEnd ? (
+                    {!isEnd && (
                         <Button variant="outlined" onClick={onLoadMore}>
                             もっと読む
                         </Button>
-                    ) : null}
+                    )}
                 </>
             )}
         </Stack>

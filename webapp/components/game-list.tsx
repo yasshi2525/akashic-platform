@@ -105,11 +105,11 @@ function GameTableCells({
                             <Typography variant="body1">
                                 {game.title}
                             </Typography>
-                            {!game.streaming ? (
+                            {!game.streaming && (
                                 <Typography variant="body2" color="error">
                                     実況不可
                                 </Typography>
-                            ) : null}
+                            )}
                         </Stack>
                         <GameDescription
                             description={game.description}
@@ -136,13 +136,11 @@ function GameTableCells({
                     variant="body2"
                     sx={{ color: theme.palette.text.secondary }}
                 >
-                    {game.playCount} 回
+                    {game.playCount.toLocaleString()} 回
                 </Typography>
             </TableCell>
             <TableCell width={100}>
-                {selected === game.contentId ? (
-                    <CheckBox fontSize="large" />
-                ) : null}
+                {selected === game.contentId && <CheckBox fontSize="large" />}
             </TableCell>
         </TableRow>
     ));
@@ -243,17 +241,18 @@ export function GameList({
                                                 <Typography variant="body1">
                                                     {game.title}
                                                 </Typography>
-                                                {!game.streaming ? (
+                                                {!game.streaming && (
                                                     <Typography
                                                         variant="body2"
                                                         color="error"
                                                     >
                                                         実況不可
                                                     </Typography>
-                                                ) : null}
-                                                {selected === game.contentId ? (
+                                                )}
+                                                {selected ===
+                                                    game.contentId && (
                                                     <CheckBox fontSize="small" />
-                                                ) : null}
+                                                )}
                                             </Stack>
                                             <GameDescription
                                                 description={game.description}
@@ -288,7 +287,8 @@ export function GameList({
                                                     .secondary,
                                             }}
                                         >
-                                            プレイ数: {game.playCount} 回
+                                            プレイ数:{" "}
+                                            {game.playCount.toLocaleString()} 回
                                         </Typography>
                                     </Stack>
                                 </Stack>
@@ -296,7 +296,7 @@ export function GameList({
                         ))}
                     </Stack>
                 )}
-                {!isLoading && list != null && !isEmpty && !isEnd ? (
+                {!isLoading && list != null && !isEmpty && !isEnd && (
                     <Button
                         onClick={handleClickMore}
                         sx={{
@@ -306,7 +306,7 @@ export function GameList({
                     >
                         もっと読む
                     </Button>
-                ) : null}
+                )}
             </Stack>
         );
     }
@@ -347,7 +347,7 @@ export function GameList({
                             expandedSet={expandedSet}
                             onToggleDescription={handleToggleDescription}
                         />
-                        {!isEnd ? (
+                        {!isEnd && (
                             <TableRow>
                                 <TableCell
                                     colSpan={4}
@@ -365,7 +365,7 @@ export function GameList({
                                     </Button>
                                 </TableCell>
                             </TableRow>
-                        ) : null}
+                        )}
                     </TableBody>
                 )}
             </Table>

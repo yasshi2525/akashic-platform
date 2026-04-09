@@ -184,9 +184,9 @@ export function ClientLogDialog({
                     onClick={handleSubmit}
                     disabled={loading}
                     startIcon={
-                        loading ? (
+                        loading && (
                             <CircularProgress size={16} color="inherit" />
-                        ) : undefined
+                        )
                     }
                     sx={{
                         backgroundColor: theme.palette.primary.main,

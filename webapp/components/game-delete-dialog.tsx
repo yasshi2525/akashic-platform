@@ -84,7 +84,7 @@ export function GameDeleteDialog({
                     <DialogContentText id="dialog-description">
                         投稿したゲームと関連するデータが削除されます。削除後は復元できません。
                     </DialogContentText>
-                    {error ? (
+                    {error && (
                         <Alert
                             variant="outlined"
                             severity="error"
@@ -92,7 +92,7 @@ export function GameDeleteDialog({
                         >
                             {error}
                         </Alert>
-                    ) : null}
+                    )}
                     <DialogActions>
                         <Button
                             variant="contained"

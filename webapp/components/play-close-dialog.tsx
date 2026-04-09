@@ -73,7 +73,7 @@ export function PlayCloseDialog({ playId }: { playId: string }) {
                     <DialogContentText id="dialog-description">
                         現在遊んでいるゲームを終了します。この部屋に参加しているプレイヤーはこれ以上遊べなくなります。
                     </DialogContentText>
-                    {error ? (
+                    {error && (
                         <Alert
                             variant="outlined"
                             severity="error"
@@ -81,7 +81,7 @@ export function PlayCloseDialog({ playId }: { playId: string }) {
                         >
                             {error}
                         </Alert>
-                    ) : null}
+                    )}
                     <DialogActions>
                         <Button
                             variant="contained"

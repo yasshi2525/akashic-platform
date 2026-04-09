@@ -74,7 +74,7 @@ export function PlayPlayerInfoResolver({
                         (残り
                         {remainingSeconds}秒) ※未選択の場合は匿名で参加します。
                     </DialogContentText>
-                    {user.authType === "guest" ? (
+                    {user.authType === "guest" && (
                         <TextField
                             autoFocus
                             fullWidth
@@ -90,7 +90,7 @@ export function PlayPlayerInfoResolver({
                                 },
                             }}
                         />
-                    ) : null}
+                    )}
                     <DialogActions>
                         <Button
                             variant="contained"

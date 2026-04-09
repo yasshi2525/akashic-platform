@@ -100,7 +100,7 @@ function GameTableCells({
                         width: "max-content",
                     }}
                 >
-                    {game.playCount} 回
+                    {game.playCount.toLocaleString()} 回
                 </Typography>
             </TableCell>
             <TableCell
@@ -224,10 +224,11 @@ export function GameListTable({
                                                     .secondary,
                                             }}
                                         >
-                                            プレイ数: {game.playCount} 回
+                                            プレイ数:{" "}
+                                            {game.playCount.toLocaleString()} 回
                                         </Typography>
                                     </Stack>
-                                    {renderActions ? (
+                                    {renderActions && (
                                         <Stack
                                             direction="row"
                                             spacing={1}
@@ -235,13 +236,13 @@ export function GameListTable({
                                         >
                                             {renderActions(game, false)}
                                         </Stack>
-                                    ) : null}
+                                    )}
                                 </Stack>
                             </Paper>
                         ))}
                     </Stack>
                 )}
-                {!isLoading && list != null && !isEmpty && !isEnd ? (
+                {!isLoading && list != null && !isEmpty && !isEnd && (
                     <Button
                         onClick={onLoadMore}
                         sx={{
@@ -251,7 +252,7 @@ export function GameListTable({
                     >
                         もっと読む
                     </Button>
-                ) : null}
+                )}
             </Stack>
         );
     }
@@ -290,7 +291,7 @@ export function GameListTable({
                             expandedSet={expandedSet}
                             onToggleDescription={handleToggleDescription}
                         />
-                        {!isEnd ? (
+                        {!isEnd && (
                             <TableRow>
                                 <TableCell
                                     colSpan={4}
@@ -308,7 +309,7 @@ export function GameListTable({
                                     </Button>
                                 </TableCell>
                             </TableRow>
-                        ) : null}
+                        )}
                     </TableBody>
                 )}
             </Table>

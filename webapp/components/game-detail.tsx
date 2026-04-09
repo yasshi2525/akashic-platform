@@ -105,7 +105,8 @@ export function GameDetailClient({
                                         variant="body2"
                                         color={theme.palette.text.secondary}
                                     >
-                                        プレイ数: {gameInfo.playCount} 回
+                                        プレイ数:{" "}
+                                        {gameInfo.playCount.toLocaleString()} 回
                                     </Typography>
                                 </Stack>
                                 <Typography

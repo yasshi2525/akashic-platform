@@ -95,7 +95,7 @@ export function ClosedPlayView({
                                 alignItems="center"
                             >
                                 <Typography variant="h6">{playName}</Typography>
-                                {isLimited ? (
+                                {isLimited && (
                                     <Tooltip
                                         arrow
                                         title="この部屋は入室の言葉を知っている人だけが入室できました。"
@@ -122,7 +122,7 @@ export function ClosedPlayView({
                                             </Typography>
                                         </Stack>
                                     </Tooltip>
-                                ) : null}
+                                )}
                             </Stack>
                             <Stack
                                 direction={{ xs: "column", sm: "row" }}
@@ -265,7 +265,8 @@ export function ClosedPlayView({
                                             variant="body2"
                                             color={theme.palette.text.secondary}
                                         >
-                                            プレイ数: {game.playCount} 回
+                                            プレイ数:{" "}
+                                            {game.playCount.toLocaleString()} 回
                                         </Typography>
                                         <UserInline
                                             user={{

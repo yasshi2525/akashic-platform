@@ -180,7 +180,7 @@ export function PlayForm() {
                                 />
                             </RadioGroup>
                         </Box>
-                        {isLimited ? (
+                        {isLimited && (
                             <Box>
                                 <Typography variant="h6" gutterBottom>
                                     入室の言葉
@@ -197,7 +197,7 @@ export function PlayForm() {
                                     helperText="部屋一覧から入室するときに必要な言葉です。"
                                 />
                             </Box>
-                        ) : null}
+                        )}
                         <Box>
                             <Typography variant="h6" gutterBottom>
                                 ゲーム選択{" "}
@@ -230,6 +230,11 @@ export function PlayForm() {
                     </Stack>
                 </CardContent>
             </Card>
+            {error && (
+                <Alert variant="outlined" severity="error">
+                    {error}
+                </Alert>
+            )}
             <Button
                 type="submit"
                 variant="contained"
@@ -241,11 +246,6 @@ export function PlayForm() {
             >
                 部屋を作成する
             </Button>
-            {error ? (
-                <Alert variant="outlined" severity="error" sx={{ mt: 1 }}>
-                    {error}
-                </Alert>
-            ) : null}
             {selectedContent && (
                 <Box
                     sx={{

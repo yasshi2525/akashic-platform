@@ -54,11 +54,11 @@ export function PlayContainer() {
                             spacing={2}
                             onSubmit={handleSubmitJoinWord}
                         >
-                            {error ? (
+                            {error && (
                                 <Alert severity="error" variant="outlined">
                                     {error}
                                 </Alert>
-                            ) : null}
+                            )}
                             <Typography variant="h6">
                                 この部屋は限定公開です
                             </Typography>

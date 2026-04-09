@@ -139,7 +139,7 @@ export function PlayCreateDialog({
                             />
                         </RadioGroup>
                     </Stack>
-                    {isLimited ? (
+                    {isLimited && (
                         <TextField
                             label="入室の言葉"
                             value={joinWord}
@@ -154,12 +154,12 @@ export function PlayCreateDialog({
                             }}
                             helperText="部屋一覧から入室するときに必要な言葉です。"
                         />
-                    ) : null}
-                    {error ? (
+                    )}
+                    {error && (
                         <Alert variant="outlined" severity="error">
                             {error}
                         </Alert>
-                    ) : null}
+                    )}
                 </Stack>
             </DialogContent>
             <DialogActions>

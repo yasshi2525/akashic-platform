@@ -154,7 +154,7 @@ export function NotificationBell() {
                                         { addSuffix: true, locale: ja },
                                     )}
                                 </Typography>
-                                {notice.link ? (
+                                {notice.link && (
                                     <Typography
                                         variant="caption"
                                         color="primary"
@@ -166,7 +166,7 @@ export function NotificationBell() {
                                     >
                                         詳細を見る
                                     </Typography>
-                                ) : null}
+                                )}
                             </Stack>
                         </MenuItem>
                     ))

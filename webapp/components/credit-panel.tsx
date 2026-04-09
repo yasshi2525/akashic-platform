@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+    Alert,
     Box,
     Button,
     Collapse,
@@ -43,7 +44,7 @@ export function CreditPanel({
             </Button>
             <Collapse in={open}>
                 <Stack spacing={1}>
-                    {credit ? (
+                    {credit && (
                         <Box>
                             <Typography variant="subtitle2">
                                 クレジット
@@ -55,19 +56,19 @@ export function CreditPanel({
                                 {credit}
                             </Typography>
                         </Box>
-                    ) : null}
-                    {credit && license ? <Divider /> : null}
-                    {isLoading ? (
+                    )}
+                    {credit && license && <Divider />}
+                    {isLoading && (
                         <Container maxWidth="md" sx={{ py: 2 }}>
                             <Skeleton variant="rectangular" height={240} />
                         </Container>
-                    ) : null}
-                    {error ? (
-                        <Typography variant="body2" color="error">
+                    )}
+                    {error && (
+                        <Alert variant="outlined" severity="error">
                             ライセンスファイルの読み込みに失敗しました。
-                        </Typography>
-                    ) : null}
-                    {license ? (
+                        </Alert>
+                    )}
+                    {license && (
                         <Box>
                             <Typography variant="subtitle2">
                                 ライブラリライセンス
@@ -84,7 +85,7 @@ export function CreditPanel({
                                 {license}
                             </Typography>
                         </Box>
-                    ) : null}
+                    )}
                 </Stack>
             </Collapse>
         </Stack>
