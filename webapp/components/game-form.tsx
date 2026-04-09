@@ -328,43 +328,6 @@ export function GameForm({
                                         {gameFileError}
                                     </Alert>
                                 )}
-                                <Box
-                                    component="label"
-                                    sx={{
-                                        width: "100%",
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        alignItems: "center",
-                                        color: theme.palette.text.secondary,
-                                        border: "2px dashed",
-                                        borderColor: gameFile
-                                            ? theme.palette.divider
-                                            : theme.palette.primary.main,
-                                        borderRadius: 2,
-                                        p: 3,
-                                        transition: "all 0.2s",
-                                        cursor: "point",
-                                        "&:hover": {
-                                            bgcolor: theme.palette.primary.main,
-                                        },
-                                    }}
-                                >
-                                    <VisuallyHiddenInput
-                                        type="file"
-                                        accept=".zip"
-                                        sx={{ display: "none" }}
-                                        onChange={handleUploadGameFile}
-                                    />
-                                    <FileUpload fontSize="large" />
-                                    <Typography
-                                        variant="body1"
-                                        sx={{ textTransform: "none" }}
-                                    >
-                                        {gameFile
-                                            ? gameFile.name
-                                            : "クリックしてZIPファイルを選択 または ファイルをドロップ"}
-                                    </Typography>
-                                </Box>
                                 {unsupportedExternals && (
                                     <Alert
                                         variant="outlined"
@@ -402,6 +365,43 @@ export function GameForm({
                                         </List>
                                     </Alert>
                                 )}
+                                <Box
+                                    component="label"
+                                    sx={{
+                                        width: "100%",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                        color: theme.palette.text.secondary,
+                                        border: "2px dashed",
+                                        borderColor: gameFile
+                                            ? theme.palette.divider
+                                            : theme.palette.primary.main,
+                                        borderRadius: 2,
+                                        p: 3,
+                                        transition: "all 0.2s",
+                                        cursor: "point",
+                                        "&:hover": {
+                                            bgcolor: theme.palette.primary.main,
+                                        },
+                                    }}
+                                >
+                                    <VisuallyHiddenInput
+                                        type="file"
+                                        accept=".zip"
+                                        sx={{ display: "none" }}
+                                        onChange={handleUploadGameFile}
+                                    />
+                                    <FileUpload fontSize="large" />
+                                    <Typography
+                                        variant="body1"
+                                        sx={{ textTransform: "none" }}
+                                    >
+                                        {gameFile
+                                            ? gameFile.name
+                                            : "クリックしてZIPファイルを選択 または ファイルをドロップ"}
+                                    </Typography>
+                                </Box>
                             </Box>
                             <Box>
                                 <Typography variant="h6" gutterBottom>
