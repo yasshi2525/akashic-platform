@@ -37,7 +37,10 @@ export async function GET(
         });
 
         if (!game.versions[0]) {
-            return new NextResponse("NotFound", { status: 404 });
+            return NextResponse.json(
+                { ok: false, reason: "NotFound" },
+                { status: 404 },
+            );
         }
 
         return NextResponse.redirect(
@@ -46,6 +49,9 @@ export async function GET(
         );
     } catch (err) {
         console.warn(`failed to fetch game icon (gameId = ${id})`, err);
-        return new NextResponse("NotFound", { status: 404 });
+        return NextResponse.json(
+            { ok: false, reason: "NotFound" },
+            { status: 404 },
+        );
     }
 }

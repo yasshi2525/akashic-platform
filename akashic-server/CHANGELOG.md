@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.3.4
+
+- Improve
+  - HTTPレスポンス時、明示的に Content-Type を指定するよう修正
+
 ## 1.3.3
 
 - Improve

@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.4.12
+
+- Improve
+  - HTTPレスポンス時、明示的に Content-Type を指定するよう修正
+    - `./akashic-server`
+    - `./akashic-storage`
+    - `./webapp`
+
 ## 1.4.11
 
 - Improve

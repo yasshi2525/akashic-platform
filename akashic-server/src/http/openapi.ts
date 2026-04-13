@@ -30,8 +30,36 @@ export const openapi = {
                             },
                         },
                     },
-                    "400": { description: "Bad Request" },
-                    "500": { description: "Internal Server Error" },
+                    "400": {
+                        description: "Bad Request",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
+                    "401": {
+                        description: "Unauthorized",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
+                    "500": {
+                        description: "Internal Server Error",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
                 },
             },
         },
@@ -63,8 +91,36 @@ export const openapi = {
                             },
                         },
                     },
-                    "400": { description: "Bad Request" },
-                    "500": { description: "Internal Server Error" },
+                    "400": {
+                        description: "Bad Request",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
+                    "401": {
+                        description: "Unauthorized",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
+                    "500": {
+                        description: "Internal Server Error",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
                 },
             },
         },
@@ -90,8 +146,36 @@ export const openapi = {
                             },
                         },
                     },
-                    "400": { description: "Bad Request" },
-                    "404": { description: "Not Found" },
+                    "400": {
+                        description: "Bad Request",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
+                    "401": {
+                        description: "Unauthorized",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
+                    "404": {
+                        description: "Not Found",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
                 },
             },
         },
@@ -119,8 +203,36 @@ export const openapi = {
                             },
                         },
                     },
-                    "400": { description: "Bad Request" },
-                    "404": { description: "Not Found" },
+                    "400": {
+                        description: "Bad Request",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
+                    "401": {
+                        description: "Unauthorized",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
+                    "404": {
+                        description: "Not Found",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
                     "409": {
                         description: "Too Early",
                         content: {
@@ -216,6 +328,15 @@ export const openapi = {
                     reason: { type: "string" },
                     remainingMs: { type: "integer", format: "int64" },
                     expiresAt: { type: "integer", format: "int64" },
+                },
+            },
+            ErrorResponse: {
+                type: "object",
+                required: ["ok", "reason"],
+                properties: {
+                    ok: { type: "boolean", enum: [false] },
+                    reason: { type: "string" },
+                    message: { type: "string" },
                 },
             },
         },

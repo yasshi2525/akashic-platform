@@ -27,8 +27,26 @@ export const openapi = {
                             },
                         },
                     },
-                    "400": { description: "Bad Request" },
-                    "422": { description: "Unprocessable Entity" },
+                    "400": {
+                        description: "Bad Request",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
+                    "422": {
+                        description: "Unprocessable Entity",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
                 },
             },
         },
@@ -54,8 +72,73 @@ export const openapi = {
                             },
                         },
                     },
-                    "400": { description: "Bad Request" },
-                    "422": { description: "Unprocessable Entity" },
+                    "400": {
+                        description: "Bad Request",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
+                    "422": {
+                        description: "Unprocessable Entity",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+        "/extend": {
+            post: {
+                summary: "Broadcast play extend event to participants",
+                requestBody: {
+                    required: true,
+                    content: {
+                        "application/json": {
+                            schema: {
+                                $ref: "#/components/schemas/ExtendRequest",
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    "200": {
+                        description: "OK",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/OkResponse",
+                                },
+                            },
+                        },
+                    },
+                    "400": {
+                        description: "Bad Request",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
+                    "422": {
+                        description: "Unprocessable Entity",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
                 },
             },
         },
@@ -77,6 +160,32 @@ export const openapi = {
                         type: "array",
                         items: { type: "string" },
                     },
+                },
+            },
+            OkResponse: {
+                type: "object",
+                required: ["ok"],
+                properties: {
+                    ok: { type: "boolean", enum: [true] },
+                },
+            },
+            ExtendRequest: {
+                type: "object",
+                required: ["playId", "expiresAt", "remainingMs", "extendMs"],
+                properties: {
+                    playId: { type: "string" },
+                    expiresAt: { type: "integer", format: "int64" },
+                    remainingMs: { type: "integer", format: "int64" },
+                    extendMs: { type: "integer", format: "int64" },
+                },
+            },
+            ErrorResponse: {
+                type: "object",
+                required: ["ok", "reason"],
+                properties: {
+                    ok: { type: "boolean", enum: [false] },
+                    reason: { type: "string" },
+                    message: { type: "string" },
                 },
             },
         },

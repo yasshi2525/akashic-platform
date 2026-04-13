@@ -337,6 +337,9 @@ const contentLogErrReasons = [
     "InternalError",
 ] as const;
 export type ContentLogErrorType = (typeof contentLogErrReasons)[number];
+export type ContentLogResponse =
+    | string
+    | { ok: false; reason: ContentLogErrorType };
 
 const notificationErrReasons = ["NotAuthorized", "InternalError"] as const;
 export type NotificationErrorType = (typeof notificationErrReasons)[number];
