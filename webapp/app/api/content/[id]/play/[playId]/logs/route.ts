@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { prisma } from "@yasshi2525/persist-schema";
-import { ContentLogEntry, ContentLogErrorType } from "@/lib/types";
+import { ContentLogEntry, ContentLogResponse } from "@/lib/types";
 import { getAuth } from "@/lib/server/auth";
 import {
     getBucket,
@@ -9,16 +9,16 @@ import {
     s3KeyPrefix,
 } from "@/lib/server/content-utils";
 
-/**
- * 正常の場合ログ生データをレスポンスボディに格納させたいため、JSON形式にしていない
- */
 export async function GET(
     _req: NextRequest,
     ctx: RouteContext<"/api/content/[id]/play/[playId]/logs">,
-): Promise<NextResponse<ContentLogErrorType | string>> {
+): Promise<NextResponse<ContentLogResponse>> {
     const { id, playId } = await ctx.params;
     if (id == null || playId == null) {
-        return new NextResponse("InvalidParams", { status: 400 });
+        return NextResponse.json(
+            { ok: false, reason: "InvalidParams" },
+            { status: 400 },
+        );
     }
 
     const content = await prisma.content.findUnique({
@@ -26,12 +26,18 @@ export async function GET(
         select: { game: { select: { publisherId: true } } },
     });
     if (!content) {
-        return new NextResponse("NotFound", { status: 404 });
+        return NextResponse.json(
+            { ok: false, reason: "NotFound" },
+            { status: 404 },
+        );
     }
 
     const user = await getAuth();
     if (content.game.publisherId !== user?.id) {
-        return new NextResponse("Forbidden", { status: 403 });
+        return NextResponse.json(
+            { ok: false, reason: "Forbidden" },
+            { status: 403 },
+        );
     }
 
     const filter = _req.nextUrl.searchParams.get("filter");
@@ -46,7 +52,10 @@ export async function GET(
         );
         const body = await result.Body?.transformToString("utf-8");
         if (body == null) {
-            return new NextResponse("NotFound", { status: 404 });
+            return NextResponse.json(
+                { ok: false, reason: "NotFound" },
+                { status: 404 },
+            );
         }
         const logEntries = body
             .split("\n")
@@ -71,12 +80,18 @@ export async function GET(
     } catch (err) {
         const code = (err as { Code?: string }).Code;
         if (code === "NoSuchKey") {
-            return new NextResponse("NotFound", { status: 404 });
+            return NextResponse.json(
+                { ok: false, reason: "NotFound" },
+                { status: 404 },
+            );
         }
         console.warn(
             `failed to fetch content log (id = ${id}, playId = ${playId})`,
             err,
         );
-        return new NextResponse("InternalError", { status: 500 });
+        return NextResponse.json(
+            { ok: false, reason: "InternalError" },
+            { status: 500 },
+        );
     }
 }

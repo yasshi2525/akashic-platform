@@ -45,7 +45,7 @@ export class HttpServer {
         app.use(express.json());
         app.use((req, res, next) => {
             if (req.header("x-akashic-internal-token") !== this._apiToken) {
-                res.status(401).send("unauthorized");
+                res.status(401).json({ ok: false, reason: "Unauthorized" });
                 return;
             }
             next();
@@ -73,8 +73,7 @@ export class HttpServer {
                 !playerId?.toString() ||
                 !playerName?.toString()
             ) {
-                res.status(400);
-                res.send("unsufficient parameter was specified.");
+                res.status(400).json({ ok: false, reason: "BadRequest" });
                 return;
             }
             try {
@@ -96,8 +95,11 @@ export class HttpServer {
                 });
                 res.json({ playId });
             } catch (err) {
-                res.status(500);
-                res.send(`failed to start. cause = ${(err as Error).message}`);
+                res.status(500).json({
+                    ok: false,
+                    reason: "InternalError",
+                    message: (err as Error).message,
+                });
             }
         });
 
@@ -105,7 +107,7 @@ export class HttpServer {
             const playId = req.query.playId;
             const reason = req.query.reason;
             if (!playId?.toString()) {
-                res.status(400).send("no playId was specified.");
+                res.status(400).json({ ok: false, reason: "MissingPlayId" });
             } else {
                 try {
                     await this._manager.end(
@@ -115,10 +117,11 @@ export class HttpServer {
                     );
                     res.json({ ok: true });
                 } catch (err) {
-                    res.status(500);
-                    res.send(
-                        `failed to end. cause = ${(err as Error).message}`,
-                    );
+                    res.status(500).json({
+                        ok: false,
+                        reason: "InternalError",
+                        message: (err as Error).message,
+                    });
                 }
             }
         });
@@ -126,14 +129,14 @@ export class HttpServer {
         app.get("/remaining", (req, res) => {
             const playId = req.query.playId;
             if (!playId?.toString()) {
-                res.status(400).send("no playId was specified.");
+                res.status(400).json({ ok: false, reason: "MissingPlayId" });
                 return;
             }
             const remaining = this._manager.getRemaining(
                 parseInt(playId.toString()),
             );
             if (!remaining) {
-                res.status(404).send("play was not found.");
+                res.status(404).json({ ok: false, reason: "NotFound" });
                 return;
             }
             res.json({
@@ -145,7 +148,7 @@ export class HttpServer {
         app.post("/extend", async (req, res) => {
             const { playId } = req.body as { playId?: string };
             if (!playId?.toString()) {
-                res.status(400).send("no playId was specified.");
+                res.status(400).json({ ok: false, reason: "MissingPlayId" });
                 return;
             }
             try {
@@ -153,7 +156,7 @@ export class HttpServer {
                     parseInt(playId.toString()),
                 );
                 if (!result.ok && result.reason === "NotFound") {
-                    res.status(404).send("play was not found.");
+                    res.status(404).json({ ok: false, reason: "NotFound" });
                     return;
                 }
                 if (!result.ok && result.reason === "TooEarly") {
@@ -162,9 +165,11 @@ export class HttpServer {
                 }
                 res.json(result);
             } catch (err) {
-                res.status(500).send(
-                    `failed to extend. cause = ${(err as Error).message}`,
-                );
+                res.status(500).json({
+                    ok: false,
+                    reason: "InternalError",
+                    message: (err as Error).message,
+                });
             }
         });
 

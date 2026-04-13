@@ -29,8 +29,36 @@ export const openapi = {
                             },
                         },
                     },
-                    "400": { description: "Bad Request" },
-                    "422": { description: "Unprocessable Entity" },
+                    "400": {
+                        description: "Bad Request",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
+                    "401": {
+                        description: "Unauthorized",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
+                    "422": {
+                        description: "Unprocessable Entity",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
                 },
             },
         },
@@ -63,8 +91,36 @@ export const openapi = {
                             },
                         },
                     },
-                    "400": { description: "Bad Request" },
-                    "422": { description: "Unprocessable Entity" },
+                    "400": {
+                        description: "Bad Request",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
+                    "401": {
+                        description: "Unauthorized",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
+                    "422": {
+                        description: "Unprocessable Entity",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
                 },
             },
         },
@@ -90,6 +146,15 @@ export const openapi = {
                 required: ["ok"],
                 properties: {
                     ok: { type: "boolean" },
+                },
+            },
+            ErrorResponse: {
+                type: "object",
+                required: ["ok", "reason"],
+                properties: {
+                    ok: { type: "boolean", enum: [false] },
+                    reason: { type: "string" },
+                    message: { type: "string" },
                 },
             },
         },

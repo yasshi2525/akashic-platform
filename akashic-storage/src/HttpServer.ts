@@ -85,7 +85,7 @@ export class HttpServer {
             if (
                 req.header("x-akashic-internal-token") !== this._adminApiToken
             ) {
-                res.status(401).send("unauthorized");
+                res.status(401).json({ ok: false, reason: "Unauthorized" });
                 return;
             }
             next();
@@ -99,16 +99,18 @@ export class HttpServer {
         adminRouter.get("/start", async (req, res) => {
             const playId = req.query.playId;
             if (!playId?.toString()) {
-                res.status(400).send("no playId was specified.");
+                res.status(400).json({ ok: false, reason: "MissingPlayId" });
             } else {
                 try {
                     const server = this._playManager.start(playId.toString());
                     const playToken = await server.generateToken(true);
                     res.json({ playToken });
                 } catch (err) {
-                    res.status(422).send(
-                        `failed to start. (playId = "${playId.toString()}, reason = "${(err as Error).message}")`,
-                    );
+                    res.status(422).json({
+                        ok: false,
+                        reason: "UnprocessableEntity",
+                        message: `failed to start. (playId = "${playId.toString()}", cause = "${(err as Error).message}")`,
+                    });
                 }
             }
         });
@@ -116,7 +118,7 @@ export class HttpServer {
         publicRouter.get("/join", async (req, res) => {
             const playId = req.query.playId;
             if (!playId?.toString()) {
-                res.status(400).send("no playId was specified.");
+                res.status(400).json({ ok: false, reason: "MissingPlayId" });
             } else {
                 try {
                     const playToken = await this._amfManager
@@ -124,9 +126,11 @@ export class HttpServer {
                         .generateToken(false);
                     res.json({ playToken });
                 } catch (err) {
-                    res.status(422).send(
-                        `failed to join. (playId = "${playId}, reason = "${(err as Error).message}")`,
-                    );
+                    res.status(422).json({
+                        ok: false,
+                        reason: "UnprocessableEntity",
+                        message: `failed to join. (playId = "${playId}", cause = "${(err as Error).message}")`,
+                    });
                 }
             }
         });
@@ -134,7 +138,7 @@ export class HttpServer {
         publicRouter.get("/participants", (req, res) => {
             const playId = req.query.playId;
             if (!playId?.toString()) {
-                res.status(400).send("no playId was specified.");
+                res.status(400).json({ ok: false, reason: "MissingPlayId" });
             } else {
                 try {
                     const participants = this._amfManager
@@ -142,9 +146,11 @@ export class HttpServer {
                         .getParticipants();
                     res.json({ participants });
                 } catch (err) {
-                    res.status(422).send(
-                        `failed to get participants. (playId = "${playId}, reason = "${(err as Error).message}")`,
-                    );
+                    res.status(422).json({
+                        ok: false,
+                        reason: "UnprocessableEntity",
+                        message: `failed to get participants. (playId = "${playId}", cause = "${(err as Error).message}")`,
+                    });
                 }
             }
         });
@@ -153,7 +159,7 @@ export class HttpServer {
             const playId = req.query.playId;
             const reason = req.query.reason;
             if (!playId?.toString()) {
-                res.status(400).send("no playId was specified.");
+                res.status(400).json({ ok: false, reason: "MissingPlayId" });
             } else {
                 try {
                     await this._playManager.end(
@@ -163,9 +169,11 @@ export class HttpServer {
                     );
                     res.json({ ok: true });
                 } catch (err) {
-                    res.status(422).send(
-                        `failed to end. (playId = "${playId}, reason = "${(err as Error).message}")`,
-                    );
+                    res.status(422).json({
+                        ok: false,
+                        reason: "UnprocessableEntity",
+                        message: `failed to end. (playId = "${playId}", cause = "${(err as Error).message}")`,
+                    });
                 }
             }
         });
@@ -175,11 +183,11 @@ export class HttpServer {
                 playId?: string;
             } & Partial<PlayExtendPayload>;
             if (!playId?.toString()) {
-                res.status(400).send("no playId was specified.");
+                res.status(400).json({ ok: false, reason: "MissingPlayId" });
                 return;
             }
             if (expiresAt == null || remainingMs == null || extendMs == null) {
-                res.status(400).send("invalid payload was specified.");
+                res.status(400).json({ ok: false, reason: "InvalidPayload" });
                 return;
             }
             const payload: PlayExtendPayload = {
@@ -194,9 +202,11 @@ export class HttpServer {
                 );
                 res.json({ ok: true });
             } catch (err) {
-                res.status(422).send(
-                    `failed to extend. (playId = "${playId}, reason = "${(err as Error).message}")`,
-                );
+                res.status(422).json({
+                    ok: false,
+                    reason: "UnprocessableEntity",
+                    message: `failed to extend. (playId = "${playId}", cause = "${(err as Error).message}")`,
+                });
             }
         });
 
