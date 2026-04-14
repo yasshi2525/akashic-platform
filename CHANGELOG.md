@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.4.13
+
+- Improve
+  - `./webapp`
+    - 環境変数 `DRAIN_REFRESH_INTERVAL` でドレイン間隔を変更できるよう修正
+
 ## 1.4.12
 
 - Improve

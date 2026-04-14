@@ -16,6 +16,7 @@ import {
     customFooterHref,
     niconicommonsWorkUrl,
     clientLogCacheMaxEntries,
+    drainRefreshInterval,
 } from "@/lib/server/custom-data";
 import { theme } from "@/lib/client/theme";
 import { AkashicProvider } from "@/components/akashic-provider";
@@ -78,6 +79,9 @@ export default async function RootLayout({
                                         <SiteHeader />
                                         <DrainBanner
                                             initialState={drainState}
+                                            refreshInterval={
+                                                drainRefreshInterval
+                                            }
                                         />
                                         <Box
                                             component="main"

@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.4.10
+
+- Improve
+  - 環境変数 `DRAIN_REFRESH_INTERVAL` でドレイン間隔を変更できるよう修正
+
 ## 1.4.9
 
 - Improve

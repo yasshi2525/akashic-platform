@@ -25,10 +25,10 @@ const fetcher = async (url: string) => {
     return state;
 };
 
-export function useDrain(initialState: DrainStatus) {
+export function useDrain(initialState: DrainStatus, refreshInterval: number) {
     const { data } = useSWR(`/api/internal/drain`, fetcher, {
         fallbackData: initialState,
-        refreshInterval: 5000,
+        refreshInterval,
     });
 
     return {
