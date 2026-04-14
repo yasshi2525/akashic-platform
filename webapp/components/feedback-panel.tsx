@@ -20,6 +20,7 @@ import {
 } from "@mui/material";
 import { FeedbackPost, GUEST_NAME, User } from "@/lib/types";
 import { FeedbackFormState, postFeedbackAction } from "@/lib/server/feedback";
+import { STORAGE_KEYS, useReadLocalStorage } from "@/lib/client/useLocalStorage";
 import { FeedbackReplyForm } from "./feedback-reply-form";
 
 const initialState: FeedbackFormState = {
@@ -47,7 +48,11 @@ function PostForm({
 }) {
     const router = useRouter();
     const [state, action] = useFormState(postFeedbackAction, initialState);
-    const [authorName, setAuthorName] = useState(GUEST_NAME);
+    const savedPlayerName = useReadLocalStorage(
+        STORAGE_KEYS.PLAYER_INFO_NAME,
+        GUEST_NAME,
+    );
+    const [authorName, setAuthorName] = useState(savedPlayerName);
     const [body, setBody] = useState("");
 
     useEffect(() => {

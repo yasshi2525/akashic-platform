@@ -12,6 +12,10 @@ import {
 } from "@mui/material";
 import { ResolvingPlayerInfoRequest } from "@/lib/client/akashic-plugins/coe-limited-plugin";
 import { useAuth } from "@/lib/client/useAuth";
+import {
+    STORAGE_KEYS,
+    useLocalStorageManual,
+} from "@/lib/client/useLocalStorage";
 
 export function PlayPlayerInfoResolver({
     request,
@@ -23,7 +27,10 @@ export function PlayPlayerInfoResolver({
         request.limitSeconds,
     );
     const [open, setOpen] = useState(true);
-    const [guestName, setGuestName] = useState<string>();
+    // guestName: 初期値を localStorage から読み込み、確定時のみ永続化する
+    const [guestName, setGuestName, persistGuestName] = useLocalStorageManual<
+        string | undefined
+    >(STORAGE_KEYS.PLAYER_INFO_NAME, undefined);
 
     function handleDeny() {
         request.onResolve(false, request.guestName);
@@ -35,6 +42,9 @@ export function PlayPlayerInfoResolver({
             (user?.authType === "guest" ? guestName : user?.name) ??
             request.guestName;
         request.onResolve(true, resolvedName);
+        if (user?.authType === "guest" && guestName) {
+            persistGuestName(guestName);
+        }
         setOpen(false);
     }
 

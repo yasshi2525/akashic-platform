@@ -35,6 +35,7 @@ import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
 import { GameInfo, User } from "@/lib/types";
 import { useAkashic } from "@/lib/client/useAkashic";
 import { useCustomData } from "@/lib/client/useCustomData";
+import { STORAGE_KEYS, useLocalStorage } from "@/lib/client/useLocalStorage";
 import { ResolvingPlayerInfoRequest } from "@/lib/client/akashic-plugins/coe-limited-plugin";
 import { AkashicContainer } from "@/lib/client/akashic-container";
 import { extendPlay } from "@/lib/server/play-extend";
@@ -136,9 +137,18 @@ export function PlayView({
     const [inviteCopyStatus, setInviteCopyStatus] = useState<
         "success" | "error"
     >();
-    const [volumePercent, setVolumePercent] = useState(100);
-    const [isMuted, setIsMuted] = useState(false);
-    const [prevVolumePercent, setPrevVolumePercent] = useState(100);
+    const [volumePercent, setVolumePercent] = useLocalStorage(
+        STORAGE_KEYS.PLAYER_VOLUME,
+        100,
+    );
+    const [isMuted, setIsMuted] = useLocalStorage(
+        STORAGE_KEYS.PLAYER_MUTED,
+        false,
+    );
+    const [prevVolumePercent, setPrevVolumePercent] = useLocalStorage(
+        STORAGE_KEYS.PLAYER_PREV_VOLUME,
+        100,
+    );
     const [screenshotStatus, setScreenshotStatus] = useState<
         "shared" | "downloaded" | "error" | "cancel"
     >();
@@ -189,6 +199,7 @@ export function PlayView({
         if (!ref.current) {
             return;
         }
+
         container.create({
             parent: ref.current,
             user,
@@ -196,7 +207,9 @@ export function PlayView({
             playId,
             playToken,
             playlogServerUrl,
-            initialMasterVolume: MASTER_VOLUME_MAX,
+            initialMasterVolume: isMuted
+                ? 0
+                : (volumePercent / 100) * MASTER_VOLUME_MAX,
             isGameMaster,
             external: contentExternal,
             onSkip: setSkipping,
