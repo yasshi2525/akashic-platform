@@ -64,6 +64,7 @@ export async function registerPlay({
             where: {
                 gameMasterId,
                 gmUserId: null,
+                isActive: true,
             },
         });
         if (guestPlayCount >= GUEST_ROOM_LIMIT) {
