@@ -35,7 +35,7 @@
 
 ## 1.4.10
 
-- Fix
+- Bug Fix
   - `./agvw-like`
     - `SessionManager` のエラーハンドラに引き渡す関数の指定誤りを修正
 
@@ -60,13 +60,13 @@
 
 ## 1.4.6
 
-- Fix
+- Bug Fix
   - `./akashic-storage`
     - broadcast する Tick の順序が subscribe 順と一致しない場合がある問題を修正 (#57)
 
 ## 1.4.5
 
-- Fix
+- Bug Fix
   - `./webapp`
     - スマートフォンで X のシェアボタンが機能しないボタンを修正 (#11)
     - プレイヤーによるログ送信時、捕捉した例外の詳細情報が展開されない問題を修正
@@ -140,13 +140,13 @@
 
 ## 1.3.2
 
-- Fix
+- Bug Fix
   - `./akashic-storage`
     - Event 書き込み遅延により、イベントがないものとして応答してしまう問題を修正
 
 ## 1.3.1
 
-- Fix
+- Bug Fix
   - `./akashic-storage`
     - Event 情報が異なるノードに振り分けられてしまう問題を修正 (#34)
 
