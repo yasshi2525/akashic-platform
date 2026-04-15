@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.5.0
+
+- Feature
+  - `Play` にログ削除日時フィールド (`logDeletedAt`) を追加
+
 ## 1.4.0
 
 - Feature

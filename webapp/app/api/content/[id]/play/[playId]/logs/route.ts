@@ -40,6 +40,21 @@ export async function GET(
         );
     }
 
+    const play = await prisma.play.findUnique({
+        where: {
+            id: parseInt(playId),
+        },
+        select: {
+            logDeletedAt: true,
+        },
+    });
+    if (play?.logDeletedAt != null) {
+        return NextResponse.json(
+            { ok: false, reason: "Deleted" },
+            { status: 410 },
+        );
+    }
+
     const filter = _req.nextUrl.searchParams.get("filter");
     const format = _req.nextUrl.searchParams.get("format") ?? "plain";
 

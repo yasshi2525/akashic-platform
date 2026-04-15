@@ -26,15 +26,21 @@ import { useClientLogList } from "@/lib/client/useClientLogList";
 function PlayErrorDetails({
     contentId,
     playId,
+    logDeletedAt,
 }: {
     contentId: number;
     playId: number;
+    logDeletedAt: Date | null;
 }) {
     const theme = useTheme();
     const [expanded, setExpanded] = useState(false);
     const [loading, setLoading] = useState(false);
     const [entries, setEntries] = useState<ContentLogEntry[] | null>(null);
     const [fetchError, setFetchError] = useState<string>();
+
+    if (logDeletedAt != null) {
+        return null;
+    }
 
     async function handleToggle() {
         if (!expanded && entries === null && !loading) {
@@ -136,9 +142,11 @@ function PlayErrorDetails({
 function ClientLogDetails({
     contentId,
     playId,
+    logDeletedAt,
 }: {
     contentId: number;
     playId: number;
+    logDeletedAt: Date | null;
 }) {
     const theme = useTheme();
     const [expanded, setExpanded] = useState(false);
@@ -146,6 +154,14 @@ function ClientLogDetails({
         contentId,
         playId,
     );
+
+    if (logDeletedAt != null) {
+        return (
+            <Typography variant="body2" color={theme.palette.text.secondary}>
+                保存期間が過ぎたため、ログデータは削除されました
+            </Typography>
+        );
+    }
 
     function handleClick() {
         if (!expanded) {
@@ -419,16 +435,25 @@ function ContentLogCard({ info }: { info: ContentLogInfo }) {
                     <PlayErrorDetails
                         contentId={info.contentId}
                         playId={info.playId}
+                        logDeletedAt={info.logDeletedAt}
                     />
                 )}
                 {info.clientLogCount > 0 && (
                     <ClientLogDetails
                         contentId={info.contentId}
                         playId={info.playId}
+                        logDeletedAt={info.logDeletedAt}
                     />
                 )}
 
-                {info.logUploadedAt ? (
+                {info.logDeletedAt != null ? (
+                    <Typography
+                        variant="body2"
+                        color={theme.palette.text.secondary}
+                    >
+                        保存期間が過ぎたため、ログデータは削除されました
+                    </Typography>
+                ) : info.logUploadedAt ? (
                     <Button
                         variant="outlined"
                         size="small"
