@@ -18,6 +18,7 @@ import {
 } from "@mui/material";
 import { GameInfo, messageKey, messages, User } from "@/lib/types";
 import { registerPlay } from "@/lib/server/play-register";
+import { STORAGE_KEYS, useLocalStorage } from "@/lib/client/useLocalStorage";
 
 export function PlayCreateDialog({
     open,
@@ -31,17 +32,21 @@ export function PlayCreateDialog({
     user: User | null;
 }) {
     const router = useRouter();
-    const [playName, setPlayName] = useState("");
-    const [isLimited, setIsLimited] = useState(false);
-    const [joinWord, setJoinWord] = useState("");
+    const [playName, setPlayName] = useLocalStorage(STORAGE_KEYS.ROOM_NAME, "");
+    const [isLimited, setIsLimited] = useLocalStorage(
+        STORAGE_KEYS.ROOM_IS_LIMITED,
+        false,
+    );
+    const [joinWord, setJoinWord] = useLocalStorage(
+        STORAGE_KEYS.ROOM_JOIN_WORD,
+        "",
+    );
     const [sending, setSending] = useState(false);
     const [error, setError] = useState<string>();
 
     useEffect(() => {
         if (open) {
-            setPlayName("");
-            setIsLimited(false);
-            setJoinWord("");
+            // playName / isLimited / joinWord は前回入力値を引き継ぐため意図的にリセットしない
             setError(undefined);
             setSending(false);
         }

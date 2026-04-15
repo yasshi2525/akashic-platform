@@ -8,3 +8,6 @@ export const niconicommonsWorkUrl = process.env.NICONICOMMONS_WORK_URL;
 export const clientLogCacheMaxEntries = Number.parseInt(
     process.env.CLIENT_LOG_CACHE_MAX_ENTRIES ?? "1000",
 );
+export const drainRefreshInterval = Number.parseInt(
+    process.env.DRAIN_REFRESH_INTERVAL ?? "5000",
+);

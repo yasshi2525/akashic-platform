@@ -3,8 +3,14 @@
 import { Alert, Box } from "@mui/material";
 import { DrainStatus, useDrain } from "@/lib/client/useDrain";
 
-export function DrainBanner({ initialState }: { initialState: DrainStatus }) {
-    const { state } = useDrain(initialState);
+export function DrainBanner({
+    initialState,
+    refreshInterval,
+}: {
+    initialState: DrainStatus;
+    refreshInterval: number;
+}) {
+    const { state } = useDrain(initialState, refreshInterval);
 
     if (!state.enabled) {
         return null;

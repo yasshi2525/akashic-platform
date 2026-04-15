@@ -237,6 +237,7 @@ services:
       GUEST_ROOM_LIMIT: 5
       CLIENT_LOG_RATE_LIMIT_SECONDS: 30
       CLIENT_LOG_CACHE_MAX_ENTRIES: 1000
+      DRAIN_REFRESH_INTERVAL: 30000
     env_file:
       - .env
     depends_on:

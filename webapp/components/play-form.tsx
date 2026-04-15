@@ -22,6 +22,7 @@ import { ArrowBack, Search, SportsEsports } from "@mui/icons-material";
 import { messageKey, messages } from "@/lib/types";
 import { registerPlay } from "@/lib/server/play-register";
 import { useAuth } from "@/lib/client/useAuth";
+import { STORAGE_KEYS, useLocalStorage } from "@/lib/client/useLocalStorage";
 import { GameList } from "./game-list";
 
 export function PlayForm() {
@@ -29,9 +30,15 @@ export function PlayForm() {
     const [selectedContent, setSelectedContent] = useState<number>();
     const [selectedGameTitle, setSelectedGameTitle] = useState<string>();
     const [keyword, setKeyword] = useState("");
-    const [playName, setPlayName] = useState("");
-    const [isLimited, setIsLimited] = useState(false);
-    const [joinWord, setJoinWord] = useState("");
+    const [playName, setPlayName] = useLocalStorage(STORAGE_KEYS.ROOM_NAME, "");
+    const [isLimited, setIsLimited] = useLocalStorage(
+        STORAGE_KEYS.ROOM_IS_LIMITED,
+        false,
+    );
+    const [joinWord, setJoinWord] = useLocalStorage(
+        STORAGE_KEYS.ROOM_JOIN_WORD,
+        "",
+    );
     const [sending, setIsSending] = useOptimistic(false, () => true);
     const [error, setError] = useState<string>();
 
