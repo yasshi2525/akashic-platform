@@ -12,10 +12,7 @@ import {
 } from "@mui/material";
 import { ResolvingPlayerInfoRequest } from "@/lib/client/akashic-plugins/coe-limited-plugin";
 import { useAuth } from "@/lib/client/useAuth";
-import {
-    STORAGE_KEYS,
-    useLocalStorageManual,
-} from "@/lib/client/useLocalStorage";
+import { STORAGE_KEYS, useLocalStorage } from "@/lib/client/useLocalStorage";
 
 export function PlayPlayerInfoResolver({
     request,
@@ -27,10 +24,10 @@ export function PlayPlayerInfoResolver({
         request.limitSeconds,
     );
     const [open, setOpen] = useState(true);
-    // guestName: 初期値を localStorage から読み込み、確定時のみ永続化する
-    const [guestName, setGuestName, persistGuestName] = useLocalStorageManual<
-        string | undefined
-    >(STORAGE_KEYS.PLAYER_INFO_NAME, undefined);
+    const [guestName, setGuestName] = useLocalStorage(
+        STORAGE_KEYS.PLAYER_INFO_NAME,
+        "",
+    );
 
     function handleDeny() {
         request.onResolve(false, request.guestName);
@@ -38,13 +35,14 @@ export function PlayPlayerInfoResolver({
     }
 
     function handleAccept() {
-        const resolvedName =
-            (user?.authType === "guest" ? guestName : user?.name) ??
-            request.guestName;
-        request.onResolve(true, resolvedName);
-        if (user?.authType === "guest" && guestName) {
-            persistGuestName(guestName);
+        let resolvedName = request.guestName;
+        if (user?.authType === "oauth") {
+            resolvedName = user.name;
+        } else if (user?.authType === "guest" && guestName) {
+            resolvedName = guestName;
+            setGuestName(guestName, true);
         }
+        request.onResolve(true, resolvedName);
         setOpen(false);
     }
 
@@ -92,7 +90,7 @@ export function PlayPlayerInfoResolver({
                             label="ユーザー名"
                             value={guestName}
                             onChange={(event) =>
-                                setGuestName(event.target.value)
+                                setGuestName(event.target.value, false)
                             }
                             slotProps={{
                                 htmlInput: {
