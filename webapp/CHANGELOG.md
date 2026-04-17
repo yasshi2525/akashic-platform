@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.4.11
+
+- Misc
+  - Content Log, Client Log 削除時の表示に対応
+
 ## 1.4.10
 
 - Bug Fix
