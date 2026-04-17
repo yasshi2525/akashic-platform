@@ -15,6 +15,10 @@ const fetcher = async (url: string) => {
                 throw new Error("このログを閲覧する権限がありません");
             case "NotFound":
                 throw new Error("指定された部屋が見つかりませんでした。");
+            case "Deleted":
+                throw new Error(
+                    "このログは保存期間が過ぎたため削除されました。",
+                );
             case "InternalError":
             default:
                 throw new Error(

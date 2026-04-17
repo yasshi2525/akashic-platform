@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 1.4.14
+
+- Improve
+  - 古い Content Log, Client Log ファイルを削除する運用ができるよう改善 (#62)
+    - `./schema/persist`
+      - ログファイルの削除フラグを追加
+    - `./webapp`
+      - ファイルが削除された際の表示を追加
+
 ## 1.4.13
 
 - Bug Fix

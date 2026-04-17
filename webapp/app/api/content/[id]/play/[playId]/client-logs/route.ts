@@ -77,6 +77,7 @@ export async function POST(
             id: true,
             contentId: true,
             isActive: true,
+            logDeletedAt: true,
             content: {
                 select: {
                     game: {
@@ -262,6 +263,21 @@ export async function GET(
         return NextResponse.json({
             ok: false,
             reason: "Forbidden",
+        });
+    }
+
+    const play = await prisma.play.findUnique({
+        where: {
+            id: parseInt(playId),
+        },
+        select: {
+            logDeletedAt: true,
+        },
+    });
+    if (play?.logDeletedAt != null) {
+        return NextResponse.json({
+            ok: false,
+            reason: "Deleted",
         });
     }
 

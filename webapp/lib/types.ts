@@ -111,6 +111,7 @@ export interface ContentLogInfo {
     createdAt: Date;
     endedAt: Date | null;
     logUploadedAt: Date | null;
+    logDeletedAt: Date | null;
     crashed: boolean;
     errorLogged: boolean;
     clientLogCount: number;
@@ -177,6 +178,7 @@ const clientLogsGetErrReasons = [
     "InvalidParams",
     "Forbidden",
     "NotFound",
+    "Deleted",
     "InternalError",
 ] as const;
 export type ClientLogsGetErrorType = (typeof clientLogsGetErrReasons)[number];
@@ -334,6 +336,7 @@ const contentLogErrReasons = [
     "InvalidParams",
     "Forbidden",
     "NotFound",
+    "Deleted",
     "InternalError",
 ] as const;
 export type ContentLogErrorType = (typeof contentLogErrReasons)[number];

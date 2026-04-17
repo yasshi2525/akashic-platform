@@ -106,6 +106,7 @@ model Play {
   isActive      Boolean   @default(true)
   endedAt       DateTime?
   logUploadedAt DateTime?
+  logDeletedAt  DateTime?
   crashed       Boolean   @default(false)
   errorLogged   Boolean   @default(false)
 
