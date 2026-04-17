@@ -15,3 +15,12 @@
 - コンテンツ投稿
 - コンテンツ更新
 - ゲーム削除
+
+## ログの削除
+
+エンドポイント: `/content-logs/delete`
+
+一定期間経過したContent Log, Client Log を削除します
+
+- retetionDays: 保持日数
+- includeErrored: エラーログも消すか

@@ -17,15 +17,16 @@ COPY manager-server/package.json manager-server/package.json
 RUN npm ci -w manager-server
 
 COPY . .
-RUN npm run build -w manager-server
+RUN npm run build:all -w @yasshi2525/manager-server
 
 FROM node:${NODE_VERSION}-alpine
 WORKDIR /app
 ENV NODE_ENV=production
-ENV MANAGER_PORT=3100
+ENV PORT=3100
+COPY --from=build --parents /app/schema/persist/package.json /app/schema/persist/dist /
 COPY --from=build --parents /app/manager-server/package.json /app/manager-server/dist /
 COPY --from=build --parents /app/package.json /app/node_modules /
 RUN chown -R node:node .
-EXPOSE ${MANAGER_PORT}
+EXPOSE ${PORT}
 USER node
 CMD ["npm", "run", "run", "-w", "@yasshi2525/manager-server"]

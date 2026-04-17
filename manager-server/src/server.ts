@@ -2,6 +2,8 @@ import { Server } from "node:http";
 import { createHmac, randomUUID } from "node:crypto";
 import * as express from "express";
 import { Express, NextFunction, Request, Response } from "express";
+import { prisma } from "@yasshi2525/persist-schema";
+import { deleteClientLogs, deleteContentLog } from "./s3";
 
 const WEBAPP_URL = process.env.WEBAPP_URL ?? "http://localhost:3000";
 const hmacSecret = process.env.HMAC_SECRET;
@@ -110,6 +112,103 @@ export class HttpServer {
                 });
                 return;
             }
+        });
+
+        app.get("/content-logs/delete", async (req: Request, res: Response) => {
+            const retentionDays = Number(req.query.retentionDays ?? 30);
+            const includeErrored = req.query.includeErrored === "true";
+
+            if (!Number.isInteger(retentionDays) || retentionDays < 1) {
+                res.status(400).json({
+                    ok: false,
+                    reason: "InvalidParams",
+                    message: "retentionDays must be a positive integer",
+                });
+                return;
+            }
+
+            const cutoff = new Date(
+                Date.now() - retentionDays * 24 * 60 * 60 * 1000,
+            );
+
+            const candidates = await prisma.play.findMany({
+                where: {
+                    isActive: false,
+                    logUploadedAt: {
+                        not: null,
+                    },
+                    logDeletedAt: null,
+                    endedAt: {
+                        lt: cutoff,
+                    },
+                    ...(!includeErrored
+                        ? {
+                              crashed: false,
+                              errorLogged: false,
+                          }
+                        : {}),
+                },
+                select: {
+                    id: true,
+                    contentId: true,
+                },
+            });
+
+            let targets = candidates;
+            if (!includeErrored && candidates.length > 0) {
+                const clientLoggedPlayIds = await prisma.clientLogRecord
+                    .findMany({
+                        where: {
+                            playId: {
+                                in: candidates.map((p) => p.id),
+                            },
+                        },
+                        select: {
+                            playId: true,
+                        },
+                        distinct: ["playId"],
+                    })
+                    .then((rows) => new Set(rows.map((r) => r.playId)));
+                targets = candidates.filter(
+                    (p) => !clientLoggedPlayIds.has(p.id),
+                );
+            }
+
+            const deletedAt = new Date();
+            let succeeded = 0;
+            let failed = 0;
+
+            for (const play of targets) {
+                try {
+                    await deleteContentLog(play.contentId, play.id);
+                    await deleteClientLogs(play.contentId, play.id);
+                    await prisma.play.update({
+                        where: {
+                            id: play.id,
+                        },
+                        data: {
+                            logDeletedAt: deletedAt,
+                        },
+                    });
+                    succeeded++;
+                } catch (err) {
+                    console.warn(
+                        `failed to delete logs (playId = ${play.id})`,
+                        err,
+                    );
+                    failed++;
+                }
+            }
+
+            res.json({
+                ok: true,
+                retentionDays,
+                includeErrored,
+                cutoff: cutoff.toISOString(),
+                total: targets.length,
+                succeeded,
+                failed,
+            });
         });
 
         app.use((req: Request, res: Response) => {
