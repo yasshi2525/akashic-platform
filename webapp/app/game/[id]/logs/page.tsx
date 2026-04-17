@@ -451,7 +451,7 @@ function ContentLogCard({ info }: { info: ContentLogInfo }) {
                         variant="body2"
                         color={theme.palette.text.secondary}
                     >
-                        保存期間が過ぎたため、ログデータは削除されました
+                        保存期間が過ぎたため、プレイヤーから報告されたログは削除されました
                     </Typography>
                 ) : info.logUploadedAt ? (
                     <Button
