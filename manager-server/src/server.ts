@@ -12,11 +12,6 @@ if (!hmacSecret) {
     throw new Error("HMAC_SECRET is required");
 }
 
-type DrainRequest = {
-    enabled?: boolean;
-    reason?: string;
-};
-
 function createDrainSignature(rawBody: string) {
     const timestamp = Date.now().toString();
     const requestId = randomUUID();
@@ -131,84 +126,92 @@ export class HttpServer {
                 Date.now() - retentionDays * 24 * 60 * 60 * 1000,
             );
 
-            const candidates = await prisma.play.findMany({
-                where: {
-                    isActive: false,
-                    logUploadedAt: {
-                        not: null,
+            try {
+                const candidates = await prisma.play.findMany({
+                    where: {
+                        isActive: false,
+                        logUploadedAt: {
+                            not: null,
+                        },
+                        logDeletedAt: null,
+                        endedAt: {
+                            lt: cutoff,
+                        },
+                        ...(!includeErrored
+                            ? {
+                                  crashed: false,
+                                  errorLogged: false,
+                              }
+                            : {}),
                     },
-                    logDeletedAt: null,
-                    endedAt: {
-                        lt: cutoff,
+                    select: {
+                        id: true,
+                        contentId: true,
                     },
-                    ...(!includeErrored
-                        ? {
-                              crashed: false,
-                              errorLogged: false,
-                          }
-                        : {}),
-                },
-                select: {
-                    id: true,
-                    contentId: true,
-                },
-            });
+                });
 
-            let targets = candidates;
-            if (!includeErrored && candidates.length > 0) {
-                const clientLoggedPlayIds = await prisma.clientLogRecord
-                    .findMany({
-                        where: {
-                            playId: {
-                                in: candidates.map((p) => p.id),
+                let targets = candidates;
+                if (!includeErrored && candidates.length > 0) {
+                    const clientLoggedPlayIds = await prisma.clientLogRecord
+                        .findMany({
+                            where: {
+                                playId: {
+                                    in: candidates.map((p) => p.id),
+                                },
                             },
-                        },
-                        select: {
-                            playId: true,
-                        },
-                        distinct: ["playId"],
-                    })
-                    .then((rows) => new Set(rows.map((r) => r.playId)));
-                targets = candidates.filter(
-                    (p) => !clientLoggedPlayIds.has(p.id),
-                );
-            }
-
-            const deletedAt = new Date();
-            let succeeded = 0;
-            let failed = 0;
-
-            for (const play of targets) {
-                try {
-                    await deleteContentLog(play.contentId, play.id);
-                    await deleteClientLogs(play.contentId, play.id);
-                    await prisma.play.update({
-                        where: {
-                            id: play.id,
-                        },
-                        data: {
-                            logDeletedAt: deletedAt,
-                        },
-                    });
-                    succeeded++;
-                } catch (err) {
-                    console.warn(
-                        `failed to delete logs (playId = ${play.id})`,
-                        err,
+                            select: {
+                                playId: true,
+                            },
+                            distinct: ["playId"],
+                        })
+                        .then((rows) => new Set(rows.map((r) => r.playId)));
+                    targets = candidates.filter(
+                        (p) => !clientLoggedPlayIds.has(p.id),
                     );
-                    failed++;
                 }
-            }
 
-            res.json({
-                ok: true,
-                retentionDays,
-                includeErrored,
-                cutoff: cutoff.toISOString(),
-                total: targets.length,
-                succeeded,
-                failed,
-            });
+                const deletedAt = new Date();
+                let succeeded = 0;
+                let failed = 0;
+
+                for (const play of targets) {
+                    try {
+                        await deleteContentLog(play.contentId, play.id);
+                        await deleteClientLogs(play.contentId, play.id);
+                        await prisma.play.update({
+                            where: {
+                                id: play.id,
+                            },
+                            data: {
+                                logDeletedAt: deletedAt,
+                            },
+                        });
+                        succeeded++;
+                    } catch (err) {
+                        console.warn(
+                            `failed to delete logs (playId = ${play.id})`,
+                            err,
+                        );
+                        failed++;
+                    }
+                }
+
+                res.json({
+                    ok: true,
+                    retentionDays,
+                    includeErrored,
+                    cutoff: cutoff.toISOString(),
+                    total: targets.length,
+                    succeeded,
+                    failed,
+                });
+            } catch (err) {
+                res.status(500).json({
+                    ok: false,
+                    reason: "InternalError",
+                    message: (err as Error).message,
+                });
+            }
         });
 
         app.use((req: Request, res: Response) => {

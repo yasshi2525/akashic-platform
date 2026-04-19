@@ -8,7 +8,7 @@ import {
 
 let s3Client: S3Client | undefined;
 
-function getS3Client(): S3Client {
+function getS3Client() {
     if (!s3Client) {
         s3Client = new S3Client({
             region: process.env.S3_REGION ?? "us-east-1",
@@ -26,7 +26,7 @@ function getS3Client(): S3Client {
     return s3Client;
 }
 
-function getBucket(): string {
+function getBucket() {
     if (!process.env.S3_BUCKET) {
         throw new Error("S3_BUCKET is required.");
     }
@@ -35,18 +35,15 @@ function getBucket(): string {
 
 const keyPrefix = process.env.S3_KEY_PREFIX ?? "";
 
-export function contentLogKey(contentId: number, playId: number): string {
+export function contentLogKey(contentId: number, playId: number) {
     return `${keyPrefix}content-logs/${contentId}/${playId}.jsonl`;
 }
 
-export function clientLogPrefix(contentId: number, playId: number): string {
+export function clientLogPrefix(contentId: number, playId: number) {
     return `${keyPrefix}client-logs/${contentId}/${playId}/`;
 }
 
-export async function deleteContentLog(
-    contentId: number,
-    playId: number,
-): Promise<void> {
+export async function deleteContentLog(contentId: number, playId: number) {
     await getS3Client().send(
         new DeleteObjectCommand({
             Bucket: getBucket(),
@@ -55,10 +52,7 @@ export async function deleteContentLog(
     );
 }
 
-export async function deleteClientLogs(
-    contentId: number,
-    playId: number,
-): Promise<void> {
+export async function deleteClientLogs(contentId: number, playId: number) {
     const bucket = getBucket();
     const prefix = clientLogPrefix(contentId, playId);
     let continuationToken: string | undefined;
@@ -75,12 +69,21 @@ export async function deleteClientLogs(
             .filter((key): key is string => Boolean(key))
             .map((key) => ({ Key: key }));
         if (objects.length > 0) {
-            await getS3Client().send(
+            const res = await getS3Client().send(
                 new DeleteObjectsCommand({
                     Bucket: bucket,
                     Delete: { Objects: objects, Quiet: true },
                 }),
             );
+            if (res.Errors && res.Errors.length > 0) {
+                console.warn(
+                    `failed to delete some client logs (contentId = ${contentId}, playId = ${playId})`,
+                    res.Errors,
+                );
+                throw new Error(
+                    `failed to delete some client logs (contentId = ${contentId}, playId = ${playId})`,
+                );
+            }
         }
         continuationToken = res.NextContinuationToken;
     } while (continuationToken);
