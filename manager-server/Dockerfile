@@ -26,7 +26,7 @@ ENV PORT=3100
 COPY --from=build --parents /app/schema/persist/package.json /app/schema/persist/dist /
 COPY --from=build --parents /app/manager-server/package.json /app/manager-server/dist /
 COPY --from=build --parents /app/package.json /app/node_modules /
-COPY *.pem ./
+COPY *.pem ./manager-server
 RUN chown -R node:node .
 EXPOSE ${PORT}
 USER node
