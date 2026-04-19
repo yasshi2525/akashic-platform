@@ -257,6 +257,14 @@ services:
       MANAGER_PORT: 3100
       WEBAPP_URL: http://webapp:3000
       HMAC_SECRET: ${HMAC_SECRET:-local-hmac-secret}
+      DATABASE_URL: postgres://ap-user:${POSTGRES_PASSWORD:-postgres}@postgres:5432/akashic
+      S3_ENDPOINT: http://minio:9000
+      S3_BUCKET: akashic-content
+      S3_KEY_PREFIX: cdn/
+      S3_REGION: us-east-1
+      S3_FORCE_PATH_STYLE: true
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
     depends_on:
       webapp:
         condition: service_started

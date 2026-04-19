@@ -22,6 +22,55 @@ export const openapi = {
                 },
             },
         },
+        "/content-logs/delete": {
+            get: {
+                summary: "Delete old play logs from S3 and mark them in DB",
+                parameters: [
+                    {
+                        name: "retentionDays",
+                        minimum: 1,
+                        default: 30,
+                        description:
+                            "Logs older than this many days are deleted",
+                        in: "query",
+                        required: false,
+                        schema: { type: "string" },
+                    },
+                    {
+                        name: "includeErrored",
+                        default: false,
+                        description:
+                            "If true, also delete logs from plays with errors or client log reports",
+                        in: "query",
+                        required: false,
+                        schema: { type: "string" },
+                    },
+                ],
+                responses: {
+                    "200": {
+                        description:
+                            "Deletion completed (check failed count for partial errors)",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/LogDeleteResponse",
+                                },
+                            },
+                        },
+                    },
+                    "400": {
+                        description: "Invalid parameters",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
         "/drain": {
             get: {
                 summary: "Forward a signed drain request to webapp",
@@ -91,6 +140,30 @@ export const openapi = {
     },
     components: {
         schemas: {
+            LogDeleteResponse: {
+                type: "object",
+                required: [
+                    "ok",
+                    "retentionDays",
+                    "includeErrored",
+                    "cutoff",
+                    "total",
+                    "succeeded",
+                    "failed",
+                ],
+                properties: {
+                    ok: { type: "boolean", enum: [true] },
+                    retentionDays: { type: "integer" },
+                    includeErrored: { type: "boolean" },
+                    cutoff: { type: "string", format: "date-time" },
+                    total: {
+                        type: "integer",
+                        description: "Number of plays targeted for deletion",
+                    },
+                    succeeded: { type: "integer" },
+                    failed: { type: "integer" },
+                },
+            },
             HealthResponse: {
                 type: "object",
                 required: ["ok"],
