@@ -31,6 +31,8 @@ import {
     VolumeUp,
     X,
 } from "@mui/icons-material";
+import { useFavorites } from "@/lib/client/useFavorites";
+import { FavoriteButton } from "./favorite-button";
 import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
 import { GameInfo, User } from "@/lib/types";
 import { useAkashic } from "@/lib/client/useAkashic";
@@ -116,6 +118,8 @@ export function PlayView({
     const theme = useTheme();
     const { playlogServerUrl } = useAkashic();
     const { niconicommonsWorkUrl, clientLogCacheMaxEntries } = useCustomData();
+    const isOAuth = user.authType === "oauth";
+    const { favoriteGameIds, add: addFavorite, remove: removeFavorite } = useFavorites();
     useEffect(() => {
         container.setClientLogMaxEntries(clientLogCacheMaxEntries);
     }, [clientLogCacheMaxEntries]);
@@ -925,6 +929,15 @@ export function PlayView({
                                             >
                                                 {game.title}
                                             </Typography>
+                                            {isOAuth && (
+                                                <FavoriteButton
+                                                    gameId={game.id}
+                                                    isFavorited={favoriteGameIds.has(game.id)}
+                                                    onAdd={addFavorite}
+                                                    onRemove={removeFavorite}
+                                                    size="medium"
+                                                />
+                                            )}
                                             <Tooltip
                                                 arrow
                                                 title={

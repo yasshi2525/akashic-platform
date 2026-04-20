@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.6.0
+
+- Feature
+  - お気に入り機能として `Favorite` テーブルを追加
+
 ## 1.5.0
 
 - Feature
