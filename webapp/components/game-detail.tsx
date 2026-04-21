@@ -20,6 +20,7 @@ import { CreditPanel } from "./credit-panel";
 import { UserInline } from "./user-inline";
 import { renderTextWithLinks } from "./text-with-links";
 import { PlayCreateDialog } from "./play-create-dialog";
+import { FavoriteButton } from "./favorite-button";
 
 export function GameDetailClient({
     gameInfo,
@@ -72,9 +73,19 @@ export function GameDetailClient({
                                 sx={{ width: 160, height: 160 }}
                             />
                             <Stack spacing={1} sx={{ flexGrow: 1 }}>
-                                <Typography variant="h4" component="h1">
-                                    {gameInfo.title}
-                                </Typography>
+                                <Stack
+                                    direction="row"
+                                    spacing={1}
+                                    alignItems="center"
+                                >
+                                    <Typography variant="h4" component="h1">
+                                        {gameInfo.title}
+                                    </Typography>
+                                    <FavoriteButton
+                                        gameId={gameInfo.id}
+                                        initialFavorited={gameInfo.isFavorited}
+                                    />
+                                </Stack>
                                 <Stack
                                     direction="row"
                                     spacing={1}

@@ -39,6 +39,7 @@ export interface GameInfo {
         image?: string;
     };
     contentId: number;
+    isFavorited: boolean;
     createdAt: Date;
     updatedAt: Date;
 }

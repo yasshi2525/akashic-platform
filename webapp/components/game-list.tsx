@@ -62,8 +62,7 @@ function GameTableCells({
     setGameTitle,
     expandedSet,
     onToggleDescription,
-    isFavoritesLoading,
-    favoriteGameIds,
+    withFavorites,
 }: {
     list: GameInfo[];
     selected?: number;
@@ -71,11 +70,10 @@ function GameTableCells({
     setGameTitle: (title?: string) => void;
     expandedSet: Set<number>;
     onToggleDescription: (e: MouseEvent, id: number) => void;
-    isFavoritesLoading: boolean;
-    favoriteGameIds: Set<number>;
+    withFavorites: boolean;
 }) {
     const theme = useTheme();
-    const [user] = useAuth();
+
     function handleClick(id: number, title: string) {
         if (id === selected) {
             setSelected(undefined);
@@ -148,14 +146,12 @@ function GameTableCells({
                     {game.playCount.toLocaleString()} 回
                 </Typography>
             </TableCell>
-            {user?.authType === "oauth" && (
-                <TableCell width={56}>
+            {withFavorites && (
+                <TableCell>
                     <FavoriteButton
-                        userId={user.id}
                         gameId={game.id}
-                        isLoading={isFavoritesLoading}
-                        isFavorited={favoriteGameIds.has(game.id)}
-                        size="small"
+                        initialFavorited={game.isFavorited}
+                        size="medium"
                     />
                 </TableCell>
             )}
@@ -184,19 +180,16 @@ export function GameList({
     const { isLoading, list, page, setPage, isEmpty, isEnd } =
         useGameList(debouncedKeyword);
     const [expandedSet, setExpandedSet] = useState<Set<number>>(new Set());
-    const {
-        isLoading: isFavoritesLoading,
-        favorites,
-        favoriteGameIds,
-    } = useFavorites();
+    const { data: favorites } = useFavorites();
+    const withFavorites = !!user && user.authType !== "guest";
 
     const filteredFavorites = debouncedKeyword
-        ? favorites.filter(
+        ? (favorites ?? []).filter(
               (game) =>
                   game.title.includes(debouncedKeyword) ||
                   game.description.includes(debouncedKeyword),
           )
-        : favorites;
+        : (favorites ?? []);
 
     function handleToggleDescription(e: MouseEvent, id: number) {
         e.stopPropagation();
@@ -254,6 +247,10 @@ export function GameList({
                                     <Typography variant="body1">
                                         {game.title}
                                     </Typography>
+                                    <FavoriteButton
+                                        gameId={game.id}
+                                        initialFavorited={game.isFavorited}
+                                    />
                                     {!game.streaming && (
                                         <Typography
                                             variant="body2"
@@ -303,17 +300,6 @@ export function GameList({
                                     プレイ数: {game.playCount.toLocaleString()}{" "}
                                     回
                                 </Typography>
-                                {user?.authType === "oauth" && (
-                                    <FavoriteButton
-                                        userId={user.id}
-                                        gameId={game.id}
-                                        isLoading={isFavoritesLoading}
-                                        isFavorited={favoriteGameIds.has(
-                                            game.id,
-                                        )}
-                                        size="small"
-                                    />
-                                )}
                             </Stack>
                         </Stack>
                     </Stack>
@@ -323,7 +309,7 @@ export function GameList({
 
         return (
             <Stack spacing={2}>
-                {user?.authType === "oauth" && filteredFavorites.length > 0 && (
+                {withFavorites && filteredFavorites.length > 0 && (
                     <>
                         <Stack direction="row" spacing={1} alignItems="center">
                             <StarOutlined fontSize="small" color="warning" />
@@ -351,7 +337,12 @@ export function GameList({
                         ゲームが見つかりませんでした
                     </Typography>
                 ) : (
-                    <Stack spacing={2}>{list.flat().map(renderCard)}</Stack>
+                    <Stack spacing={2}>
+                        {list
+                            .flat()
+                            .filter((game) => !game.isFavorited)
+                            .map(renderCard)}
+                    </Stack>
                 )}
                 {!isLoading && list != null && !isEmpty && !isEnd && (
                     <Button
@@ -383,17 +374,14 @@ export function GameList({
                         >
                             プレイ数
                         </TableCell>
-                        {user?.authType === "oauth" && <TableCell width={56} />}
+                        {withFavorites && <TableCell />}
                         <TableCell />
                     </TableRow>
                 </TableHead>
-                {user?.authType === "oauth" && filteredFavorites.length > 0 && (
+                {withFavorites && filteredFavorites.length > 0 && (
                     <TableBody>
                         <TableRow>
-                            <TableCell
-                                colSpan={user?.authType === "oauth" ? 5 : 4}
-                                sx={{ pb: 0, pt: 1 }}
-                            >
+                            <TableCell colSpan={5} sx={{ pb: 0, pt: 1 }}>
                                 <Stack
                                     direction="row"
                                     spacing={1}
@@ -419,14 +407,10 @@ export function GameList({
                             setGameTitle={setGameTitle}
                             expandedSet={expandedSet}
                             onToggleDescription={handleToggleDescription}
-                            isFavoritesLoading={isFavoritesLoading}
-                            favoriteGameIds={favoriteGameIds}
+                            withFavorites={withFavorites}
                         />
                         <TableRow>
-                            <TableCell
-                                colSpan={user?.authType === "oauth" ? 5 : 4}
-                                sx={{ p: 0 }}
-                            >
+                            <TableCell colSpan={5} sx={{ p: 0 }}>
                                 <Divider />
                             </TableCell>
                         </TableRow>
@@ -443,19 +427,20 @@ export function GameList({
                 ) : (
                     <TableBody>
                         <GameTableCells
-                            list={list.flat()}
+                            list={list
+                                .flat()
+                                .filter((game) => !game.isFavorited)}
                             selected={selected}
                             setSelected={setSelected}
                             setGameTitle={setGameTitle}
                             expandedSet={expandedSet}
                             onToggleDescription={handleToggleDescription}
-                            isFavoritesLoading={isFavoritesLoading}
-                            favoriteGameIds={favoriteGameIds}
+                            withFavorites={withFavorites}
                         />
                         {!isEnd && (
                             <TableRow>
                                 <TableCell
-                                    colSpan={user?.authType === "oauth" ? 5 : 4}
+                                    colSpan={withFavorites ? 5 : 4}
                                     sx={{ textAlign: "center" }}
                                 >
                                     <Button

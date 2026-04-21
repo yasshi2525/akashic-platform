@@ -35,7 +35,6 @@ import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
 import { GameInfo, User } from "@/lib/types";
 import { useAkashic } from "@/lib/client/useAkashic";
 import { useCustomData } from "@/lib/client/useCustomData";
-import { useFavorites } from "@/lib/client/useFavorites";
 import { STORAGE_KEYS, useLocalStorage } from "@/lib/client/useLocalStorage";
 import { ResolvingPlayerInfoRequest } from "@/lib/client/akashic-plugins/coe-limited-plugin";
 import { AkashicContainer } from "@/lib/client/akashic-container";
@@ -118,7 +117,6 @@ export function PlayView({
     const theme = useTheme();
     const { playlogServerUrl } = useAkashic();
     const { niconicommonsWorkUrl, clientLogCacheMaxEntries } = useCustomData();
-    const { isLoading: favoritesLoading, favoriteGameIds } = useFavorites();
     useEffect(() => {
         container.setClientLogMaxEntries(clientLogCacheMaxEntries);
     }, [clientLogCacheMaxEntries]);
@@ -928,17 +926,6 @@ export function PlayView({
                                             >
                                                 {game.title}
                                             </Typography>
-                                            {user.authType !== "guest" && (
-                                                <FavoriteButton
-                                                    userId={user.id}
-                                                    gameId={game.id}
-                                                    isLoading={favoritesLoading}
-                                                    isFavorited={favoriteGameIds.has(
-                                                        game.id,
-                                                    )}
-                                                    size="medium"
-                                                />
-                                            )}
                                             <Tooltip
                                                 arrow
                                                 title={
@@ -1008,6 +995,12 @@ export function PlayView({
                                                     </Typography>
                                                 </Stack>
                                             </Tooltip>
+                                            <FavoriteButton
+                                                gameId={game.id}
+                                                initialFavorited={
+                                                    game.isFavorited
+                                                }
+                                            />
                                         </Stack>
                                         <Stack
                                             direction="row"

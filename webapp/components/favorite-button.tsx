@@ -9,25 +9,28 @@ import {
     Tooltip,
     useTheme,
 } from "@mui/material";
-import { Favorite, FavoriteBorder } from "@mui/icons-material";
+import { Star, StarBorder } from "@mui/icons-material";
+import { useAuth } from "@/lib/client/useAuth";
 import { addFavorite, deleteFavorite } from "@/lib/server/favorite";
 
 export function FavoriteButton({
-    userId,
     gameId,
-    isLoading,
-    isFavorited,
-    size = "medium",
+    initialFavorited,
+    size = "large",
 }: {
-    userId: string;
     gameId: number;
-    isLoading: boolean;
-    isFavorited: boolean;
+    initialFavorited: boolean;
     size?: "small" | "medium" | "large";
 }) {
     const theme = useTheme();
+    const [user] = useAuth();
+    const [isFavorited, setFavorited] = useState(initialFavorited);
     const [isUpdating, setIsUpdating] = useState(false);
     const [error, setError] = useState<string>();
+
+    if (!user || user.authType === "guest") {
+        return null;
+    }
 
     async function handleClick(e: React.MouseEvent) {
         e.stopPropagation();
@@ -36,9 +39,11 @@ export function FavoriteButton({
         }
         setIsUpdating(true);
         const res = isFavorited
-            ? await deleteFavorite({ userId, gameId })
-            : await addFavorite({ userId, gameId });
-        if (!res.ok) {
+            ? await deleteFavorite(user!.id, gameId)
+            : await addFavorite(user!.id, gameId);
+        if (res.ok) {
+            setFavorited((prev) => !prev);
+        } else {
             switch (res.reason) {
                 case "AlreadyExists":
                     setError("すでにお気に入りに追加されています。");
@@ -62,14 +67,6 @@ export function FavoriteButton({
             }
         }
         setIsUpdating(false);
-    }
-
-    if (isLoading) {
-        return (
-            <CircularProgress
-                size={size === "small" ? 16 : size === "large" ? 28 : 22}
-            />
-        );
     }
     return (
         <>
@@ -96,12 +93,12 @@ export function FavoriteButton({
                             }
                         />
                     ) : isFavorited ? (
-                        <Favorite
+                        <Star
                             fontSize={size}
                             sx={{ color: theme.palette.primary.light }}
                         />
                     ) : (
-                        <FavoriteBorder fontSize={size} />
+                        <StarBorder fontSize={size} />
                     )}
                 </IconButton>
             </Tooltip>

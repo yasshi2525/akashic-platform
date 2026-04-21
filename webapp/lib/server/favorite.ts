@@ -2,6 +2,7 @@
 
 import { prisma } from "@yasshi2525/persist-schema";
 import { isWriteBlocked } from "./drain-state";
+import { User } from "../types";
 
 const favoriteToggleErrReasons = [
     "AlreadyExists",
@@ -15,13 +16,60 @@ type FavoriteToggleResponse =
     | { ok: true }
     | { ok: false; reason: FavoriteToggleErrorType };
 
-export async function addFavorite({
-    userId,
-    gameId,
-}: {
-    userId: string;
-    gameId: number;
-}): Promise<FavoriteToggleResponse> {
+export async function isFavorited(
+    user: User | null,
+    gameId: number,
+): Promise<boolean> {
+    if (!user || user.authType === "guest") {
+        return false;
+    }
+    try {
+        const favorite = await prisma.favorite.findUnique({
+            where: {
+                userId_gameId: {
+                    userId: user.id,
+                    gameId,
+                },
+            },
+            select: { id: true },
+        });
+        return !!favorite;
+    } catch (err) {
+        console.warn(
+            `failed to check favorite (userId = ${user.id}, gameId = ${gameId})`,
+            err,
+        );
+        return false;
+    }
+}
+
+export async function getFavoriteList(user: User | null, gameIds: number[]) {
+    if (!user || user.authType === "guest") {
+        return [];
+    }
+    try {
+        const favorites = await prisma.favorite.findMany({
+            where: {
+                userId: user.id,
+                gameId: {
+                    in: gameIds,
+                },
+            },
+            select: {
+                gameId: true,
+            },
+        });
+        return favorites.map((f) => f.gameId);
+    } catch (err) {
+        console.warn(`failed to get favorite list (userId = ${user.id})`, err);
+        return [];
+    }
+}
+
+export async function addFavorite(
+    userId: string,
+    gameId: number,
+): Promise<FavoriteToggleResponse> {
     if (isWriteBlocked()) {
         return {
             ok: false,
@@ -65,13 +113,10 @@ export async function addFavorite({
     }
 }
 
-export async function deleteFavorite({
-    userId,
-    gameId,
-}: {
-    userId: string;
-    gameId: number;
-}): Promise<FavoriteToggleResponse> {
+export async function deleteFavorite(
+    userId: string,
+    gameId: number,
+): Promise<FavoriteToggleResponse> {
     if (isWriteBlocked()) {
         return {
             ok: false,

@@ -3,6 +3,8 @@ import { prisma } from "@yasshi2525/persist-schema";
 import { GameInfo, GAMELIST_LIMITS } from "@/lib/types";
 import { publicContentBaseUrl } from "@/lib/server/akashic";
 import { fetchLicense } from "@/lib/server/game-info";
+import { getFavoriteList } from "@/lib/server/favorite";
+import { getAuth } from "@/lib/server/auth";
 
 export async function GET(req: NextRequest) {
     const keyword = req.nextUrl.searchParams.get("keyword") ?? undefined;
@@ -87,6 +89,12 @@ export async function GET(req: NextRequest) {
             createdAt: true,
         },
     });
+    const favoritedGameIds = new Set(
+        await getFavoriteList(
+            await getAuth(),
+            result.map((game) => game.id),
+        ),
+    );
     return NextResponse.json({
         ok: true,
         data: await Promise.all(
@@ -117,6 +125,7 @@ export async function GET(req: NextRequest) {
                         playCount,
                         license: await fetchLicense(versions[0].id),
                         contentId: versions[0].id,
+                        isFavorited: favoritedGameIds.has(id),
                         createdAt,
                         updatedAt: versions[0].updatedAt,
                     }) satisfies GameInfo,

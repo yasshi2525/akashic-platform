@@ -6,12 +6,10 @@ import { format } from "date-fns";
 import {
     Alert,
     Avatar,
-    Box,
     Button,
     Card,
     CardContent,
     Container,
-    Divider,
     Stack,
     Tooltip,
     Typography,
@@ -21,8 +19,6 @@ import {
     ArrowBack,
     Home,
     Lock,
-    OpenInNew,
-    PlayArrow,
     Videocam,
     VideocamOff,
 } from "@mui/icons-material";
@@ -31,6 +27,7 @@ import { UserInline } from "./user-inline";
 import { CreditPanel } from "./credit-panel";
 import { renderTextWithLinks } from "./text-with-links";
 import { PlayCreateDialog } from "./play-create-dialog";
+import { FavoriteButton } from "./favorite-button";
 
 function formatDate(date?: Date): string {
     if (!date) return "--";
@@ -249,6 +246,10 @@ export function ClosedPlayView({
                                                 </Typography>
                                             </Stack>
                                         </Tooltip>
+                                        <FavoriteButton
+                                            gameId={game.id}
+                                            initialFavorited={game.isFavorited}
+                                        />
                                     </Stack>
                                     <Stack
                                         direction="row"

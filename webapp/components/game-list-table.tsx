@@ -18,8 +18,10 @@ import {
     useMediaQuery,
     useTheme,
 } from "@mui/material";
+import { useAuth } from "@/lib/client/useAuth";
 import { GameInfo } from "@/lib/types";
 import { GameDescription } from "./text-with-links";
+import { FavoriteButton } from "./favorite-button";
 
 function Loading() {
     return (
@@ -53,11 +55,13 @@ function GameTableCells({
     renderActions,
     expandedSet,
     onToggleDescription,
+    withFavorite,
 }: {
     list: GameInfo[];
     renderActions?: (game: GameInfo, isTable: boolean) => ReactNode;
     expandedSet: Set<number>;
     onToggleDescription: (e: MouseEvent, id: number) => void;
+    withFavorite: boolean;
 }) {
     const theme = useTheme();
 
@@ -116,6 +120,14 @@ function GameTableCells({
                     {renderActions?.(game, true)}
                 </Stack>
             </TableCell>
+            {withFavorite && (
+                <TableCell>
+                    <FavoriteButton
+                        gameId={game.id}
+                        initialFavorited={game.isFavorited}
+                    />
+                </TableCell>
+            )}
         </TableRow>
     ));
 }
@@ -136,6 +148,7 @@ export function GameListTable({
     renderActions?: (game: GameInfo, isTable: boolean) => ReactNode;
 }) {
     const theme = useTheme();
+    const [user] = useAuth();
     const isTable = useMediaQuery(theme.breakpoints.up("md"));
     const [expandedSet, setExpandedSet] = useState<Set<number>>(new Set());
 
@@ -290,6 +303,7 @@ export function GameListTable({
                             renderActions={renderActions}
                             expandedSet={expandedSet}
                             onToggleDescription={handleToggleDescription}
+                            withFavorite={!!user && user.authType !== "guest"}
                         />
                         {!isEnd && (
                             <TableRow>

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@yasshi2525/persist-schema";
-import { FavoriteListResponse, GameInfo } from "@/lib/types";
+import { FavoriteListResponse } from "@/lib/types";
 import { publicContentBaseUrl } from "@/lib/server/akashic";
 import { fetchLicense } from "@/lib/server/game-info";
 import { getAuth } from "@/lib/server/auth";
@@ -18,7 +18,6 @@ export async function GET(): Promise<NextResponse<FavoriteListResponse>> {
             },
         );
     }
-
     try {
         const favorites = await prisma.favorite.findMany({
             where: {
@@ -59,31 +58,29 @@ export async function GET(): Promise<NextResponse<FavoriteListResponse>> {
                 },
             },
         });
-
-        const data: GameInfo[] = await Promise.all(
-            favorites.map(async ({ game }) => ({
-                id: game.id,
-                title: game.title,
-                iconURL: `${publicContentBaseUrl}/${game.versions[0].id}/${game.versions[0].icon}`,
-                publisher: {
-                    id: game.publisher.id,
-                    name: game.publisher.name!,
-                    image: game.publisher.image ?? undefined,
-                },
-                description: game.description,
-                credit: game.credit,
-                streaming: game.streaming,
-                playCount: game.playCount,
-                license: await fetchLicense(game.versions[0].id),
-                contentId: game.versions[0].id,
-                createdAt: game.createdAt,
-                updatedAt: game.versions[0].updatedAt,
-            })),
-        );
-
         return NextResponse.json({
             ok: true,
-            data,
+            data: await Promise.all(
+                favorites.map(async ({ game }) => ({
+                    id: game.id,
+                    title: game.title,
+                    iconURL: `${publicContentBaseUrl}/${game.versions[0].id}/${game.versions[0].icon}`,
+                    publisher: {
+                        id: game.publisher.id,
+                        name: game.publisher.name!,
+                        image: game.publisher.image ?? undefined,
+                    },
+                    description: game.description,
+                    credit: game.credit,
+                    streaming: game.streaming,
+                    playCount: game.playCount,
+                    license: await fetchLicense(game.versions[0].id),
+                    contentId: game.versions[0].id,
+                    isFavorited: true,
+                    createdAt: game.createdAt,
+                    updatedAt: game.versions[0].updatedAt,
+                })),
+            ),
         });
     } catch (err) {
         console.warn("failed to fetch favorite games.", err);

@@ -1,6 +1,8 @@
 import { prisma } from "@yasshi2525/persist-schema";
 import { GameInfo } from "../types";
 import { internalContentBaseUrl, publicContentBaseUrl } from "./akashic";
+import { getAuth } from "./auth";
+import { isFavorited } from "./favorite";
 
 export async function fetchGameInfo(gameId: number) {
     const game = await prisma.game.findUniqueOrThrow({
@@ -50,6 +52,7 @@ export async function fetchGameInfo(gameId: number) {
         playCount: game.playCount,
         license: await fetchLicense(game.versions[0].id),
         contentId: game.versions[0].id,
+        isFavorited: await isFavorited(await getAuth(), game.id),
         createdAt: game.createdAt,
         updatedAt: game.versions[0].updatedAt,
     } satisfies GameInfo;
