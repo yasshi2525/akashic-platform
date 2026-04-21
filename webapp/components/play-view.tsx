@@ -31,12 +31,11 @@ import {
     VolumeUp,
     X,
 } from "@mui/icons-material";
-import { useFavorites } from "@/lib/client/useFavorites";
-import { FavoriteButton } from "./favorite-button";
 import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
 import { GameInfo, User } from "@/lib/types";
 import { useAkashic } from "@/lib/client/useAkashic";
 import { useCustomData } from "@/lib/client/useCustomData";
+import { useFavorites } from "@/lib/client/useFavorites";
 import { STORAGE_KEYS, useLocalStorage } from "@/lib/client/useLocalStorage";
 import { ResolvingPlayerInfoRequest } from "@/lib/client/akashic-plugins/coe-limited-plugin";
 import { AkashicContainer } from "@/lib/client/akashic-container";
@@ -49,6 +48,7 @@ import { CreditPanel } from "./credit-panel";
 import { UserInline } from "./user-inline";
 import { ClientLogDialog } from "./client-log-dialog";
 import { TroubleshootButton } from "./troubleshoot-button";
+import { FavoriteButton } from "./favorite-button";
 import { renderTextWithLinks } from "./text-with-links";
 
 const warnings = ["EVENT_ON_SKIPPING"] as const;
@@ -118,8 +118,7 @@ export function PlayView({
     const theme = useTheme();
     const { playlogServerUrl } = useAkashic();
     const { niconicommonsWorkUrl, clientLogCacheMaxEntries } = useCustomData();
-    const isOAuth = user.authType === "oauth";
-    const { favoriteGameIds, add: addFavorite, remove: removeFavorite } = useFavorites();
+    const { isLoading: favoritesLoading, favoriteGameIds } = useFavorites();
     useEffect(() => {
         container.setClientLogMaxEntries(clientLogCacheMaxEntries);
     }, [clientLogCacheMaxEntries]);
@@ -929,12 +928,14 @@ export function PlayView({
                                             >
                                                 {game.title}
                                             </Typography>
-                                            {isOAuth && (
+                                            {user.authType !== "guest" && (
                                                 <FavoriteButton
+                                                    userId={user.id}
                                                     gameId={game.id}
-                                                    isFavorited={favoriteGameIds.has(game.id)}
-                                                    onAdd={addFavorite}
-                                                    onRemove={removeFavorite}
+                                                    isLoading={favoritesLoading}
+                                                    isFavorited={favoriteGameIds.has(
+                                                        game.id,
+                                                    )}
                                                     size="medium"
                                                 />
                                             )}

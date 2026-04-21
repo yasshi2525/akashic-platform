@@ -62,10 +62,8 @@ function GameTableCells({
     setGameTitle,
     expandedSet,
     onToggleDescription,
-    showFavoriteButton,
+    isFavoritesLoading,
     favoriteGameIds,
-    onFavoriteAdd,
-    onFavoriteRemove,
 }: {
     list: GameInfo[];
     selected?: number;
@@ -73,12 +71,11 @@ function GameTableCells({
     setGameTitle: (title?: string) => void;
     expandedSet: Set<number>;
     onToggleDescription: (e: MouseEvent, id: number) => void;
-    showFavoriteButton: boolean;
+    isFavoritesLoading: boolean;
     favoriteGameIds: Set<number>;
-    onFavoriteAdd: (gameId: number) => Promise<boolean>;
-    onFavoriteRemove: (gameId: number) => Promise<boolean>;
 }) {
     const theme = useTheme();
+    const [user] = useAuth();
     function handleClick(id: number, title: string) {
         if (id === selected) {
             setSelected(undefined);
@@ -151,13 +148,13 @@ function GameTableCells({
                     {game.playCount.toLocaleString()} 回
                 </Typography>
             </TableCell>
-            {showFavoriteButton && (
+            {user?.authType === "oauth" && (
                 <TableCell width={56}>
                     <FavoriteButton
+                        userId={user.id}
                         gameId={game.id}
+                        isLoading={isFavoritesLoading}
                         isFavorited={favoriteGameIds.has(game.id)}
-                        onAdd={onFavoriteAdd}
-                        onRemove={onFavoriteRemove}
                         size="small"
                     />
                 </TableCell>
@@ -182,20 +179,22 @@ export function GameList({
 }) {
     const theme = useTheme();
     const isTable = useMediaQuery(theme.breakpoints.up("md"));
+    const [user] = useAuth();
     const [debouncedKeyword] = useDebounce(keyword, 500);
     const { isLoading, list, page, setPage, isEmpty, isEnd } =
         useGameList(debouncedKeyword);
     const [expandedSet, setExpandedSet] = useState<Set<number>>(new Set());
-
-    const [user] = useAuth();
-    const isOAuth = user?.authType === "oauth";
-    const { favorites, favoriteGameIds, add, remove } = useFavorites();
+    const {
+        isLoading: isFavoritesLoading,
+        favorites,
+        favoriteGameIds,
+    } = useFavorites();
 
     const filteredFavorites = debouncedKeyword
         ? favorites.filter(
-              (g) =>
-                  g.title.includes(debouncedKeyword) ||
-                  g.description.includes(debouncedKeyword),
+              (game) =>
+                  game.title.includes(debouncedKeyword) ||
+                  game.description.includes(debouncedKeyword),
           )
         : favorites;
 
@@ -222,8 +221,6 @@ export function GameList({
     function handleClickMore() {
         setPage(page + 1);
     }
-
-    const showFavoriteSection = isOAuth && filteredFavorites.length > 0;
 
     if (!isTable) {
         function renderCard(game: GameInfo) {
@@ -292,22 +289,28 @@ export function GameList({
                                 textVariant="body2"
                                 avatarSize={20}
                             />
-                            <Stack direction="row" alignItems="center" spacing={1}>
+                            <Stack
+                                direction="row"
+                                alignItems="center"
+                                spacing={1}
+                            >
                                 <Typography
                                     variant="body2"
                                     sx={{
                                         color: theme.palette.text.secondary,
                                     }}
                                 >
-                                    プレイ数:{" "}
-                                    {game.playCount.toLocaleString()} 回
+                                    プレイ数: {game.playCount.toLocaleString()}{" "}
+                                    回
                                 </Typography>
-                                {isOAuth && (
+                                {user?.authType === "oauth" && (
                                     <FavoriteButton
+                                        userId={user.id}
                                         gameId={game.id}
-                                        isFavorited={favoriteGameIds.has(game.id)}
-                                        onAdd={add}
-                                        onRemove={remove}
+                                        isLoading={isFavoritesLoading}
+                                        isFavorited={favoriteGameIds.has(
+                                            game.id,
+                                        )}
                                         size="small"
                                     />
                                 )}
@@ -320,11 +323,14 @@ export function GameList({
 
         return (
             <Stack spacing={2}>
-                {showFavoriteSection && (
+                {user?.authType === "oauth" && filteredFavorites.length > 0 && (
                     <>
                         <Stack direction="row" spacing={1} alignItems="center">
                             <StarOutlined fontSize="small" color="warning" />
-                            <Typography variant="subtitle2" color="text.secondary">
+                            <Typography
+                                variant="subtitle2"
+                                color={theme.palette.text.secondary}
+                            >
                                 お気に入り
                             </Typography>
                         </Stack>
@@ -345,9 +351,7 @@ export function GameList({
                         ゲームが見つかりませんでした
                     </Typography>
                 ) : (
-                    <Stack spacing={2}>
-                        {list.flat().map(renderCard)}
-                    </Stack>
+                    <Stack spacing={2}>{list.flat().map(renderCard)}</Stack>
                 )}
                 {!isLoading && list != null && !isEmpty && !isEnd && (
                     <Button
@@ -364,8 +368,6 @@ export function GameList({
         );
     }
 
-    const colSpan = isOAuth ? 5 : 4;
-
     return (
         <TableContainer component={Paper}>
             <Table stickyHeader>
@@ -381,17 +383,30 @@ export function GameList({
                         >
                             プレイ数
                         </TableCell>
-                        {isOAuth && <TableCell width={56} />}
+                        {user?.authType === "oauth" && <TableCell width={56} />}
                         <TableCell />
                     </TableRow>
                 </TableHead>
-                {showFavoriteSection && (
+                {user?.authType === "oauth" && filteredFavorites.length > 0 && (
                     <TableBody>
                         <TableRow>
-                            <TableCell colSpan={colSpan} sx={{ pb: 0, pt: 1 }}>
-                                <Stack direction="row" spacing={1} alignItems="center">
-                                    <StarOutlined fontSize="small" color="warning" />
-                                    <Typography variant="subtitle2" color="text.secondary">
+                            <TableCell
+                                colSpan={user?.authType === "oauth" ? 5 : 4}
+                                sx={{ pb: 0, pt: 1 }}
+                            >
+                                <Stack
+                                    direction="row"
+                                    spacing={1}
+                                    alignItems="center"
+                                >
+                                    <StarOutlined
+                                        fontSize="small"
+                                        color="warning"
+                                    />
+                                    <Typography
+                                        variant="subtitle2"
+                                        color="text.secondary"
+                                    >
                                         お気に入り
                                     </Typography>
                                 </Stack>
@@ -404,13 +419,14 @@ export function GameList({
                             setGameTitle={setGameTitle}
                             expandedSet={expandedSet}
                             onToggleDescription={handleToggleDescription}
-                            showFavoriteButton={true}
+                            isFavoritesLoading={isFavoritesLoading}
                             favoriteGameIds={favoriteGameIds}
-                            onFavoriteAdd={add}
-                            onFavoriteRemove={remove}
                         />
                         <TableRow>
-                            <TableCell colSpan={colSpan} sx={{ p: 0 }}>
+                            <TableCell
+                                colSpan={user?.authType === "oauth" ? 5 : 4}
+                                sx={{ p: 0 }}
+                            >
                                 <Divider />
                             </TableCell>
                         </TableRow>
@@ -433,15 +449,13 @@ export function GameList({
                             setGameTitle={setGameTitle}
                             expandedSet={expandedSet}
                             onToggleDescription={handleToggleDescription}
-                            showFavoriteButton={isOAuth}
+                            isFavoritesLoading={isFavoritesLoading}
                             favoriteGameIds={favoriteGameIds}
-                            onFavoriteAdd={add}
-                            onFavoriteRemove={remove}
                         />
                         {!isEnd && (
                             <TableRow>
                                 <TableCell
-                                    colSpan={colSpan}
+                                    colSpan={user?.authType === "oauth" ? 5 : 4}
                                     sx={{ textAlign: "center" }}
                                 >
                                     <Button

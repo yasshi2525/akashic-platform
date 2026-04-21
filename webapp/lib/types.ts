@@ -250,18 +250,10 @@ export type GameResponse =
     | { ok: true; data: GameInfo }
     | { ok: false; reason: GameErrorType };
 
-const favoriteErrReasons = [
-    "Unauthorized",
-    "NotFound",
-    "AlreadyExists",
-    "InternalError",
-] as const;
+const favoriteErrReasons = ["Unauthorized", "InternalError"] as const;
 export type FavoriteErrorType = (typeof favoriteErrReasons)[number];
 export type FavoriteListResponse =
     | { ok: true; data: GameInfo[] }
-    | { ok: false; reason: FavoriteErrorType };
-export type FavoriteToggleResponse =
-    | { ok: true }
     | { ok: false; reason: FavoriteErrorType };
 
 const playErrReasons = [
