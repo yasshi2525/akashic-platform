@@ -151,6 +151,7 @@ export function GameListTable({
     const [user] = useAuth();
     const isTable = useMediaQuery(theme.breakpoints.up("md"));
     const [expandedSet, setExpandedSet] = useState<Set<number>>(new Set());
+    const withFavorites = !!user && user.authType !== "guest";
 
     function handleToggleDescription(e: MouseEvent, id: number) {
         e.stopPropagation();
@@ -197,9 +198,22 @@ export function GameListTable({
                                             spacing={0.5}
                                             sx={{ minWidth: 0, flex: 1 }}
                                         >
-                                            <Typography variant="body1">
-                                                {game.title}
-                                            </Typography>
+                                            <Stack
+                                                direction="row"
+                                                spacing={1}
+                                                alignItems="center"
+                                            >
+                                                <Typography variant="body1">
+                                                    {game.title}
+                                                </Typography>
+                                                <FavoriteButton
+                                                    gameId={game.id}
+                                                    initialFavorited={
+                                                        game.isFavorited
+                                                    }
+                                                    size="medium"
+                                                />
+                                            </Stack>
                                             <GameDescription
                                                 description={game.description}
                                                 gameId={game.contentId}
@@ -285,7 +299,8 @@ export function GameListTable({
                         >
                             プレイ数
                         </TableCell>
-                        <TableCell></TableCell>
+                        <TableCell />
+                        {withFavorites && <TableCell />}
                     </TableRow>
                 </TableHead>
                 {isLoading ? (

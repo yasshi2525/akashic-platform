@@ -46,6 +46,7 @@ export function FavoriteButton({
         } else {
             switch (res.reason) {
                 case "AlreadyExists":
+                    setFavorited(true);
                     setError("すでにお気に入りに追加されています。");
                     break;
                 case "NotFound":
@@ -86,19 +87,22 @@ export function FavoriteButton({
                         <CircularProgress
                             size={
                                 size === "small"
-                                    ? 16
-                                    : size === "large"
-                                      ? 28
-                                      : 22
+                                    ? 18
+                                    : size === "medium"
+                                      ? 24
+                                      : 36
                             }
                         />
                     ) : isFavorited ? (
                         <Star
                             fontSize={size}
-                            sx={{ color: theme.palette.primary.light }}
+                            sx={{ color: theme.palette.warning.light }}
                         />
                     ) : (
-                        <StarBorder fontSize={size} />
+                        <StarBorder
+                            fontSize={size}
+                            sx={{ color: theme.palette.warning.light }}
+                        />
                     )}
                 </IconButton>
             </Tooltip>

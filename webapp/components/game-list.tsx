@@ -151,7 +151,6 @@ function GameTableCells({
                     <FavoriteButton
                         gameId={game.id}
                         initialFavorited={game.isFavorited}
-                        size="medium"
                     />
                 </TableCell>
             )}
@@ -250,6 +249,7 @@ export function GameList({
                                     <FavoriteButton
                                         gameId={game.id}
                                         initialFavorited={game.isFavorited}
+                                        size="medium"
                                     />
                                     {!game.streaming && (
                                         <Typography
