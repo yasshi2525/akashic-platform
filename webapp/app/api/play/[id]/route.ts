@@ -11,6 +11,7 @@ import {
 import { fetchLicense } from "@/lib/server/game-info";
 import { getContentExternal } from "@/lib/server/content-get-external";
 import { fetchGameJson, getContentViewSize } from "@/lib/server/play-utils";
+import { isFavorited } from "@/lib/server/favorite";
 
 async function fetchPlayToken(play: Pick<Play, "id" | "contentId">) {
     const res = await fetch(
@@ -98,6 +99,7 @@ export async function GET(
                 reason: "NotFound",
             });
         }
+        const user = await getAuth();
         if (!play.isActive) {
             const iconURL = `${publicContentBaseUrl}/${play.contentId}/${play.content.icon}`;
             return NextResponse.json({
@@ -129,6 +131,10 @@ export async function GET(
                                 play.content.game.publisher.image ?? undefined,
                         },
                         contentId: play.contentId,
+                        isFavorited: await isFavorited(
+                            user,
+                            play.content.game.id,
+                        ),
                         createdAt: play.content.game.createdAt,
                         updatedAt: play.content.game.updatedAt,
                     },
@@ -136,7 +142,6 @@ export async function GET(
             });
         }
         if (play.isLimited) {
-            const user = await getAuth();
             if (user?.id !== play.gameMasterId) {
                 if (inviteHash !== play.inviteHash) {
                     if (!joinWord) {
@@ -203,6 +208,7 @@ export async function GET(
                         image: play.content.game.publisher.image ?? undefined,
                     },
                     contentId: play.contentId,
+                    isFavorited: await isFavorited(user, play.content.game.id),
                     createdAt: play.content.game.createdAt,
                     updatedAt: play.content.game.updatedAt,
                 },

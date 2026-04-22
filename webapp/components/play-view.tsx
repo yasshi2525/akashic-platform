@@ -47,6 +47,7 @@ import { CreditPanel } from "./credit-panel";
 import { UserInline } from "./user-inline";
 import { ClientLogDialog } from "./client-log-dialog";
 import { TroubleshootButton } from "./troubleshoot-button";
+import { FavoriteButton } from "./favorite-button";
 import { renderTextWithLinks } from "./text-with-links";
 
 const warnings = ["EVENT_ON_SKIPPING"] as const;
@@ -994,6 +995,12 @@ export function PlayView({
                                                     </Typography>
                                                 </Stack>
                                             </Tooltip>
+                                            <FavoriteButton
+                                                gameId={game.id}
+                                                initialFavorited={
+                                                    game.isFavorited
+                                                }
+                                            />
                                         </Stack>
                                         <Stack
                                             direction="row"

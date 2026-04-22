@@ -18,8 +18,10 @@ import {
     useMediaQuery,
     useTheme,
 } from "@mui/material";
+import { useAuth } from "@/lib/client/useAuth";
 import { GameInfo } from "@/lib/types";
 import { GameDescription } from "./text-with-links";
+import { FavoriteButton } from "./favorite-button";
 
 function Loading() {
     return (
@@ -53,11 +55,13 @@ function GameTableCells({
     renderActions,
     expandedSet,
     onToggleDescription,
+    withFavorite,
 }: {
     list: GameInfo[];
     renderActions?: (game: GameInfo, isTable: boolean) => ReactNode;
     expandedSet: Set<number>;
     onToggleDescription: (e: MouseEvent, id: number) => void;
+    withFavorite: boolean;
 }) {
     const theme = useTheme();
 
@@ -116,6 +120,14 @@ function GameTableCells({
                     {renderActions?.(game, true)}
                 </Stack>
             </TableCell>
+            {withFavorite && (
+                <TableCell>
+                    <FavoriteButton
+                        gameId={game.id}
+                        initialFavorited={game.isFavorited}
+                    />
+                </TableCell>
+            )}
         </TableRow>
     ));
 }
@@ -136,8 +148,10 @@ export function GameListTable({
     renderActions?: (game: GameInfo, isTable: boolean) => ReactNode;
 }) {
     const theme = useTheme();
+    const [user] = useAuth();
     const isTable = useMediaQuery(theme.breakpoints.up("md"));
     const [expandedSet, setExpandedSet] = useState<Set<number>>(new Set());
+    const withFavorites = !!user && user.authType !== "guest";
 
     function handleToggleDescription(e: MouseEvent, id: number) {
         e.stopPropagation();
@@ -184,9 +198,22 @@ export function GameListTable({
                                             spacing={0.5}
                                             sx={{ minWidth: 0, flex: 1 }}
                                         >
-                                            <Typography variant="body1">
-                                                {game.title}
-                                            </Typography>
+                                            <Stack
+                                                direction="row"
+                                                spacing={1}
+                                                alignItems="center"
+                                            >
+                                                <Typography variant="body1">
+                                                    {game.title}
+                                                </Typography>
+                                                <FavoriteButton
+                                                    gameId={game.id}
+                                                    initialFavorited={
+                                                        game.isFavorited
+                                                    }
+                                                    size="medium"
+                                                />
+                                            </Stack>
                                             <GameDescription
                                                 description={game.description}
                                                 gameId={game.contentId}
@@ -272,7 +299,8 @@ export function GameListTable({
                         >
                             プレイ数
                         </TableCell>
-                        <TableCell></TableCell>
+                        <TableCell />
+                        {withFavorites && <TableCell />}
                     </TableRow>
                 </TableHead>
                 {isLoading ? (
@@ -290,6 +318,7 @@ export function GameListTable({
                             renderActions={renderActions}
                             expandedSet={expandedSet}
                             onToggleDescription={handleToggleDescription}
+                            withFavorite={!!user && user.authType !== "guest"}
                         />
                         {!isEnd && (
                             <TableRow>

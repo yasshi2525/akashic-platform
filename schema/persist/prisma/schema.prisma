@@ -21,6 +21,7 @@ model User {
   fbPosts       FeedbackPost[]
   fbReplies     FeedbackReply[]
   clientLogs    ClientLogRecord[]
+  favorites     Favorite[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -65,6 +66,18 @@ model VerificationToken {
   @@id([identifier, token])
 }
 
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  gameId    Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId])
+}
+
 model Game {
   id          Int            @id @default(autoincrement())
   publisherId String
@@ -75,6 +88,7 @@ model Game {
   playCount   Int            @default(0)
   versions    Content[]
   feedbacks   FeedbackPost[]
+  favorites   Favorite[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

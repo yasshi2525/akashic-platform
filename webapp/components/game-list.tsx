@@ -5,6 +5,7 @@ import { useDebounce } from "use-debounce";
 import {
     Avatar,
     Button,
+    Divider,
     Paper,
     Skeleton,
     Stack,
@@ -18,16 +19,19 @@ import {
     useMediaQuery,
     useTheme,
 } from "@mui/material";
-import { CheckBox } from "@mui/icons-material";
+import { CheckBox, StarOutlined } from "@mui/icons-material";
 import { GameInfo } from "@/lib/types";
 import { useGameList } from "@/lib/client/useGameList";
+import { useFavorites } from "@/lib/client/useFavorites";
+import { useAuth } from "@/lib/client/useAuth";
 import { UserInline } from "./user-inline";
 import { GameDescription } from "./text-with-links";
+import { FavoriteButton } from "./favorite-button";
 
 function Loading() {
     return (
         <TableRow>
-            <TableCell colSpan={4}>
+            <TableCell colSpan={5}>
                 <Skeleton variant="rounded" width="100%" />
             </TableCell>
         </TableRow>
@@ -38,7 +42,7 @@ function NoResult() {
     const theme = useTheme();
     return (
         <TableRow>
-            <TableCell colSpan={4}>
+            <TableCell colSpan={5}>
                 <Typography
                     variant="body1"
                     color={theme.palette.text.secondary}
@@ -58,6 +62,7 @@ function GameTableCells({
     setGameTitle,
     expandedSet,
     onToggleDescription,
+    withFavorites,
 }: {
     list: GameInfo[];
     selected?: number;
@@ -65,8 +70,10 @@ function GameTableCells({
     setGameTitle: (title?: string) => void;
     expandedSet: Set<number>;
     onToggleDescription: (e: MouseEvent, id: number) => void;
+    withFavorites: boolean;
 }) {
     const theme = useTheme();
+
     function handleClick(id: number, title: string) {
         if (id === selected) {
             setSelected(undefined);
@@ -139,6 +146,14 @@ function GameTableCells({
                     {game.playCount.toLocaleString()} 回
                 </Typography>
             </TableCell>
+            {withFavorites && (
+                <TableCell>
+                    <FavoriteButton
+                        gameId={game.id}
+                        initialFavorited={game.isFavorited}
+                    />
+                </TableCell>
+            )}
             <TableCell width={100}>
                 {selected === game.contentId && <CheckBox fontSize="large" />}
             </TableCell>
@@ -159,10 +174,21 @@ export function GameList({
 }) {
     const theme = useTheme();
     const isTable = useMediaQuery(theme.breakpoints.up("md"));
+    const [user] = useAuth();
     const [debouncedKeyword] = useDebounce(keyword, 500);
     const { isLoading, list, page, setPage, isEmpty, isEnd } =
         useGameList(debouncedKeyword);
     const [expandedSet, setExpandedSet] = useState<Set<number>>(new Set());
+    const { data: favorites } = useFavorites();
+    const withFavorites = !!user && user.authType !== "guest";
+
+    const filteredFavorites = debouncedKeyword
+        ? (favorites ?? []).filter(
+              (game) =>
+                  game.title.includes(debouncedKeyword) ||
+                  game.description.includes(debouncedKeyword),
+          )
+        : (favorites ?? []);
 
     function handleToggleDescription(e: MouseEvent, id: number) {
         e.stopPropagation();
@@ -189,8 +215,117 @@ export function GameList({
     }
 
     if (!isTable) {
+        function renderCard(game: GameInfo) {
+            return (
+                <Paper
+                    key={game.contentId}
+                    sx={{
+                        padding: 2,
+                        cursor: "pointer",
+                        bgcolor:
+                            selected === game.contentId
+                                ? theme.palette.action.selected
+                                : "inherit",
+                    }}
+                    variant="outlined"
+                    onClick={() => handleClick(game.contentId, game.title)}
+                >
+                    <Stack spacing={1.5}>
+                        <Stack direction="row" spacing={2}>
+                            <Avatar
+                                variant="square"
+                                src={game.iconURL}
+                                sx={{ width: 72, height: 72 }}
+                            />
+                            <Stack spacing={0.5} sx={{ minWidth: 0, flex: 1 }}>
+                                <Stack
+                                    direction="row"
+                                    spacing={1}
+                                    alignItems="center"
+                                >
+                                    <Typography variant="body1">
+                                        {game.title}
+                                    </Typography>
+                                    <FavoriteButton
+                                        gameId={game.id}
+                                        initialFavorited={game.isFavorited}
+                                        size="medium"
+                                    />
+                                    {!game.streaming && (
+                                        <Typography
+                                            variant="body2"
+                                            color="error"
+                                        >
+                                            実況不可
+                                        </Typography>
+                                    )}
+                                    {selected === game.contentId && (
+                                        <CheckBox fontSize="small" />
+                                    )}
+                                </Stack>
+                                <GameDescription
+                                    description={game.description}
+                                    gameId={game.contentId}
+                                    expanded={expandedSet.has(game.contentId)}
+                                    onToggle={handleToggleDescription}
+                                />
+                            </Stack>
+                        </Stack>
+                        <Stack
+                            direction="row"
+                            spacing={2}
+                            justifyContent="space-between"
+                            alignItems="center"
+                        >
+                            <UserInline
+                                user={{
+                                    id: game.publisher.id,
+                                    name: game.publisher.name,
+                                    image: game.publisher.image,
+                                }}
+                                textVariant="body2"
+                                avatarSize={20}
+                            />
+                            <Stack
+                                direction="row"
+                                alignItems="center"
+                                spacing={1}
+                            >
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        color: theme.palette.text.secondary,
+                                    }}
+                                >
+                                    プレイ数: {game.playCount.toLocaleString()}{" "}
+                                    回
+                                </Typography>
+                            </Stack>
+                        </Stack>
+                    </Stack>
+                </Paper>
+            );
+        }
+
         return (
             <Stack spacing={2}>
+                {withFavorites && filteredFavorites.length > 0 && (
+                    <>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                            <StarOutlined fontSize="small" color="warning" />
+                            <Typography
+                                variant="subtitle2"
+                                color={theme.palette.text.secondary}
+                            >
+                                お気に入り
+                            </Typography>
+                        </Stack>
+                        <Stack spacing={2}>
+                            {filteredFavorites.map(renderCard)}
+                        </Stack>
+                        <Divider />
+                    </>
+                )}
                 {isLoading ? (
                     <Skeleton variant="rounded" width="100%" height={120} />
                 ) : list == null || isEmpty ? (
@@ -203,97 +338,10 @@ export function GameList({
                     </Typography>
                 ) : (
                     <Stack spacing={2}>
-                        {list.flat().map((game) => (
-                            <Paper
-                                key={game.contentId}
-                                sx={{
-                                    padding: 2,
-                                    cursor: "pointer",
-                                    bgcolor:
-                                        selected === game.contentId
-                                            ? theme.palette.action.selected
-                                            : "inherit",
-                                }}
-                                variant="outlined"
-                                onClick={() =>
-                                    handleClick(game.contentId, game.title)
-                                }
-                            >
-                                <Stack spacing={1.5}>
-                                    <Stack direction="row" spacing={2}>
-                                        <Avatar
-                                            variant="square"
-                                            src={game.iconURL}
-                                            sx={{
-                                                width: 72,
-                                                height: 72,
-                                            }}
-                                        />
-                                        <Stack
-                                            spacing={0.5}
-                                            sx={{ minWidth: 0, flex: 1 }}
-                                        >
-                                            <Stack
-                                                direction="row"
-                                                spacing={1}
-                                                alignItems="center"
-                                            >
-                                                <Typography variant="body1">
-                                                    {game.title}
-                                                </Typography>
-                                                {!game.streaming && (
-                                                    <Typography
-                                                        variant="body2"
-                                                        color="error"
-                                                    >
-                                                        実況不可
-                                                    </Typography>
-                                                )}
-                                                {selected ===
-                                                    game.contentId && (
-                                                    <CheckBox fontSize="small" />
-                                                )}
-                                            </Stack>
-                                            <GameDescription
-                                                description={game.description}
-                                                gameId={game.contentId}
-                                                expanded={expandedSet.has(
-                                                    game.contentId,
-                                                )}
-                                                onToggle={
-                                                    handleToggleDescription
-                                                }
-                                            />
-                                        </Stack>
-                                    </Stack>
-                                    <Stack
-                                        direction="row"
-                                        spacing={2}
-                                        justifyContent="space-between"
-                                    >
-                                        <UserInline
-                                            user={{
-                                                id: game.publisher.id,
-                                                name: game.publisher.name,
-                                                image: game.publisher.image,
-                                            }}
-                                            textVariant="body2"
-                                            avatarSize={20}
-                                        />
-                                        <Typography
-                                            variant="body2"
-                                            sx={{
-                                                color: theme.palette.text
-                                                    .secondary,
-                                            }}
-                                        >
-                                            プレイ数:{" "}
-                                            {game.playCount.toLocaleString()} 回
-                                        </Typography>
-                                    </Stack>
-                                </Stack>
-                            </Paper>
-                        ))}
+                        {list
+                            .flat()
+                            .filter((game) => !game.isFavorited)
+                            .map(renderCard)}
                     </Stack>
                 )}
                 {!isLoading && list != null && !isEmpty && !isEnd && (
@@ -326,9 +374,48 @@ export function GameList({
                         >
                             プレイ数
                         </TableCell>
-                        <TableCell></TableCell>
+                        {withFavorites && <TableCell />}
+                        <TableCell />
                     </TableRow>
                 </TableHead>
+                {withFavorites && filteredFavorites.length > 0 && (
+                    <TableBody>
+                        <TableRow>
+                            <TableCell colSpan={5} sx={{ pb: 0, pt: 1 }}>
+                                <Stack
+                                    direction="row"
+                                    spacing={1}
+                                    alignItems="center"
+                                >
+                                    <StarOutlined
+                                        fontSize="small"
+                                        color="warning"
+                                    />
+                                    <Typography
+                                        variant="subtitle2"
+                                        color="text.secondary"
+                                    >
+                                        お気に入り
+                                    </Typography>
+                                </Stack>
+                            </TableCell>
+                        </TableRow>
+                        <GameTableCells
+                            list={filteredFavorites}
+                            selected={selected}
+                            setSelected={setSelected}
+                            setGameTitle={setGameTitle}
+                            expandedSet={expandedSet}
+                            onToggleDescription={handleToggleDescription}
+                            withFavorites={withFavorites}
+                        />
+                        <TableRow>
+                            <TableCell colSpan={5} sx={{ p: 0 }}>
+                                <Divider />
+                            </TableCell>
+                        </TableRow>
+                    </TableBody>
+                )}
                 {isLoading ? (
                     <TableBody>
                         <Loading />
@@ -340,17 +427,20 @@ export function GameList({
                 ) : (
                     <TableBody>
                         <GameTableCells
-                            list={list.flat()}
+                            list={list
+                                .flat()
+                                .filter((game) => !game.isFavorited)}
                             selected={selected}
                             setSelected={setSelected}
                             setGameTitle={setGameTitle}
                             expandedSet={expandedSet}
                             onToggleDescription={handleToggleDescription}
+                            withFavorites={withFavorites}
                         />
                         {!isEnd && (
                             <TableRow>
                                 <TableCell
-                                    colSpan={4}
+                                    colSpan={withFavorites ? 5 : 4}
                                     sx={{ textAlign: "center" }}
                                 >
                                     <Button

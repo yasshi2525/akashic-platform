@@ -39,6 +39,7 @@ export interface GameInfo {
         image?: string;
     };
     contentId: number;
+    isFavorited: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -249,6 +250,12 @@ export type GameErrorType = (typeof gameErrReasons)[number];
 export type GameResponse =
     | { ok: true; data: GameInfo }
     | { ok: false; reason: GameErrorType };
+
+const favoriteErrReasons = ["Unauthorized", "InternalError"] as const;
+export type FavoriteErrorType = (typeof favoriteErrReasons)[number];
+export type FavoriteListResponse =
+    | { ok: true; data: GameInfo[] }
+    | { ok: false; reason: FavoriteErrorType };
 
 const playErrReasons = [
     "InvalidParams",
