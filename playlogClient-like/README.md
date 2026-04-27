@@ -1,6 +1,8 @@
 # About
 
-[`@akashic/agvw`](https://github.com/akashic-games/agvw) の実行時に必要となる `playlogClinet` (ソース非公開) の独自実装です。
+[`@akashic/agvw`](https://github.com/akashic-games/agvw) の実行時に必要となる [`@akashic/playlog-client`](https://github.com/akashic-games/akashic-system/tree/main/packages/playlog-client) の独自実装です。
+
+独自実装をした理由は、本リポジトリ開発時に上記ライブラリが非公開だったためです。本実装は [`Socket.IO`](https://socket.io/) を使用して双方向通信を実現している点で異なります。
 
 ## NOTE
 

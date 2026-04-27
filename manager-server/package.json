@@ -1,7 +1,6 @@
 {
   "name": "@yasshi2525/manager-server",
-  "version": "1.1.0",
-  "private": true,
+  "version": "1.1.1",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "description": "manager server for service maintenance",
@@ -19,13 +18,13 @@
   "license": "MIT",
   "devDependencies": {
     "@types/express": "^5.0.6",
-    "@types/node": "^24.3.1",
-    "prettier": "^3.7.4",
-    "typescript": "^5.9.3"
+    "@types/node": "^24.12.2",
+    "prettier": "^3.8.3",
+    "typescript": "^6.0.3"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1031.0",
-    "@yasshi2525/persist-schema": "^1.0.0",
+    "@aws-sdk/client-s3": "^3.1037.0",
+    "@yasshi2525/persist-schema": "^1.6.1",
     "express": "^5.2.1"
   }
 }

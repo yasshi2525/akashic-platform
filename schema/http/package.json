@@ -1,6 +1,6 @@
 {
   "name": "@yasshi2525/http-schema",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": "true",
   "description": "http schema (Open API)",
   "files": [
@@ -14,6 +14,6 @@
   "author": "yasshi2525",
   "license": "MIT",
   "devDependencies": {
-    "swagger-ui-dist": "^5.31.0"
+    "swagger-ui-dist": "^5.32.4"
   }
 }

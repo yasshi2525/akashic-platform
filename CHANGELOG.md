@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.4.16
+
+- Misc
+  - Update dependencies.
+
 ## 1.4.15
 
 - Improve

@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.0.4
+
+- Misc
+  - Update dependencies.
+
 ## 1.0.3
 
 - Bug Fix

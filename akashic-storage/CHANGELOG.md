@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.1.8
+
+- Misc
+  - Update dependencies.
+
 ## 1.1.7
 
 - Improve

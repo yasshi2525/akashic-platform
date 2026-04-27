@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.6.1
+
+- Misc
+  - Update dependencies.
+
 ## 1.6.0
 
 - Feature

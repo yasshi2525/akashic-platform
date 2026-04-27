@@ -1,7 +1,6 @@
 {
   "name": "@yasshi2525/playlog-client-like",
-  "version": "1.1.0",
-  "private": true,
+  "version": "1.1.1",
   "description": "playlogClient like implementation",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -19,14 +18,14 @@
   "license": "MIT",
   "devDependencies": {
     "@akashic/amflow": "^3.3.0",
-    "esbuild": "^0.27.2",
-    "prettier": "^3.7.4",
+    "esbuild": "^0.28.0",
+    "prettier": "^3.8.3",
     "tsup": "^8.5.1",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.3"
   },
   "dependencies": {
-    "@akashic/playlog": "^3.3.0",
-    "@yasshi2525/amflow-client-event-schema": "^1.0.0",
-    "socket.io-client": "^4.8.1"
+    "@akashic/playlog": "^3.4.1",
+    "@yasshi2525/amflow-client-event-schema": "^1.0.1",
+    "socket.io-client": "^4.8.3"
   }
 }

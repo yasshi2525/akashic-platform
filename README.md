@@ -59,7 +59,7 @@ Web API 仕様: https://yasshi2525.github.io/akashic-platform/
 
 ### playlogClient-like
 
-[`@akashic/agvw`](https://github.com/akashic-games/agvw) が使用している `playlogClient` モジュールの実装です。当該モジュールのソースが公開されていないため、独自に実装しています。
+[`@akashic/playlog-client`](https://github.com/akashic-games/akashic-system/tree/main/packages/playlog-client) の独自実装です。本リポジトリ開発当初、当該モジュールのソースが公開されていなかったため独自に実装しました。
 
 ### akashic-server
 
@@ -145,14 +145,10 @@ npx -w ./webapp auth secret
 
 #### 実行方法
 
-> [!NOTE]
->
-> 下記3つは現状、すべてフォアグラウンドで実行されます
-
 ```sh
-npm run run -w ./akashic-storage
-npm run run -w ./akashic-server
-npm run dev -w ./webapp
+npm run run -w ./akashic-storage &
+npm run run -w ./akashic-server &
+npm run dev -w ./webapp &
 ```
 
 必要に応じて管理サーバーを起動させてください。

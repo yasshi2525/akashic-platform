@@ -1,8 +1,7 @@
 {
   "name": "@yasshi2525/amflow-event-schema",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "AMFlow event schema",
-  "private": true,
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -18,12 +17,12 @@
   "devDependencies": {
     "@akashic/amflow": "^3.3.0",
     "@types/jest": "^30.0.0",
-    "jest": "^30.2.0",
-    "prettier": "^3.7.4",
-    "ts-jest": "^29.4.6",
-    "typescript": "^5.9.3"
+    "jest": "^30.3.0",
+    "prettier": "^3.8.3",
+    "ts-jest": "^29.4.9",
+    "typescript": "^6.0.3"
   },
   "dependencies": {
-    "@akashic/playlog": "^3.3.0"
+    "@akashic/playlog": "^3.4.1"
   }
 }
