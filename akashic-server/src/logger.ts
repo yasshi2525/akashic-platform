@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import type { PassThrough } from "node:stream";
-import * as util from "node:util";
+import util from "node:util";
 
 export interface PlayContext {
     playId: number;

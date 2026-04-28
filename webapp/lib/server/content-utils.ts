@@ -1,5 +1,5 @@
 import * as path from "node:path";
-import * as process from "node:process";
+import process from "node:process";
 import { randomBytes } from "node:crypto";
 import {
     DeleteObjectsCommand,

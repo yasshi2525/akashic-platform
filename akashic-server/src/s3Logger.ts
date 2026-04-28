@@ -1,4 +1,4 @@
-import * as process from "node:process";
+import process from "node:process";
 import { PassThrough } from "node:stream";
 import { S3Client } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
