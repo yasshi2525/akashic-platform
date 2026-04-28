@@ -1,6 +1,6 @@
 import { Server, createServer } from "node:http";
-import * as express from "express";
-import * as cors from "cors";
+import express from "express";
+import cors from "cors";
 import type {
     PlayEndReason,
     PlayExtendPayload,

@@ -1,6 +1,6 @@
 import { Server } from "node:http";
 import { createHmac, randomUUID } from "node:crypto";
-import * as express from "express";
+import express from "express";
 import { Express, NextFunction, Request, Response } from "express";
 import { prisma } from "@yasshi2525/persist-schema";
 import { deleteClientLogs, deleteContentLog } from "./s3";

@@ -1,5 +1,5 @@
 import { Server } from "node:http";
-import * as express from "express";
+import express from "express";
 import { Express } from "express";
 import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
 import { RunnerManager } from "./runnerManager";
