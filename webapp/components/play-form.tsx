@@ -121,7 +121,14 @@ export function PlayForm() {
                 gap: 4,
             }}
         >
-            <Stack width="100%" direction="row" spacing={2} alignItems="center">
+            <Stack
+                direction="row"
+                spacing={2}
+                sx={{
+                    width: "100%",
+                    alignItems: "center",
+                }}
+            >
                 <Button
                     component={Link}
                     href="/"
@@ -133,8 +140,10 @@ export function PlayForm() {
                 <Stack
                     direction="row"
                     spacing={2}
-                    justifyContent="center"
-                    alignItems="center"
+                    sx={{
+                        justifyContent: "center",
+                        alignItems: "center",
+                    }}
                 >
                     <SportsEsports fontSize="large" />
                     <Typography variant="h4" component="h1">
@@ -283,12 +292,16 @@ export function PlayForm() {
                             <Stack
                                 direction="row"
                                 spacing={2}
-                                alignItems="center"
+                                sx={{
+                                    alignItems: "center",
+                                }}
                             >
                                 <Stack
-                                    flex={1}
                                     spacing={0}
-                                    sx={{ minWidth: 0 }}
+                                    sx={{
+                                        flex: 1,
+                                        minWidth: 0,
+                                    }}
                                 >
                                     <Typography
                                         variant="caption"
@@ -299,7 +312,9 @@ export function PlayForm() {
                                     <Typography
                                         variant="body1"
                                         noWrap
-                                        fontWeight="medium"
+                                        sx={{
+                                            fontWeight: "medium",
+                                        }}
                                     >
                                         {selectedGameTitle}
                                     </Typography>

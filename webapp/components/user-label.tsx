@@ -34,7 +34,13 @@ export function UserLabel({ user }: { user: User | null }) {
     const theme = useTheme();
 
     return (
-        <Stack direction="row" gap={2} alignItems="center">
+        <Stack
+            direction="row"
+            sx={{
+                gap: 2,
+                alignItems: "center",
+            }}
+        >
             <UserIcon user={user} />
             <Typography
                 variant="body1"

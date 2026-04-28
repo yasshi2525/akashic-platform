@@ -19,9 +19,6 @@ function TACBody() {
     return (
         <Stack
             spacing={1}
-            maxWidth="md"
-            maxHeight="25em"
-            alignSelf="center"
             sx={{
                 py: 2,
                 px: 4,
@@ -30,9 +27,18 @@ function TACBody() {
                 borderWidth: 1,
                 borderRadius: 4,
                 overflow: "auto",
+                maxWidth: "md",
+                maxHeight: "25em",
+                alignSelf: "center",
             }}
         >
-            <Typography variant="h5" component="h2" textAlign="center">
+            <Typography
+                variant="h5"
+                component="h2"
+                sx={{
+                    textAlign: "center",
+                }}
+            >
                 投稿規約
             </Typography>
             <Typography variant="h6" component="h3">
@@ -151,7 +157,13 @@ export function GameTermsAndConditions() {
                     sx={{ mt: 2, alignSelf: "center" }}
                 />
                 {!agreed && (
-                    <Box maxWidth="md" alignSelf="center" textAlign="center">
+                    <Box
+                        sx={{
+                            maxWidth: "md",
+                            alignSelf: "center",
+                            textAlign: "center",
+                        }}
+                    >
                         <Typography color="error" variant="body2" gutterBottom>
                             投稿規約に同意してください。
                         </Typography>

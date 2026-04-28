@@ -21,7 +21,7 @@ import {
 } from "@mui/material";
 import {
     ContentCopy,
-    HelpOutline,
+    HelpOutlined,
     Lock,
     OpenInNew,
     PhotoCamera,
@@ -594,17 +594,21 @@ export function PlayView({
                                 <Stack
                                     direction={{ xs: "column", sm: "row" }}
                                     spacing={1}
-                                    alignItems={{
-                                        xs: "flex-start",
-                                        sm: "center",
+                                    sx={{
+                                        alignItems: {
+                                            xs: "flex-start",
+                                            sm: "center",
+                                        },
+                                        justifyContent: "space-between",
                                     }}
-                                    justifyContent="space-between"
                                 >
                                     <Stack spacing={1}>
                                         <Stack
                                             direction="row"
                                             spacing={1}
-                                            alignItems="center"
+                                            sx={{
+                                                alignItems: "center",
+                                            }}
                                         >
                                             <Typography variant="h6">
                                                 {playName}
@@ -617,7 +621,10 @@ export function PlayView({
                                                     <Stack
                                                         direction="row"
                                                         spacing={1}
-                                                        alignItems="center"
+                                                        sx={{
+                                                            alignItems:
+                                                                "center",
+                                                        }}
                                                     >
                                                         <Lock
                                                             fontSize="small"
@@ -645,7 +652,9 @@ export function PlayView({
                                         <Stack
                                             direction="row"
                                             spacing={1}
-                                            alignItems="center"
+                                            sx={{
+                                                alignItems: "center",
+                                            }}
                                         >
                                             <Typography
                                                 variant="body2"
@@ -687,23 +696,27 @@ export function PlayView({
                                     </Stack>
                                     <Stack
                                         spacing={1}
-                                        alignItems={{
-                                            xs: "flex-start",
-                                            sm: "center",
+                                        sx={{
+                                            alignItems: {
+                                                xs: "flex-start",
+                                                sm: "center",
+                                            },
                                         }}
                                     >
                                         <Stack
                                             direction="row"
-                                            alignItems="center"
                                             sx={{
+                                                alignItems: "center",
                                                 width: "100%",
                                             }}
                                         >
                                             <Stack
                                                 direction="row"
-                                                alignItems="center"
                                                 spacing={1}
-                                                sx={{ mr: 3 }}
+                                                sx={{
+                                                    alignItems: "center",
+                                                    mr: 3,
+                                                }}
                                             >
                                                 <IconButton
                                                     onClick={handleToggleMute}
@@ -760,9 +773,11 @@ export function PlayView({
                                             </Alert>
                                         )}
                                         <Stack
-                                            alignItems="center"
                                             direction="row"
-                                            gap={1}
+                                            sx={{
+                                                gap: 1,
+                                                alignItems: "center",
+                                            }}
                                         >
                                             <Stack direction="row" spacing={2}>
                                                 <Typography
@@ -802,7 +817,9 @@ export function PlayView({
                                     <Stack
                                         direction="row"
                                         spacing={1}
-                                        alignItems="center"
+                                        sx={{
+                                            alignItems: "center",
+                                        }}
                                     >
                                         <Typography
                                             variant="body1"
@@ -852,7 +869,9 @@ export function PlayView({
                                         <Stack
                                             direction="row"
                                             spacing={1}
-                                            alignItems="center"
+                                            sx={{
+                                                alignItems: "center",
+                                            }}
                                         >
                                             <Typography
                                                 variant="body2"
@@ -866,7 +885,7 @@ export function PlayView({
                                                 arrow
                                                 title="トップページから入室する場合に求められる合言葉です。入室できない人がいた場合、この言葉を伝えて下さい。"
                                             >
-                                                <HelpOutline
+                                                <HelpOutlined
                                                     fontSize="small"
                                                     sx={{
                                                         color: theme.palette
@@ -918,7 +937,9 @@ export function PlayView({
                                         <Stack
                                             direction="row"
                                             spacing={1}
-                                            alignItems="center"
+                                            sx={{
+                                                alignItems: "center",
+                                            }}
                                         >
                                             <Typography
                                                 variant="h5"
@@ -967,8 +988,8 @@ export function PlayView({
                                                 <Stack
                                                     direction="row"
                                                     spacing={0.5}
-                                                    alignItems="center"
                                                     sx={{
+                                                        alignItems: "center",
                                                         color: game.streaming
                                                             ? theme.palette
                                                                   .success.light
@@ -1005,7 +1026,9 @@ export function PlayView({
                                         <Stack
                                             direction="row"
                                             spacing={1}
-                                            alignItems="center"
+                                            sx={{
+                                                alignItems: "center",
+                                            }}
                                         >
                                             <Typography
                                                 variant="body2"
@@ -1042,7 +1065,9 @@ export function PlayView({
                                 </Stack>
                                 <Stack
                                     direction="row"
-                                    justifyContent="flex-end"
+                                    sx={{
+                                        justifyContent: "flex-end",
+                                    }}
                                 >
                                     <Button
                                         component={Link}

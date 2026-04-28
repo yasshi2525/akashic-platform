@@ -23,7 +23,13 @@ export default function PrivacyPolicyPage() {
                     bgcolor: "background.paper",
                 }}
             >
-                <Typography variant="h4" component="h1" textAlign="center">
+                <Typography
+                    variant="h4"
+                    component="h1"
+                    sx={{
+                        textAlign: "center",
+                    }}
+                >
                     プライバシーポリシー
                 </Typography>
                 <Typography variant="body1" gutterBottom>

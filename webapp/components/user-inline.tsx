@@ -21,7 +21,13 @@ export function UserInline({
     openInNewWindow?: boolean;
 }) {
     const content = (
-        <Stack direction="row" spacing={1} alignItems="center">
+        <Stack
+            direction="row"
+            spacing={1}
+            sx={{
+                alignItems: "center",
+            }}
+        >
             {user.image && (
                 <Avatar
                     src={user.image}

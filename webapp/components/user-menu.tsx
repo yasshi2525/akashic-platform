@@ -147,7 +147,13 @@ export function UserMenu() {
     }
 
     return (
-        <Stack direction="row" gap={1} alignItems="center">
+        <Stack
+            direction="row"
+            sx={{
+                gap: 1,
+                alignItems: "center",
+            }}
+        >
             <UserLabel user={user} />
             <IconButton aria-label="help" component={Link} href="/help">
                 <Help fontSize="large" />

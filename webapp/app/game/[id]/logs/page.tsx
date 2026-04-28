@@ -110,7 +110,9 @@ function PlayErrorDetails({
                             <Typography
                                 variant="caption"
                                 color={theme.palette.text.secondary}
-                                display="block"
+                                sx={{
+                                    display: "block",
+                                }}
                             >
                                 {new Date(entry.timestamp).toLocaleString(
                                     "ja-JP",
@@ -206,8 +208,10 @@ function ClientLogDetails({
                             <Stack
                                 direction="row"
                                 spacing={1}
-                                alignItems="center"
-                                sx={{ mb: 0.5 }}
+                                sx={{
+                                    mb: 0.5,
+                                    alignItems: "center",
+                                }}
                             >
                                 {submission.reporter?.image && (
                                     <Avatar
@@ -235,7 +239,9 @@ function ClientLogDetails({
                                     <Typography
                                         variant="caption"
                                         color={theme.palette.text.secondary}
-                                        display="block"
+                                        sx={{
+                                            display: "block",
+                                        }}
                                     >
                                         コメント
                                     </Typography>
@@ -280,14 +286,16 @@ function ClientLogDetails({
                                                 <Typography
                                                     key={i}
                                                     variant="caption"
-                                                    display="block"
                                                     align="center"
                                                     color={
                                                         theme.palette.text
                                                             .secondary
                                                     }
-                                                    fontSize="0.75rem"
-                                                    fontStyle="italic"
+                                                    sx={{
+                                                        display: "block",
+                                                        fontSize: "0.75rem",
+                                                        fontStyle: "italic",
+                                                    }}
                                                 >
                                                     ※
                                                     以前のログは上限超過により省略されました
@@ -315,14 +323,18 @@ function ClientLogDetails({
                                                                     .text
                                                                     .secondary
                                                     }
-                                                    fontSize="0.75rem"
-                                                    fontFamily="monospace"
+                                                    sx={{
+                                                        fontSize: "0.75rem",
+                                                        fontFamily: "monospace",
+                                                    }}
                                                 >
                                                     [{entry.level.padEnd(5)}]
                                                 </Typography>
                                                 <Typography
-                                                    fontSize="0.75rem"
-                                                    fontFamily="monospace"
+                                                    sx={{
+                                                        fontSize: "0.75rem",
+                                                        fontFamily: "monospace",
+                                                    }}
                                                 >
                                                     {new Date(
                                                         entry.timestamp,
@@ -330,12 +342,12 @@ function ClientLogDetails({
                                                 </Typography>
                                                 <Typography
                                                     component="pre"
-                                                    whiteSpace="pre-wrap"
                                                     sx={{
+                                                        whiteSpace: "pre-wrap",
                                                         wordBreak: "break-word",
+                                                        fontSize: "0.75rem",
+                                                        fontFamily: "monospace",
                                                     }}
-                                                    fontSize="0.75rem"
-                                                    fontFamily="monospace"
                                                 >
                                                     {entry.message}
                                                 </Typography>
@@ -369,10 +381,17 @@ function ContentLogCard({ info }: { info: ContentLogInfo }) {
                 <Stack
                     direction="row"
                     spacing={1}
-                    alignItems="center"
-                    flexWrap="wrap"
+                    sx={{
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                    }}
                 >
-                    <Typography variant="subtitle1" fontWeight="bold">
+                    <Typography
+                        variant="subtitle1"
+                        sx={{
+                            fontWeight: "bold",
+                        }}
+                    >
                         {info.name}
                     </Typography>
                     {info.crashed && (
@@ -398,7 +417,13 @@ function ContentLogCard({ info }: { info: ContentLogInfo }) {
                     )}
                 </Stack>
 
-                <Stack direction="row" spacing={1} alignItems="center">
+                <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{
+                        alignItems: "center",
+                    }}
+                >
                     {info.gameMaster.iconURL && (
                         <Avatar
                             src={info.gameMaster.iconURL}
@@ -546,8 +571,10 @@ export default function ContentLogs() {
             <Stack
                 spacing={1}
                 direction="row"
-                alignItems="center"
-                justifyContent="center"
+                sx={{
+                    alignItems: "center",
+                    justifyContent: "center",
+                }}
             >
                 <Button
                     component={Link}

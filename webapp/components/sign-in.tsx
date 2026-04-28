@@ -32,7 +32,13 @@ export function SignIn({
     }
 
     return (
-        <Stack spacing={2} alignItems="stretch" sx={{ width: "100%" }}>
+        <Stack
+            spacing={2}
+            sx={{
+                width: "100%",
+                alignItems: "stretch",
+            }}
+        >
             {authProviders.map((provider) => (
                 <Button
                     key={provider}

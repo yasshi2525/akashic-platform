@@ -89,7 +89,9 @@ export function ClosedPlayView({
                             <Stack
                                 direction="row"
                                 spacing={1}
-                                alignItems="center"
+                                sx={{
+                                    alignItems: "center",
+                                }}
                             >
                                 <Typography variant="h6">{playName}</Typography>
                                 {isLimited && (
@@ -100,7 +102,9 @@ export function ClosedPlayView({
                                         <Stack
                                             direction="row"
                                             spacing={0.5}
-                                            alignItems="center"
+                                            sx={{
+                                                alignItems: "center",
+                                            }}
                                         >
                                             <Lock
                                                 fontSize="small"
@@ -128,7 +132,9 @@ export function ClosedPlayView({
                                 <Stack
                                     direction="row"
                                     spacing={1}
-                                    alignItems="center"
+                                    sx={{
+                                        alignItems: "center",
+                                    }}
                                 >
                                     <Typography
                                         variant="body2"
@@ -188,7 +194,9 @@ export function ClosedPlayView({
                                     <Stack
                                         direction="row"
                                         spacing={1}
-                                        alignItems="center"
+                                        sx={{
+                                            alignItems: "center",
+                                        }}
                                     >
                                         <Typography
                                             variant="h5"
@@ -218,7 +226,6 @@ export function ClosedPlayView({
                                             <Stack
                                                 direction="row"
                                                 spacing={0.5}
-                                                alignItems="center"
                                                 sx={{
                                                     color: game.streaming
                                                         ? theme.palette.success
@@ -226,6 +233,7 @@ export function ClosedPlayView({
                                                         : theme.palette.error
                                                               .light,
                                                     cursor: "help",
+                                                    alignItems: "center",
                                                 }}
                                             >
                                                 {game.streaming ? (
@@ -254,7 +262,9 @@ export function ClosedPlayView({
                                     <Stack
                                         direction="row"
                                         spacing={1}
-                                        alignItems="center"
+                                        sx={{
+                                            alignItems: "center",
+                                        }}
                                     >
                                         <Typography
                                             variant="body2"
@@ -294,7 +304,9 @@ export function ClosedPlayView({
                             <Stack
                                 direction={{ xs: "column", sm: "row" }}
                                 spacing={1}
-                                justifyContent="flex-end"
+                                sx={{
+                                    justifyContent: "flex-end",
+                                }}
                             >
                                 <Button
                                     variant="outlined"

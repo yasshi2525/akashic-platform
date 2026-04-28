@@ -76,7 +76,9 @@ export function GameDetailClient({
                                 <Stack
                                     direction="row"
                                     spacing={1}
-                                    alignItems="center"
+                                    sx={{
+                                        alignItems: "center",
+                                    }}
                                 >
                                     <Typography variant="h4" component="h1">
                                         {gameInfo.title}
@@ -89,7 +91,9 @@ export function GameDetailClient({
                                 <Stack
                                     direction="row"
                                     spacing={1}
-                                    alignItems="center"
+                                    sx={{
+                                        alignItems: "center",
+                                    }}
                                 >
                                     <Typography
                                         variant="body2"
@@ -110,7 +114,9 @@ export function GameDetailClient({
                                 <Stack
                                     direction="row"
                                     spacing={1}
-                                    alignItems="center"
+                                    sx={{
+                                        alignItems: "center",
+                                    }}
                                 >
                                     <Typography
                                         variant="body2"

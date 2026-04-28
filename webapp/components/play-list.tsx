@@ -110,7 +110,9 @@ function PlayGrid({ list }: { list: PlayInfo[] }) {
                                     <Stack
                                         spacing={1}
                                         direction="row"
-                                        alignItems="center"
+                                        sx={{
+                                            alignItems: "center",
+                                        }}
                                     >
                                         <Lock
                                             fontSize="small"
@@ -374,13 +376,15 @@ export function PlayList({
                     xs: "column",
                     md: "row",
                 }}
-                justifyContent="space-between"
-                alignItems={{
-                    xs: "start",
-                    md: "center",
-                }}
                 spacing={1}
-                sx={{ mb: 2 }}
+                sx={{
+                    mb: 2,
+                    justifyContent: "space-between",
+                    alignItems: {
+                        xs: "start",
+                        md: "center",
+                    },
+                }}
             >
                 <Box>
                     <Typography variant="h4" component="h1">

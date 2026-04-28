@@ -80,7 +80,9 @@ export function UserFeedbackList({
                                         <Stack
                                             direction="row"
                                             spacing={2}
-                                            alignItems="center"
+                                            sx={{
+                                                alignItems: "center",
+                                            }}
                                         >
                                             <Avatar
                                                 variant="square"

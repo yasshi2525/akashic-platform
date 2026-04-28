@@ -36,9 +36,11 @@ export function SiteCustomFooter() {
     return (
         <Stack
             direction="row"
-            alignSelf="center"
-            alignItems="center"
             color={theme.palette.text.secondary}
+            sx={{
+                alignSelf: "center",
+                alignItems: "center",
+            }}
         >
             <Typography variant="body2" component="span">
                 Sponsored by

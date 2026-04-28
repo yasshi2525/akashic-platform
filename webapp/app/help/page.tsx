@@ -34,7 +34,13 @@ export default function HelpPage() {
                     bgcolor: theme.palette.background.paper,
                 }}
             >
-                <Typography variant="h4" component="h1" textAlign="center">
+                <Typography
+                    variant="h4"
+                    component="h1"
+                    sx={{
+                        textAlign: "center",
+                    }}
+                >
                     ヘルプ
                 </Typography>
                 <Box>

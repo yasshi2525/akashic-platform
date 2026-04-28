@@ -114,8 +114,10 @@ function GameTableCells({
             >
                 <Stack
                     direction={{ xs: "column", lg: "row" }}
-                    gap={1}
-                    sx={{ width: "max-content" }}
+                    sx={{
+                        gap: 1,
+                        width: "max-content",
+                    }}
                 >
                     {renderActions?.(game, true)}
                 </Stack>
@@ -201,7 +203,9 @@ export function GameListTable({
                                             <Stack
                                                 direction="row"
                                                 spacing={1}
-                                                alignItems="center"
+                                                sx={{
+                                                    alignItems: "center",
+                                                }}
                                             >
                                                 <Typography variant="body1">
                                                     {game.title}
@@ -229,7 +233,9 @@ export function GameListTable({
                                     <Stack
                                         direction="row"
                                         spacing={2}
-                                        justifyContent="space-between"
+                                        sx={{
+                                            justifyContent: "space-between",
+                                        }}
                                     >
                                         <Typography
                                             variant="body2"

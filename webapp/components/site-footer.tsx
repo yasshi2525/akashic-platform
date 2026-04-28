@@ -47,7 +47,9 @@ export function SiteFooter() {
                             </Typography>
                             <Typography
                                 variant="body2"
-                                display={{ xs: "none", sm: "inherit" }}
+                                sx={{
+                                    display: { xs: "none", sm: "inherit" },
+                                }}
                             >
                                 All rights reserved.
                             </Typography>
@@ -72,7 +74,9 @@ export function SiteFooter() {
                             <Typography variant="body2">問い合わせ:</Typography>
                             <Typography
                                 variant="body2"
-                                display={{ xs: "none", sm: "inherit" }}
+                                sx={{
+                                    display: { xs: "none", sm: "inherit" },
+                                }}
                             >
                                 やっしー
                             </Typography>

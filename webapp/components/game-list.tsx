@@ -108,7 +108,13 @@ function GameTableCells({
                         }}
                     />
                     <Stack spacing={1}>
-                        <Stack direction="row" spacing={1} alignItems="center">
+                        <Stack
+                            direction="row"
+                            spacing={1}
+                            sx={{
+                                alignItems: "center",
+                            }}
+                        >
                             <Typography variant="body1">
                                 {game.title}
                             </Typography>
@@ -241,7 +247,9 @@ export function GameList({
                                 <Stack
                                     direction="row"
                                     spacing={1}
-                                    alignItems="center"
+                                    sx={{
+                                        alignItems: "center",
+                                    }}
                                 >
                                     <Typography variant="body1">
                                         {game.title}
@@ -274,8 +282,10 @@ export function GameList({
                         <Stack
                             direction="row"
                             spacing={2}
-                            justifyContent="space-between"
-                            alignItems="center"
+                            sx={{
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                            }}
                         >
                             <UserInline
                                 user={{
@@ -288,8 +298,10 @@ export function GameList({
                             />
                             <Stack
                                 direction="row"
-                                alignItems="center"
                                 spacing={1}
+                                sx={{
+                                    alignItems: "center",
+                                }}
                             >
                                 <Typography
                                     variant="body2"
@@ -311,7 +323,13 @@ export function GameList({
             <Stack spacing={2}>
                 {withFavorites && filteredFavorites.length > 0 && (
                     <>
-                        <Stack direction="row" spacing={1} alignItems="center">
+                        <Stack
+                            direction="row"
+                            spacing={1}
+                            sx={{
+                                alignItems: "center",
+                            }}
+                        >
                             <StarOutlined fontSize="small" color="warning" />
                             <Typography
                                 variant="subtitle2"
@@ -385,7 +403,9 @@ export function GameList({
                                 <Stack
                                     direction="row"
                                     spacing={1}
-                                    alignItems="center"
+                                    sx={{
+                                        alignItems: "center",
+                                    }}
                                 >
                                     <StarOutlined
                                         fontSize="small"

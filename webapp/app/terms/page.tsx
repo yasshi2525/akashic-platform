@@ -1,6 +1,13 @@
 "use client";
 
-import { Box, Container, List, ListItem, Stack, Typography } from "@mui/material";
+import {
+    Box,
+    Container,
+    List,
+    ListItem,
+    Stack,
+    Typography,
+} from "@mui/material";
 
 export default function TermsPage() {
     return (
@@ -16,7 +23,13 @@ export default function TermsPage() {
                     bgcolor: "background.paper",
                 }}
             >
-                <Typography variant="h4" component="h1" textAlign="center">
+                <Typography
+                    variant="h4"
+                    component="h1"
+                    sx={{
+                        textAlign: "center",
+                    }}
+                >
                     利用規約
                 </Typography>
                 <Typography variant="body1" gutterBottom>

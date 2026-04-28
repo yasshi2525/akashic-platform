@@ -17,7 +17,14 @@ export function DrainBanner({
     }
 
     return (
-        <Box maxWidth="md" alignSelf="center" sx={{ px: 2, pt: 2 }}>
+        <Box
+            sx={{
+                px: 2,
+                pt: 2,
+                alignSelf: "center",
+                maxWidth: "md",
+            }}
+        >
             <Alert severity="warning" variant="outlined">
                 現在臨時メンテナンス中です。部屋の作成・延長、コンテンツ投稿を停止しています。
                 {state.reason ? ` (${state.reason})` : ""}

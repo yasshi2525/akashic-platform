@@ -92,7 +92,12 @@ export function NotificationBell() {
                 }}
             >
                 <Box sx={{ px: 2, pt: 1, pb: 1 }}>
-                    <Stack direction="row" justifyContent="space-between">
+                    <Stack
+                        direction="row"
+                        sx={{
+                            justifyContent: "space-between",
+                        }}
+                    >
                         <Typography variant="subtitle1">通知</Typography>
                         <Button
                             size="small"

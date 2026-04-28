@@ -42,7 +42,14 @@ export function UserGameListSection({
 
     return (
         <Stack spacing={2}>
-            <Stack width="100%" direction="row" spacing={2} alignItems="center">
+            <Stack
+                direction="row"
+                spacing={2}
+                sx={{
+                    width: "100%",
+                    alignItems: "center",
+                }}
+            >
                 <Box sx={{ flex: 1 }} />
                 <FormatListBulleted fontSize="large" />
                 <Typography variant="h4" component="h2">

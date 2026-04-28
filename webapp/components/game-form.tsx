@@ -273,7 +273,14 @@ export function GameForm({
                 gap: 4,
             }}
         >
-            <Stack width="100%" direction="row" spacing={2} alignItems="center">
+            <Stack
+                direction="row"
+                spacing={2}
+                sx={{
+                    width: "100%",
+                    alignItems: "center",
+                }}
+            >
                 <Box sx={{ flex: 1 }} />
                 {gameId == null ? (
                     <AddCircle fontSize="large" />
@@ -422,8 +429,10 @@ export function GameForm({
                                 <Stack
                                     direction="row"
                                     spacing={2}
-                                    justifyContent="space-between"
-                                    alignItems="center"
+                                    sx={{
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                    }}
                                 >
                                     <Avatar
                                         variant="square"
@@ -443,7 +452,7 @@ export function GameForm({
                                             color="disabled"
                                         />
                                     </Avatar>
-                                    <Box width="100%">
+                                    <Box sx={{ width: "100%" }}>
                                         <Box
                                             component="label"
                                             sx={{
@@ -562,7 +571,9 @@ export function GameForm({
                                 <Stack
                                     spacing={1}
                                     direction="row"
-                                    alignItems="center"
+                                    sx={{
+                                        alignItems: "center",
+                                    }}
                                 >
                                     <FormControlLabel
                                         control={
