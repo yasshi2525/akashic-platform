@@ -15,6 +15,7 @@
     "akashic-server",
     "akashic-storage",
     "webapp",
+    "webapp-static",
     "manager-server"
   ]
 }

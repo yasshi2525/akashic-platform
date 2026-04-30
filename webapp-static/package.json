@@ -1,0 +1,35 @@
+{
+  "name": "@yasshi2525/webapp-static",
+  "version": "1.0.0",
+  "private": true,
+  "description": "static page for webapp",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "files": [],
+  "type": "module",
+  "scripts": {
+    "build": "next build"
+  },
+  "author": "yasshi2525",
+  "license": "MIT",
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.4",
+    "@types/node": "25.6.0",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "prettier": "^3.8.3",
+    "tailwindcss": "^4.2.4",
+    "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "@emotion/cache": "^11.14.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^9.0.0",
+    "@mui/material": "^9.0.0",
+    "@mui/material-nextjs": "^9.0.0",
+    "next": "^16.2.4",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
+  }
+}

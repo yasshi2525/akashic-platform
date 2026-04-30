@@ -49,6 +49,10 @@ Web API 仕様: https://yasshi2525.github.io/akashic-platform/
 
 ゲームプラットフォームとして機能する Web アプリケーション 実装
 
+### webapp-static
+
+静的 Web ページファイル。メンテナンス画面などの Web アプリケーション停止時に表示する画面用
+
 ### schema
 
 クライアント・サーバー両者で必要なスキーマ定義置き場
