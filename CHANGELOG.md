@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 1.4.19
+
+- Improve
+  - `./akashic-storage`
+    - 書き込み遅延によるラグ対策 (#74)
+      - Valkey への書き込みを非同期化
+      - 直近Tick情報をオンメモリでバッファリングする機能を追加
+        - バッファ数: 環境変数 `MEMORY_TICK_BUFFER_SIZE` (デフォルト値: `300`)
+
 ## 1.4.18
 
 - Improve

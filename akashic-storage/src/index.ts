@@ -12,7 +12,12 @@ import { AMFlowServerManager } from "./AMFlowServerManager";
         process.env.VALKEY_NO_TLS?.toLowerCase() === "true",
     );
 
-    const amfManager = new AMFlowServerManager({ valkey });
+    const amfManager = new AMFlowServerManager({
+        valkey,
+        memoryTickBufferSize: parseInt(
+            process.env.MEMORY_TICK_BUFFER_SIZE ?? "300",
+        ),
+    });
     const playManager = new PlayManager({ amfManager });
 
     const allowOrigins = [process.env.CLIENT_ORIGIN].filter(

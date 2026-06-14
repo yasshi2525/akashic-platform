@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 1.1.9
+
+- Improve
+  - Valkey への書き込みを非同期化
+  - 直近Tick情報をオンメモリでバッファリングする機能を追加
+    - バッファ数: 環境変数 `MEMORY_TICK_BUFFER_SIZE` (デフォルト値: `300`)
+
 ## 1.1.8
 
 - Misc

@@ -11,6 +11,7 @@ import {
     TickIndex,
     EventIndex,
     EventFlagsMask,
+    TickListIndex,
 } from "@akashic/playlog";
 import {
     BadRequestError,
@@ -30,6 +31,13 @@ import { AMFlowStoreBase } from "./AMFlowStoreBase";
 interface ValkeyAMFlowStoreParameterObject {
     valkey: GlideClusterClient;
     playId: string;
+    memoryTickBufferSize: number;
+}
+
+interface MemoryEventEntry {
+    frame: number;
+    unfilteredEvents: Event[];
+    filteredEvents: Event[];
 }
 
 export class ValkeyAMFlowStore extends AMFlowStoreBase {
@@ -40,8 +48,15 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
     _isDestroyed: boolean;
     _hashPlayId: string;
     _keyList: string[];
-    _tickQueue: Promise<void>;
     _startPointQueue: Promise<void>;
+
+    _memoryTickBufferSize: number;
+    _memoryOldestFrame: number;
+    _memoryTickBuffer: MemoryEventEntry[];
+
+    _valkeyWriteQueue: TickPack[];
+    _isValkeyDraining: boolean;
+    _valkeyDrainPromise: Promise<void>;
 
     constructor(param: ValkeyAMFlowStoreParameterObject) {
         super(param.playId);
@@ -52,8 +67,15 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         this._isDestroyed = false;
         this._hashPlayId = `{${this.playId}}`;
         this._keyList = [];
-        this._tickQueue = Promise.resolve();
         this._startPointQueue = Promise.resolve();
+
+        this._memoryTickBufferSize = param.memoryTickBufferSize;
+        this._memoryOldestFrame = -1;
+        this._memoryTickBuffer = [];
+
+        this._valkeyWriteQueue = [];
+        this._isValkeyDraining = false;
+        this._valkeyDrainPromise = Promise.resolve();
     }
 
     async authenticate(token: string) {
@@ -66,49 +88,202 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         return toPermission(permissionType as PermissionType);
     }
 
-    sendTickPack(tickPack: TickPack): Promise<void> {
-        this._tickQueue = this._tickQueue
-            .catch(() => {})
-            .then(() => this._doSendTickPack(tickPack));
-        return this._tickQueue;
-    }
-
-    private async _doSendTickPack(tickPack: TickPack): Promise<void> {
-        await this._pushTick(tickPack);
+    sendTickPack(tickPack: TickPack) {
+        const accepted = this._updateMemoryState(tickPack);
+        if (!accepted) {
+            return Promise.resolve();
+        }
         for (const tick of toTickList(tickPack)) {
             this.sendTick(tick);
         }
+        if (convertTickPack.isTick(tickPack) && tickPack[TickIndex.Events]) {
+            this._enqueueValkeyWrite(tickPack);
+        }
+        return Promise.resolve();
     }
 
-    async getTickList(opts: GetTickListOptions): Promise<TickList | null> {
+    private _updateMemoryState(tickPack: TickPack) {
+        let frame: number;
+
+        if (convertTickPack.isNumber(tickPack)) {
+            if (tickPack <= this._latestTickFrame) {
+                // illegal age tick
+                return false;
+            }
+            frame = tickPack;
+        } else if (convertTickPack.isTickFrame(tickPack)) {
+            if (tickPack.to <= this._latestTickFrame) {
+                // illegal age tick
+                return false;
+            }
+            frame = tickPack.to;
+        } else if (convertTickPack.isTick(tickPack)) {
+            if (tickPack[TickIndex.Frame] <= this._latestTickFrame) {
+                // illegal age tick
+                return false;
+            }
+            frame = tickPack[TickIndex.Frame];
+            if (tickPack[TickIndex.Events]) {
+                const unfilteredEvents = tickPack[TickIndex.Events].filter(
+                    (event) =>
+                        !(
+                            event[EventIndex.EventFlags] &
+                            EventFlagsMask.Transient
+                        ),
+                );
+                const filteredEvents = unfilteredEvents.filter(
+                    (event) =>
+                        !(
+                            event[EventIndex.EventFlags] &
+                            EventFlagsMask.Ignorable
+                        ),
+                );
+                if (unfilteredEvents.length > 0) {
+                    this._memoryTickBuffer.push({
+                        frame,
+                        unfilteredEvents,
+                        filteredEvents,
+                    });
+                }
+            }
+        } else {
+            return false;
+        }
+
+        this._latestTickFrame = frame;
+        if (this._memoryOldestFrame === -1) {
+            this._memoryOldestFrame = frame;
+        }
+        const evictBefore = frame - this._memoryTickBufferSize;
+        if (evictBefore > this._memoryOldestFrame) {
+            while (
+                this._memoryTickBuffer.length > 0 &&
+                this._memoryTickBuffer[0].frame < evictBefore
+            ) {
+                this._memoryTickBuffer.shift();
+            }
+            this._memoryOldestFrame = evictBefore;
+        }
+        return true;
+    }
+
+    private _enqueueValkeyWrite(tickPack: TickPack) {
+        this._valkeyWriteQueue.push(tickPack);
+        if (!this._isValkeyDraining) {
+            this._valkeyDrainPromise = this._drainValkeyQueue();
+        }
+    }
+
+    private async _drainValkeyQueue() {
+        this._isValkeyDraining = true;
+        while (this._valkeyWriteQueue.length > 0) {
+            const tickPack = this._valkeyWriteQueue.shift()!;
+            try {
+                await this._pushTick(tickPack);
+            } catch (err) {
+                console.error(
+                    `failed to persist tick to valkey (playId = ${this.playId})`,
+                    err,
+                );
+            }
+        }
+        this._isValkeyDraining = false;
+    }
+
+    async getTickList(opts: GetTickListOptions) {
         const from = opts.begin;
         const to = Math.min(opts.end - 1, this._latestTickFrame);
         if (to < from) {
             return null;
         }
-        const scores = opts.excludeEventFlags?.ignorable
+        const filterIgnorable = opts.excludeEventFlags?.ignorable ?? false;
+
+        // 要求範囲が完全にメモリバッファ内
+        if (this._memoryOldestFrame !== -1 && from >= this._memoryOldestFrame) {
+            return this._getTickListFromMemory(from, to, filterIgnorable);
+        }
+
+        // 要求範囲がメモリバッファと Valkey をまたぐ場合
+        // Valkey 書き込みラグで直近 tick が Valkey に未反映の可能性があるため両方を合成する
+        if (this._memoryOldestFrame !== -1 && to >= this._memoryOldestFrame) {
+            const [valkeyList, memoryList] = await Promise.all([
+                this._getTickListFromValkey(
+                    from,
+                    this._memoryOldestFrame - 1,
+                    filterIgnorable,
+                ),
+                Promise.resolve(
+                    this._getTickListFromMemory(
+                        this._memoryOldestFrame,
+                        to,
+                        filterIgnorable,
+                    ),
+                ),
+            ]);
+            return this._mergeTickLists(from, to, valkeyList, memoryList);
+        }
+
+        // 要求範囲が完全に Valkey 内
+        return this._getTickListFromValkey(from, to, filterIgnorable);
+    }
+
+    private _mergeTickLists(
+        from: number,
+        to: number,
+        ...lists: TickList[]
+    ): TickList {
+        const ticks: Tick[] = [];
+        for (const list of lists) {
+            if (list[TickListIndex.Ticks]) {
+                ticks.push(...list[TickListIndex.Ticks]);
+            }
+        }
+        return ticks.length > 0 ? [from, to, ticks] : [from, to];
+    }
+
+    private _getTickListFromMemory(
+        from: number,
+        to: number,
+        filterIgnorable: boolean,
+    ): TickList {
+        const entries = this._memoryTickBuffer.filter(
+            ({ frame }) => frame >= from && frame <= to,
+        );
+        if (entries.length === 0) {
+            return [from, to];
+        }
+        const ticks: Tick[] = entries
+            .map(
+                ({ frame, unfilteredEvents, filteredEvents }) =>
+                    [
+                        frame,
+                        filterIgnorable ? filteredEvents : unfilteredEvents,
+                    ] as Tick,
+            )
+            .filter((tick) => tick[TickIndex.Events]);
+        return ticks.length > 0 ? [from, to, ticks] : [from, to];
+    }
+
+    private async _getTickListFromValkey(
+        from: number,
+        to: number,
+        filterIgnorable: boolean,
+    ): Promise<TickList> {
+        const scores = filterIgnorable
             ? await this._valkey.zrangeWithScores(
                   genKey(ValkeyZSetKey.FilteredEvent, this._hashPlayId),
                   {
                       type: "byScore",
-                      start: {
-                          value: from,
-                      },
-                      end: {
-                          value: to,
-                      },
+                      start: { value: from },
+                      end: { value: to },
                   },
               )
             : await this._valkey.zrangeWithScores(
                   genKey(ValkeyZSetKey.UnfilteredEvent, this._hashPlayId),
                   {
                       type: "byScore",
-                      start: {
-                          value: from,
-                      },
-                      end: {
-                          value: to,
-                      },
+                      start: { value: from },
+                      end: { value: to },
                   },
               );
         if (scores.length === 0) {
@@ -122,13 +297,13 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
                 }))
                 .map(async ({ tick, eventId }) => ({
                     tick,
-                    eventId: eventId,
+                    eventId,
                     event: await this._valkey.get(
                         genKey(ValkeyKey.Event, this._hashPlayId, eventId),
                     ),
                 })),
         );
-        this._warnIfNotFoundEventRecord(opts, rawEvList);
+        this._warnIfNotFoundEventRecord(filterIgnorable, rawEvList);
         const evList = rawEvList
             .filter(({ event }) => event)
             .map(({ tick, eventId, event }) => {
@@ -148,17 +323,17 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
                 }
             })
             .filter(({ event }) => event) as { tick: number; event: Event }[];
-        return [from, to, this._toTickList(from, to, evList)];
+        return [from, to, this._toTickList(evList)];
     }
 
-    putStartPoint(startPoint: StartPoint): Promise<void> {
+    putStartPoint(startPoint: StartPoint) {
         this._startPointQueue = this._startPointQueue
             .catch(() => {})
             .then(() => this._doPutStartPoint(startPoint));
         return this._startPointQueue;
     }
 
-    private async _doPutStartPoint(startPoint: StartPoint): Promise<void> {
+    private async _doPutStartPoint(startPoint: StartPoint) {
         const startPointKey = genKey(
             ValkeyKey.StartPoint,
             this._hashPlayId,
@@ -251,6 +426,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         if (this._isDestroyed) {
             return;
         }
+        await this._valkeyDrainPromise;
         await this._valkey.unlink([
             genKey(ValkeyZSetKey.UnfilteredEvent, this._hashPlayId),
             genKey(ValkeyZSetKey.FilteredEvent, this._hashPlayId),
@@ -276,11 +452,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         return token;
     }
 
-    _toTickList(
-        from: number,
-        to: number,
-        evList: { tick: number; event: Event }[],
-    ) {
+    _toTickList(evList: { tick: number; event: Event }[]) {
         const tickList: Tick[] = [];
         if (evList.length === 0) {
             return tickList;
@@ -303,7 +475,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
      * null な ev はデータ不整合が起きていることを示すので、念の為ログにだす
      */
     _warnIfNotFoundEventRecord(
-        opts: GetTickListOptions,
+        filterIgnorable: boolean,
         eventList: {
             tick: number;
             eventId: number;
@@ -312,7 +484,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
     ) {
         const notFoundEvents = eventList.filter(({ event }) => event == null);
         if (notFoundEvents.length > 0) {
-            const sourceZsetKey = opts.excludeEventFlags?.ignorable
+            const sourceZsetKey = filterIgnorable
                 ? ValkeyZSetKey.FilteredEvent
                 : ValkeyZSetKey.UnfilteredEvent;
             console.warn(
@@ -326,53 +498,31 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
     }
 
     async _pushTick(tickPack: TickPack) {
-        if (convertTickPack.isNumber(tickPack)) {
-            if (tickPack <= this._latestTickFrame) {
-                // illegal age tick
-                return;
-            }
-            this._latestTickFrame = tickPack;
-        } else if (convertTickPack.isTickFrame(tickPack)) {
-            if (tickPack.to <= this._latestTickFrame) {
-                // illegal age tick
-                return;
-            }
-            this._latestTickFrame = tickPack.to;
-        } else if (convertTickPack.isTick(tickPack)) {
-            if (tickPack[TickIndex.Frame] <= this._latestTickFrame) {
-                // illegal age tick
-                return;
-            }
-            if (tickPack[TickIndex.Events]) {
-                const unfilteredEvents = this._genEventIds(
-                    tickPack[TickIndex.Events].filter(
-                        (event) =>
-                            !(
-                                event[EventIndex.EventFlags] &
-                                EventFlagsMask.Transient
-                            ),
-                    ),
-                );
-                const filteredEvents = unfilteredEvents.filter(
-                    ({ event }) =>
-                        !(
-                            event[EventIndex.EventFlags] &
-                            EventFlagsMask.Ignorable
-                        ),
-                );
-                await this._storeEvents(unfilteredEvents);
-                await this._storeUnfilteredEvents(
-                    tickPack[TickIndex.Frame],
-                    unfilteredEvents,
-                );
-                await this._storeFilteredEvents(
-                    tickPack[TickIndex.Frame],
-                    filteredEvents,
-                );
-                this._nextUnfilteredEventId += unfilteredEvents.length;
-            }
-            this._latestTickFrame = tickPack[TickIndex.Frame];
+        if (!convertTickPack.isTick(tickPack) || !tickPack[TickIndex.Events]) {
+            return;
         }
+        const unfilteredEvents = this._genEventIds(
+            tickPack[TickIndex.Events].filter(
+                (event) =>
+                    !(event[EventIndex.EventFlags] & EventFlagsMask.Transient),
+            ),
+        );
+        const filteredEvents = unfilteredEvents.filter(
+            ({ event }) =>
+                !(event[EventIndex.EventFlags] & EventFlagsMask.Ignorable),
+        );
+        await Promise.all([
+            this._storeEvents(unfilteredEvents),
+            this._storeUnfilteredEvents(
+                tickPack[TickIndex.Frame],
+                unfilteredEvents,
+            ),
+            this._storeFilteredEvents(
+                tickPack[TickIndex.Frame],
+                filteredEvents,
+            ),
+        ]);
+        this._nextUnfilteredEventId += unfilteredEvents.length;
     }
 
     /**
