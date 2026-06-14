@@ -1,10 +1,18 @@
 "use client";
 
-import { MouseEvent, RefObject, TouchEvent, useEffect, useState } from "react";
+import {
+    MouseEvent,
+    RefObject,
+    TouchEvent,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import {
     Alert,
+    alpha,
     Avatar,
     Button,
     Card,
@@ -55,6 +63,13 @@ type WarningType = (typeof warnings)[number];
 
 const MASTER_VOLUME_MAX = 0.4;
 
+const extensionReminderTypes = ["INFO", "WARN"] as const;
+type ExtensionReminderType = (typeof extensionReminderTypes)[number];
+const extensionReminderThresholds = {
+    INFO: 5 * 60 * 1000,
+    WARN: 2 * 60 * 1000,
+} satisfies Record<ExtensionReminderType, number>;
+
 const toMessage = (typ?: WarningType) => {
     if (!typ) {
         return undefined;
@@ -72,6 +87,17 @@ const toMessage = (typ?: WarningType) => {
 // 同時に2インスタンス存在するとロードがとまり、破棄に必要なステップを踏めない
 const container = new AkashicContainer();
 const EXTEND_WINDOW_MS = 10 * 60 * 1000;
+
+function initShownExtensionReminders(initialMs: number) {
+    const set = new Set<ExtensionReminderType>();
+    if (initialMs <= extensionReminderThresholds.INFO) {
+        set.add("INFO");
+    }
+    if (initialMs <= extensionReminderThresholds.WARN) {
+        set.add("WARN");
+    }
+    return set;
+}
 
 export function PlayView({
     playId,
@@ -134,6 +160,11 @@ export function PlayView({
     );
     const [extendError, setExtendError] = useState<string>();
     const [extendLoading, setExtendLoading] = useState(false);
+    const [extensionReminderType, setExtensionReminderType] =
+        useState<ExtensionReminderType>();
+    const shownReminders = useRef(
+        initShownExtensionReminders(initialRemainingMs),
+    );
     const [inviteUrl, setInviteUrl] = useState<string>();
     const [inviteCopyStatus, setInviteCopyStatus] = useState<
         "success" | "error"
@@ -220,6 +251,8 @@ export function PlayView({
             },
             onPlayEnd: setPlayEndReason,
             onPlayExtend: (payload) => {
+                shownReminders.current.clear();
+                setExtensionReminderType(undefined);
                 setExpiresAt(payload.expiresAt);
                 setRemainingMs(payload.remainingMs);
             },
@@ -245,6 +278,25 @@ export function PlayView({
     }, [expiresAt]);
 
     useEffect(() => {
+        if (remainingMs == null) {
+            return;
+        }
+        if (
+            remainingMs <= extensionReminderThresholds.WARN &&
+            !shownReminders.current.has("WARN")
+        ) {
+            shownReminders.current.add("WARN");
+            setExtensionReminderType("WARN");
+        } else if (
+            remainingMs <= extensionReminderThresholds.INFO &&
+            !shownReminders.current.has("INFO")
+        ) {
+            shownReminders.current.add("INFO");
+            setExtensionReminderType("INFO");
+        }
+    }, [remainingMs]);
+
+    useEffect(() => {
         if (typeof window === "undefined") {
             return;
         }
@@ -264,6 +316,8 @@ export function PlayView({
         try {
             const json = await extendPlay({ playId });
             if (json.ok) {
+                shownReminders.current.clear();
+                setExtensionReminderType(undefined);
                 setExpiresAt(json.expiresAt);
                 setRemainingMs(json.remainingMs);
             } else if (json.reason === "TooEarly") {
@@ -583,6 +637,66 @@ export function PlayView({
                         {xShareStatus === "shared"
                             ? "Xに投稿しました。"
                             : "Xへの投稿に失敗しました。"}
+                    </Alert>
+                </Snackbar>
+            )}
+            {extensionReminderType && (
+                <Snackbar
+                    open={!!extensionReminderType}
+                    anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                    autoHideDuration={
+                        extensionReminderType === "INFO" ? 15000 : null
+                    }
+                    onClose={(_, reason) => {
+                        if (reason === "timeout") {
+                            setExtensionReminderType(undefined);
+                        }
+                    }}
+                    disableWindowBlurListener={true}
+                    slotProps={{
+                        clickAwayListener: {
+                            onClickAway: (event) => {
+                                (event as any).defaultMuiPrevented = true;
+                            },
+                        },
+                    }}
+                >
+                    <Alert
+                        severity={
+                            extensionReminderType === "INFO"
+                                ? "info"
+                                : "warning"
+                        }
+                        variant="filled"
+                        onClick={() => setExtensionReminderType(undefined)}
+                        sx={{
+                            cursor: "pointer",
+                            alignItems: "center",
+                            backgroundColor: alpha(
+                                extensionReminderType === "INFO"
+                                    ? theme.palette.info.main
+                                    : theme.palette.warning.main,
+                                0.7,
+                            ),
+                            color: theme.palette.text.primary,
+                            py: 2,
+                        }}
+                        action={
+                            <Button
+                                variant="contained"
+                                onClick={() => handleExtend()}
+                                disabled={extendLoading}
+                                sx={{
+                                    filter: "drop-shadow(5px 5px 5px rgba(0, 0, 0, 0.3))",
+                                }}
+                            >
+                                30分延長する
+                            </Button>
+                        }
+                    >
+                        {extensionReminderType === "INFO"
+                            ? "残り5分で終了します"
+                            : "残り2分で終了します!!"}
                     </Alert>
                 </Snackbar>
             )}
