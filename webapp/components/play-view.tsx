@@ -88,17 +88,6 @@ const toMessage = (typ?: WarningType) => {
 const container = new AkashicContainer();
 const EXTEND_WINDOW_MS = 10 * 60 * 1000;
 
-function initShownExtensionReminders(initialMs: number) {
-    const set = new Set<ExtensionReminderType>();
-    if (initialMs <= extensionReminderThresholds.INFO) {
-        set.add("INFO");
-    }
-    if (initialMs <= extensionReminderThresholds.WARN) {
-        set.add("WARN");
-    }
-    return set;
-}
-
 export function PlayView({
     playId,
     playToken,
@@ -162,9 +151,7 @@ export function PlayView({
     const [extendLoading, setExtendLoading] = useState(false);
     const [extensionReminderType, setExtensionReminderType] =
         useState<ExtensionReminderType>();
-    const shownReminders = useRef(
-        initShownExtensionReminders(initialRemainingMs),
-    );
+    const shownReminders = useRef(new Set<ExtensionReminderType>());
     const [inviteUrl, setInviteUrl] = useState<string>();
     const [inviteCopyStatus, setInviteCopyStatus] = useState<
         "success" | "error"
