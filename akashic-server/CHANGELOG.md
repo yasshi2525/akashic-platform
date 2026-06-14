@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.3.6
+
+- Improve
+  `playlogClient` の `maxPreservingTickSize` を設定する環境変数 (`MAX_PRESERVING_TICK_SIZE`) を追加。未設定時は `0`
+
 ## 1.3.5
 
 - Misc

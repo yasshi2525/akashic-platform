@@ -41,7 +41,8 @@ export function SiteHeader() {
                                 component="span"
                                 sx={{
                                     fontSize: {
-                                        xs: theme.typography.h5.fontSize,
+                                        xs: theme.typography.body1.fontSize,
+                                        sm: theme.typography.h5.fontSize,
                                         md: theme.typography.h4.fontSize,
                                     },
                                 }}

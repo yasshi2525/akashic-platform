@@ -8,6 +8,7 @@ function TextIcon({ name }: { name?: string }) {
         <Avatar
             sx={{
                 bgcolor: colors.deepOrange[500],
+                display: { xs: "none", sm: "inherit" },
             }}
         >
             {name ?? "ゲ"}
@@ -26,7 +27,15 @@ function UserIcon({ user }: { user: User | null }) {
             return <TextIcon />;
         }
     } else {
-        return <Avatar src={user.image} alt={user.name} />;
+        return (
+            <Avatar
+                src={user.image}
+                alt={user.name}
+                sx={{
+                    display: { xs: "none", sm: "inherit" },
+                }}
+            />
+        );
     }
 }
 
@@ -48,7 +57,7 @@ export function UserLabel({ user }: { user: User | null }) {
                     color: theme.palette.text.secondary,
                     display: {
                         xs: "none",
-                        sm: "inherit",
+                        lg: "inherit",
                     },
                 }}
             >

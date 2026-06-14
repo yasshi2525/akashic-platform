@@ -150,7 +150,7 @@ export function UserMenu() {
         <Stack
             direction="row"
             sx={{
-                gap: 1,
+                gap: { xs: 0, sm: 1 },
                 alignItems: "center",
             }}
         >

@@ -12,6 +12,9 @@ const storagePublicUrl =
 const storageAdminUrl =
     process.env.STORAGE_ADMIN_URL ?? "http://localhost:3033";
 const storageAdminToken = process.env.STORAGE_ADMIN_TOKEN ?? "";
+const maxPreservingTickSize = parseInt(
+    process.env.MAX_PRESERVING_TICK_SIZE ?? "0",
+);
 const apiToken = process.env.SERVER_API_TOKEN ?? "";
 
 const manager = new RunnerManager({
@@ -19,6 +22,7 @@ const manager = new RunnerManager({
     storagePublicUrl,
     storageAdminUrl,
     storageAdminToken,
+    maxPreservingTickSize,
 });
 const http = new HttpServer({ manager, apiToken });
 
