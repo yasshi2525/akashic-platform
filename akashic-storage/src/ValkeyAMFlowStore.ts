@@ -11,6 +11,7 @@ import {
     TickIndex,
     EventIndex,
     EventFlagsMask,
+    TickListIndex,
 } from "@akashic/playlog";
 import {
     BadRequestError,
@@ -87,8 +88,11 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         return toPermission(permissionType as PermissionType);
     }
 
-    sendTickPack(tickPack: TickPack): Promise<void> {
-        this._updateMemoryState(tickPack);
+    sendTickPack(tickPack: TickPack) {
+        const accepted = this._updateMemoryState(tickPack);
+        if (!accepted) {
+            return Promise.resolve();
+        }
         for (const tick of toTickList(tickPack)) {
             this.sendTick(tick);
         }
@@ -98,25 +102,25 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         return Promise.resolve();
     }
 
-    private _updateMemoryState(tickPack: TickPack): void {
+    private _updateMemoryState(tickPack: TickPack) {
         let frame: number;
 
         if (convertTickPack.isNumber(tickPack)) {
             if (tickPack <= this._latestTickFrame) {
                 // illegal age tick
-                return;
+                return false;
             }
             frame = tickPack;
         } else if (convertTickPack.isTickFrame(tickPack)) {
             if (tickPack.to <= this._latestTickFrame) {
                 // illegal age tick
-                return;
+                return false;
             }
             frame = tickPack.to;
         } else if (convertTickPack.isTick(tickPack)) {
             if (tickPack[TickIndex.Frame] <= this._latestTickFrame) {
                 // illegal age tick
-                return;
+                return false;
             }
             frame = tickPack[TickIndex.Frame];
             if (tickPack[TickIndex.Events]) {
@@ -143,7 +147,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
                 }
             }
         } else {
-            return;
+            return false;
         }
 
         this._latestTickFrame = frame;
@@ -160,16 +164,17 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
             }
             this._memoryOldestFrame = evictBefore;
         }
+        return true;
     }
 
-    private _enqueueValkeyWrite(tickPack: TickPack): void {
+    private _enqueueValkeyWrite(tickPack: TickPack) {
         this._valkeyWriteQueue.push(tickPack);
         if (!this._isValkeyDraining) {
             this._valkeyDrainPromise = this._drainValkeyQueue();
         }
     }
 
-    private async _drainValkeyQueue(): Promise<void> {
+    private async _drainValkeyQueue() {
         this._isValkeyDraining = true;
         while (this._valkeyWriteQueue.length > 0) {
             const tickPack = this._valkeyWriteQueue.shift()!;
@@ -185,17 +190,55 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         this._isValkeyDraining = false;
     }
 
-    async getTickList(opts: GetTickListOptions): Promise<TickList | null> {
+    async getTickList(opts: GetTickListOptions) {
         const from = opts.begin;
         const to = Math.min(opts.end - 1, this._latestTickFrame);
         if (to < from) {
             return null;
         }
         const filterIgnorable = opts.excludeEventFlags?.ignorable ?? false;
+
+        // 要求範囲が完全にメモリバッファ内
         if (this._memoryOldestFrame !== -1 && from >= this._memoryOldestFrame) {
             return this._getTickListFromMemory(from, to, filterIgnorable);
         }
+
+        // 要求範囲がメモリバッファと Valkey をまたぐ場合
+        // Valkey 書き込みラグで直近 tick が Valkey に未反映の可能性があるため両方を合成する
+        if (this._memoryOldestFrame !== -1 && to >= this._memoryOldestFrame) {
+            const [valkeyList, memoryList] = await Promise.all([
+                this._getTickListFromValkey(
+                    from,
+                    this._memoryOldestFrame - 1,
+                    filterIgnorable,
+                ),
+                Promise.resolve(
+                    this._getTickListFromMemory(
+                        this._memoryOldestFrame,
+                        to,
+                        filterIgnorable,
+                    ),
+                ),
+            ]);
+            return this._mergeTickLists(from, to, valkeyList, memoryList);
+        }
+
+        // 要求範囲が完全に Valkey 内
         return this._getTickListFromValkey(from, to, filterIgnorable);
+    }
+
+    private _mergeTickLists(
+        from: number,
+        to: number,
+        ...lists: TickList[]
+    ): TickList {
+        const ticks: Tick[] = [];
+        for (const list of lists) {
+            if (list[TickListIndex.Ticks]) {
+                ticks.push(...list[TickListIndex.Ticks]);
+            }
+        }
+        return ticks.length > 0 ? [from, to, ticks] : [from, to];
     }
 
     private _getTickListFromMemory(
@@ -283,14 +326,14 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         return [from, to, this._toTickList(evList)];
     }
 
-    putStartPoint(startPoint: StartPoint): Promise<void> {
+    putStartPoint(startPoint: StartPoint) {
         this._startPointQueue = this._startPointQueue
             .catch(() => {})
             .then(() => this._doPutStartPoint(startPoint));
         return this._startPointQueue;
     }
 
-    private async _doPutStartPoint(startPoint: StartPoint): Promise<void> {
+    private async _doPutStartPoint(startPoint: StartPoint) {
         const startPointKey = genKey(
             ValkeyKey.StartPoint,
             this._hashPlayId,
