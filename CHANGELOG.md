@@ -7,6 +7,7 @@
     - `playlogClient` の `maxPreservingTickSize` を設定する環境変数 (`MAX_PRESERVING_TICK_SIZE`) を追加。未設定時は `0`
   - `./webapp`
     - プレイ残り時間が少なくなった際に通知する機能を追加 (#35)
+    - xs, sm におけるメニューバーレイアウトを改善
 
 ## 1.4.17
 
