@@ -31,6 +31,7 @@ export interface RunnerParameterObject {
     storagePublicUrl: string;
     storageAdminUrl: string;
     storageAdminToken: string;
+    maxPreservingTickSize: number;
     playName: string;
     contentId: number;
     contentUrl: string;
@@ -405,7 +406,8 @@ export class Runner {
                     session.createClient(
                         {
                             usePrimaryChannel: true,
-                            maxPreservingTickSize: 2,
+                            maxPreservingTickSize:
+                                this._param.maxPreservingTickSize,
                         },
                         (err, client) => {
                             if (err) {

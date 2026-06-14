@@ -6,6 +6,7 @@ interface RunnerManagerParameterObject {
     storagePublicUrl: string;
     storageAdminUrl: string;
     storageAdminToken: string;
+    maxPreservingTickSize: number;
 }
 
 export type RunnerStartParameterObject = Omit<
@@ -16,6 +17,7 @@ export type RunnerStartParameterObject = Omit<
     | "storagePublicUrl"
     | "storageAdminUrl"
     | "storageAdminToken"
+    | "maxPreservingTickSize"
 >;
 
 export class RunnerManager {
@@ -23,6 +25,7 @@ export class RunnerManager {
     _storagePublicUrl: string;
     _storageAdminUrl: string;
     _storageAdminToken: string;
+    _maxPreservingTickSize: number;
     _runners: Map<number, Runner>;
 
     constructor(param: RunnerManagerParameterObject) {
@@ -30,6 +33,7 @@ export class RunnerManager {
         this._storagePublicUrl = param.storagePublicUrl;
         this._storageAdminUrl = param.storageAdminUrl;
         this._storageAdminToken = param.storageAdminToken;
+        this._maxPreservingTickSize = param.maxPreservingTickSize;
         this._runners = new Map();
     }
 
@@ -39,6 +43,7 @@ export class RunnerManager {
             storagePublicUrl: this._storagePublicUrl,
             storageAdminUrl: this._storageAdminUrl,
             storageAdminToken: this._storageAdminToken,
+            maxPreservingTickSize: this._maxPreservingTickSize,
             ...param,
         });
         const playId = await runner.start();
