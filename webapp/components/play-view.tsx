@@ -57,6 +57,7 @@ import { ClientLogDialog } from "./client-log-dialog";
 import { TroubleshootButton } from "./troubleshoot-button";
 import { FavoriteButton } from "./favorite-button";
 import { renderTextWithLinks } from "./text-with-links";
+import { HandleSetDialog } from "./handle-set-dialog";
 
 const warnings = ["EVENT_ON_SKIPPING"] as const;
 type WarningType = (typeof warnings)[number];
@@ -105,6 +106,7 @@ export function PlayView({
     remainingMs: initialRemainingMs,
     expiresAt: initialExpiresAt,
     user,
+    onPlayEnd,
     ref,
 }: {
     playId: string;
@@ -118,6 +120,7 @@ export function PlayView({
         userId?: string;
         name: string;
         iconURL?: string;
+        handle?: string;
     };
     isGameMaster: boolean;
     contentWidth: number;
@@ -127,6 +130,7 @@ export function PlayView({
     remainingMs: number;
     expiresAt: number;
     user: User;
+    onPlayEnd?: (reason: PlayEndReason) => void;
     ref: RefObject<HTMLDivElement | null>;
 }) {
     const theme = useTheme();
@@ -156,6 +160,10 @@ export function PlayView({
     const [inviteCopyStatus, setInviteCopyStatus] = useState<
         "success" | "error"
     >();
+    const [handle, setHandle] = useState(gameMaster.handle);
+    const [liveUrl, setLiveUrl] = useState<string>();
+    const [liveCopyStatus, setLiveCopyStatus] = useState<"success" | "error">();
+    const [handleDialogOpen, setHandleDialogOpen] = useState(false);
     const [volumePercent, setVolumePercent] = useLocalStorage(
         STORAGE_KEYS.PLAYER_VOLUME,
         100,
@@ -236,7 +244,12 @@ export function PlayView({
             onOpenTroubleshoot: () => {
                 setTroubleshootOpen(true);
             },
-            onPlayEnd: setPlayEndReason,
+            onPlayEnd: (reason) => {
+                if (onPlayEnd) {
+                    onPlayEnd(reason);
+                }
+                setPlayEndReason(reason);
+            },
             onPlayExtend: (payload) => {
                 shownReminders.current.clear();
                 setExtensionReminderType(undefined);
@@ -294,6 +307,13 @@ export function PlayView({
         setInviteUrl(currentUrl.toString());
     }, [playId, inviteHash, isLimited]);
 
+    useEffect(() => {
+        if (!handle || typeof window === "undefined") return;
+        setLiveUrl(
+            new URL(`/live/${handle}`, window.location.origin).toString(),
+        );
+    }, [handle]);
+
     async function handleExtend() {
         if (extendLoading) {
             return;
@@ -336,6 +356,19 @@ export function PlayView({
         } catch (err) {
             console.warn("failed to copy invite url", err);
             setInviteCopyStatus("error");
+        }
+    }
+
+    async function handleCopyLiveUrl() {
+        if (!liveUrl) {
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(liveUrl);
+            setLiveCopyStatus("success");
+        } catch (err) {
+            console.warn("failed to copy live url", err);
+            setLiveCopyStatus("error");
         }
     }
 
@@ -624,6 +657,24 @@ export function PlayView({
                         {xShareStatus === "shared"
                             ? "Xに投稿しました。"
                             : "Xへの投稿に失敗しました。"}
+                    </Alert>
+                </Snackbar>
+            )}
+            {liveCopyStatus && (
+                <Snackbar
+                    open={!!liveCopyStatus}
+                    anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                    autoHideDuration={2500}
+                    onClose={() => setLiveCopyStatus(undefined)}
+                >
+                    <Alert
+                        severity={
+                            liveCopyStatus === "error" ? "error" : "success"
+                        }
+                    >
+                        {liveCopyStatus === "success"
+                            ? "ユーザー部屋リンクをコピーしました。"
+                            : "クリップボードへのコピーに失敗しました。"}
                     </Alert>
                 </Snackbar>
             )}
@@ -1012,10 +1063,112 @@ export function PlayView({
                                     )}
                                 </Stack>
                                 {isGameMaster && (
+                                    <Stack spacing={1}>
+                                        {handle ? (
+                                            <>
+                                                <Typography variant="body1">
+                                                    あなたのユーザー部屋リンク
+                                                </Typography>
+                                                <Stack
+                                                    direction="row"
+                                                    spacing={1}
+                                                    sx={{
+                                                        alignItems: "center",
+                                                    }}
+                                                >
+                                                    <Typography
+                                                        variant="body1"
+                                                        sx={{
+                                                            p: 1,
+                                                            color: theme.palette
+                                                                .text.secondary,
+                                                            borderStyle:
+                                                                "solid",
+                                                            borderWidth: 1,
+                                                            borderRadius: 2,
+                                                            borderColor:
+                                                                theme.palette
+                                                                    .divider,
+                                                            backgroundColor:
+                                                                theme.palette
+                                                                    .background
+                                                                    .default,
+                                                            cursor: "pointer",
+                                                            flexGrow: 1,
+                                                        }}
+                                                        onClick={
+                                                            handleCopyLiveUrl
+                                                        }
+                                                    >
+                                                        {liveUrl ??
+                                                            "リンクを準備中..."}
+                                                    </Typography>
+                                                    <Button
+                                                        startIcon={
+                                                            <ContentCopy />
+                                                        }
+                                                        variant="outlined"
+                                                        onClick={
+                                                            handleCopyLiveUrl
+                                                        }
+                                                        disabled={!liveUrl}
+                                                        sx={{
+                                                            borderColor:
+                                                                theme.palette
+                                                                    .primary
+                                                                    .light,
+                                                            color: theme.palette
+                                                                .primary.light,
+                                                        }}
+                                                    >
+                                                        コピー
+                                                    </Button>
+                                                </Stack>
+                                                <Typography
+                                                    variant="body2"
+                                                    color={
+                                                        theme.palette.text
+                                                            .secondary
+                                                    }
+                                                >
+                                                    このリンクを共有すると、いつでもあなたが作成した最新の部屋に案内することができます。
+                                                </Typography>
+                                            </>
+                                        ) : (
+                                            <Alert
+                                                severity="info"
+                                                variant="outlined"
+                                                action={
+                                                    <Button
+                                                        size="small"
+                                                        onClick={() =>
+                                                            setHandleDialogOpen(
+                                                                true,
+                                                            )
+                                                        }
+                                                    >
+                                                        設定する
+                                                    </Button>
+                                                }
+                                            >
+                                                ユーザー部屋リンクを設定すると、いつでもあなたが作成した最新の部屋に案内することができます。
+                                            </Alert>
+                                        )}
+                                    </Stack>
+                                )}
+                                {isGameMaster && (
                                     <Stack sx={{ justifyContent: "center" }}>
                                         <PlayCloseDialog playId={playId} />
                                     </Stack>
                                 )}
+                                <HandleSetDialog
+                                    open={handleDialogOpen}
+                                    onClose={() => setHandleDialogOpen(false)}
+                                    onHandleSet={(newHandle) => {
+                                        setHandle(newHandle);
+                                        setHandleDialogOpen(false);
+                                    }}
+                                />
                             </Stack>
                         </CardContent>
                     </Card>

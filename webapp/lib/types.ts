@@ -202,6 +202,7 @@ export interface NotificationInfo {
 export interface UserProfile {
     id: string;
     name: string;
+    handle?: string;
     image?: string;
     /**
      * 自分自身の場合のみ値が格納。サインイン中のプロパイダ
@@ -279,6 +280,7 @@ interface BasePlayViewInfo {
         userId?: string;
         name: string;
         iconURL?: string;
+        handle?: string;
     };
     createdAt: Date;
 }
@@ -301,6 +303,33 @@ export interface ClosedPlayViewInfo extends BasePlayViewInfo {
 export type PlayResponse =
     | { ok: true; data: PlayViewInfo }
     | { ok: false; reason: PlayErrorType };
+
+export interface ActiveLiveInfo extends ActivePlayViewInfo {
+    id: number;
+}
+
+export type LiveInfo = {
+    owner: {
+        userId: string;
+        name: string;
+        iconURL?: string;
+    };
+} & (
+    | {
+          requiresJoinWord: true;
+          reason: "JoinWordRequired" | "InvalidJoinWord";
+      }
+    | {
+          requiresJoinWord: false;
+          info?: ActiveLiveInfo;
+      }
+);
+
+const liveErrReasons = ["NotFound", "InternalError"] as const;
+export type LiveErrorType = (typeof liveErrReasons)[number];
+export type LiveResponse =
+    | { ok: true; data: LiveInfo }
+    | { ok: false; reason: LiveErrorType };
 
 const feedbackErrReasons = [
     "InvalidParams",

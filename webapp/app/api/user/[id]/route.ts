@@ -21,6 +21,7 @@ export async function GET(
         select: {
             id: true,
             name: true,
+            handle: true,
             image: true,
         },
     });
@@ -49,6 +50,7 @@ export async function GET(
         data: {
             id: user.id,
             name: user.name,
+            handle: user.handle ?? undefined,
             image: user.image ?? undefined,
             provider,
         },

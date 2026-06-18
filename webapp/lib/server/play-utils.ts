@@ -1,7 +1,88 @@
 "use server";
 
 import type { GameConfiguration } from "@akashic/game-configuration";
-import { internalContentBaseUrl } from "./akashic";
+import {
+    akashicServerUrl,
+    internalContentBaseUrl,
+    internalPlaylogServerUrl,
+    withAkashicServerAuth,
+} from "./akashic";
+
+export async function fetchPlayToken(playId: number, contentId: number) {
+    const res = await fetch(
+        `${internalPlaylogServerUrl}/join?playId=${playId}`,
+    );
+    if (res.status !== 200) {
+        throw new Error(
+            `playlog server responded error message. (contentId = "${contentId}", detail = "${await res.text()}")`,
+        );
+    }
+    const json = (await res.json()) as { playToken: string };
+    if (!json.playToken) {
+        throw new Error(
+            `playlog server responded invalid message. (contentId = "${contentId}", detail = "${json}")`,
+        );
+    }
+    return json.playToken;
+}
+
+export function checkLimitedPlayAccess(
+    play: {
+        isLimited: boolean;
+        gameMasterId: string;
+        joinWord?: string | null;
+        inviteHash?: string | null;
+    },
+    userId: string | undefined,
+    input: {
+        joinWord?: string;
+        inviteHash?: string;
+    },
+): {
+    ok: false;
+    reason: "JoinWordRequired" | "InvalidJoinWord";
+} | null {
+    if (!play.isLimited) {
+        return null;
+    }
+    if (userId === play.gameMasterId) {
+        return null;
+    }
+    if (
+        input.inviteHash !== undefined &&
+        input.inviteHash === play.inviteHash
+    ) {
+        return null;
+    }
+    if (!input.joinWord) {
+        return {
+            ok: false,
+            reason: "JoinWordRequired",
+        };
+    }
+    if (input.joinWord !== play.joinWord) {
+        return {
+            ok: false,
+            reason: "InvalidJoinWord",
+        };
+    }
+    return null;
+}
+
+export async function fetchPlayRemaining(playId: number) {
+    const res = await fetch(`${akashicServerUrl}/remaining?playId=${playId}`, {
+        headers: withAkashicServerAuth(),
+    });
+    if (res.status !== 200) {
+        throw new Error(
+            `akashic server /remaining responded error. (playId = "${playId}", detail = "${await res.text()}")`,
+        );
+    }
+    return (await res.json()) as {
+        remainingMs: number;
+        expiresAt: number;
+    };
+}
 
 export async function fetchGameJson(contentId: number) {
     return (await (
