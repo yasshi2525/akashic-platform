@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.7.0
+
+- Feature
+  - `User` に `handle` を追加
+
 ## 1.6.1
 
 - Misc

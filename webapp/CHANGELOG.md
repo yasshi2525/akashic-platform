@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.5.0
+
+- Feature
+  - ユーザー部屋機能を追加
+
 ## 1.4.14
 
 - Improve
