@@ -166,24 +166,24 @@ export function PlayCreateDialog({
                         </Alert>
                     )}
                 </Stack>
+                <DialogActions>
+                    <Button
+                        variant="contained"
+                        onClick={handleSubmit}
+                        disabled={sending}
+                    >
+                        作成する
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        color="inherit"
+                        onClick={onClose}
+                        disabled={sending}
+                    >
+                        キャンセル
+                    </Button>
+                </DialogActions>
             </DialogContent>
-            <DialogActions>
-                <Button
-                    variant="contained"
-                    onClick={handleSubmit}
-                    disabled={sending}
-                >
-                    作成する
-                </Button>
-                <Button
-                    variant="outlined"
-                    color="inherit"
-                    onClick={onClose}
-                    disabled={sending}
-                >
-                    キャンセル
-                </Button>
-            </DialogActions>
         </Dialog>
     );
 }
