@@ -100,7 +100,9 @@ export async function GET(
             });
         }
         const user = await getAuth();
-        const denied = checkLimitedPlayAccess(play, user?.id, { joinWord });
+        const denied = await checkLimitedPlayAccess(play, user?.id, {
+            joinWord,
+        });
         if (denied) {
             return NextResponse.json({
                 ok: true,

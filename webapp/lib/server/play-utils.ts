@@ -26,7 +26,7 @@ export async function fetchPlayToken(playId: number, contentId: number) {
     return json.playToken;
 }
 
-export function checkLimitedPlayAccess(
+export async function checkLimitedPlayAccess(
     play: {
         isLimited: boolean;
         gameMasterId: string;
@@ -38,10 +38,10 @@ export function checkLimitedPlayAccess(
         joinWord?: string;
         inviteHash?: string;
     },
-): {
+): Promise<{
     ok: false;
     reason: "JoinWordRequired" | "InvalidJoinWord";
-} | null {
+} | null> {
     if (!play.isLimited) {
         return null;
     }

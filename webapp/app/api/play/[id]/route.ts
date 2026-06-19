@@ -126,7 +126,7 @@ export async function GET(
                 },
             });
         }
-        const denied = checkLimitedPlayAccess(play, user?.id, {
+        const denied = await checkLimitedPlayAccess(play, user?.id, {
             joinWord,
             inviteHash,
         });
