@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     Alert,
     Box,
@@ -8,8 +8,8 @@ import {
     Card,
     CardContent,
     Chip,
-    CircularProgress,
     Container,
+    Divider,
     Skeleton,
     Stack,
     TextField,
@@ -28,52 +28,62 @@ function LiveHeader({
     name,
     iconURL,
     isPlaying,
+    width,
 }: {
     userId: string;
     name: string;
     iconURL?: string;
     isPlaying: boolean;
+    width?: "narrow";
 }) {
+    const theme = useTheme();
     return (
-        <Box
-            sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1.5,
-                px: 2,
-                py: 1.5,
-                borderBottom: 1,
-                borderColor: "divider",
-            }}
-        >
-            <UserInline
-                user={{
-                    id: userId,
-                    name: name,
-                    image: iconURL,
-                }}
-                textVariant="body1"
-                avatarSize={24}
-            />
-            <Typography variant="body1" sx={{ ml: 1 }}>
-                さんの部屋
-            </Typography>
-            {isPlaying ? (
-                <Chip
-                    label="ただいまプレイ中"
-                    color="error"
-                    size="small"
-                    sx={{ ml: "auto" }}
-                />
-            ) : (
-                <Chip
-                    label="休憩中"
-                    color="default"
-                    size="small"
-                    sx={{ ml: "auto" }}
-                />
-            )}
-        </Box>
+        <>
+            <Container maxWidth={width === "narrow" ? "sm" : "md"}>
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        borderColor: "divider",
+                        justifyContent: "flex-start",
+                        my: 1,
+                    }}
+                >
+                    <UserInline
+                        user={{
+                            id: userId,
+                            name: name,
+                            image: iconURL,
+                        }}
+                        textVariant="body1"
+                        avatarSize={24}
+                    />
+                    <Typography
+                        variant="body1"
+                        color={theme.palette.text.secondary}
+                        sx={{ ml: 1 }}
+                    >
+                        さんの部屋
+                    </Typography>
+                    {isPlaying ? (
+                        <Chip
+                            label="ただいまプレイ中"
+                            color="success"
+                            size="small"
+                            sx={{ ml: 1 }}
+                        />
+                    ) : (
+                        <Chip
+                            label="休憩中"
+                            color="default"
+                            size="small"
+                            sx={{ ml: 1 }}
+                        />
+                    )}
+                </Box>
+            </Container>
+            <Divider />
+        </>
     );
 }
 
@@ -82,9 +92,15 @@ export function LiveContainer({ handle }: { handle: string }) {
     const [joinWord, setJoinWord] = useState("");
     const [submittedJoinWord, setSubmittedJoinWord] = useState<string>();
     /**
-     * Note: プレイ中はポーリングさせたくないため記録。更新時に再レンダリングさせないためにuseRef
+     * NOTE: プレイ中はポーリングさせたくないため、プレイ中かどうか判定するため記憶する。
+     * NOTE: isPlaying の値を更新した際に再レンダリングさせたくないので useRef を使用する
      */
     const isPlaying = useRef(false);
+    /**
+     * NOTE: プレイが終わった直後、まだ data にはまだ情報が残っている。
+     * NOTE: 直前の id を保持することで待機状態に遷移させる
+     */
+    const closedPlayId = useRef<number>(undefined);
     const [cachedInfo, setCachedInfo] = useState<ActiveLiveInfo>();
     const [user] = useAuth();
     const container = useRef<HTMLDivElement>(null);
@@ -98,7 +114,11 @@ export function LiveContainer({ handle }: { handle: string }) {
         if (isPlaying.current) {
             return;
         }
-        if (!data?.requiresJoinWord && data?.info) {
+        if (
+            !data?.requiresJoinWord &&
+            data?.info &&
+            data.info.id !== closedPlayId.current
+        ) {
             setCachedInfo(data.info);
             isPlaying.current = true;
         }
@@ -107,6 +127,7 @@ export function LiveContainer({ handle }: { handle: string }) {
     function handlePlayEnd(_reason: PlayEndReason) {
         setCachedInfo(undefined);
         setJoinWord("");
+        closedPlayId.current = cachedInfo?.id;
         setSubmittedJoinWord(undefined);
         isPlaying.current = false;
     }
@@ -139,50 +160,55 @@ export function LiveContainer({ handle }: { handle: string }) {
     }
     if (data?.requiresJoinWord) {
         return (
-            <Container maxWidth="sm" sx={{ mt: 2 }}>
+            <>
                 <LiveHeader
                     userId={data.owner.userId}
                     name={data.owner.name}
                     iconURL={data.owner.iconURL}
                     isPlaying={true}
+                    width="narrow"
                 />
-                <Card>
-                    <CardContent>
-                        <Stack
-                            component="form"
-                            spacing={2}
-                            onSubmit={handleSubmitJoinWord}
-                        >
-                            {error && (
-                                <Alert severity="error" variant="outlined">
-                                    {error}
-                                </Alert>
-                            )}
-                            {submittedJoinWord && (
-                                <Alert severity="error" variant="outlined">
-                                    入室の言葉が正しくありません。
-                                </Alert>
-                            )}
-                            <Typography variant="h6">
-                                ただいま限定公開設定でプレイしています。
-                            </Typography>
-                            <Typography variant="body2">
-                                ゲームに参加するには入室の言葉が必要です。
-                            </Typography>
-                            <TextField
-                                label="入室の言葉"
-                                value={joinWord}
-                                onChange={(e) => setJoinWord(e.target.value)}
-                                autoFocus
-                                fullWidth
-                            />
-                            <Button type="submit" variant="contained">
-                                入室する
-                            </Button>
-                        </Stack>
-                    </CardContent>
-                </Card>
-            </Container>
+                <Container maxWidth="sm" sx={{ mt: 2 }}>
+                    <Card>
+                        <CardContent>
+                            <Stack
+                                component="form"
+                                spacing={2}
+                                onSubmit={handleSubmitJoinWord}
+                            >
+                                {error && (
+                                    <Alert severity="error" variant="outlined">
+                                        {error}
+                                    </Alert>
+                                )}
+                                {submittedJoinWord && (
+                                    <Alert severity="error" variant="outlined">
+                                        入室の言葉が正しくありません。
+                                    </Alert>
+                                )}
+                                <Typography variant="h6">
+                                    ただいま限定公開設定でプレイしています。
+                                </Typography>
+                                <Typography variant="body2">
+                                    ゲームに参加するには入室の言葉が必要です。
+                                </Typography>
+                                <TextField
+                                    label="入室の言葉"
+                                    value={joinWord}
+                                    onChange={(e) =>
+                                        setJoinWord(e.target.value)
+                                    }
+                                    autoFocus
+                                    fullWidth
+                                />
+                                <Button type="submit" variant="contained">
+                                    入室する
+                                </Button>
+                            </Stack>
+                        </CardContent>
+                    </Card>
+                </Container>
+            </>
         );
     }
     if (error || !data || !user) {
@@ -195,38 +221,44 @@ export function LiveContainer({ handle }: { handle: string }) {
             </Container>
         );
     }
-    if (!data.info) {
+    if (!isPlaying.current) {
         return (
-            <Container maxWidth="sm" sx={{ mt: 4 }}>
+            <>
                 <LiveHeader
                     userId={data.owner.userId}
                     name={data.owner.name}
                     iconURL={data.owner.iconURL}
                     isPlaying={false}
+                    width="narrow"
                 />
-                <Card>
-                    <CardContent>
-                        <Stack spacing={2} sx={{ alignItems: "center", py: 2 }}>
-                            <Typography variant="h6">
-                                現在ゲームを起動していません
-                            </Typography>
-                            <Typography
-                                variant="body2"
-                                color={theme.palette.text.secondary}
-                                sx={{ textAlign: "center" }}
+                <Container maxWidth="sm" sx={{ mt: 4 }}>
+                    <Card>
+                        <CardContent>
+                            <Stack
+                                spacing={2}
+                                sx={{ alignItems: "center", py: 2 }}
                             >
-                                ゲーム開始までお待ちください。
-                            </Typography>
-                            <CircularProgress size={24} />
-                        </Stack>
-                    </CardContent>
-                </Card>
-            </Container>
+                                <Typography variant="h6">
+                                    {data.owner.name}{" "}
+                                    さんは現在ゲームを起動していません
+                                </Typography>
+                                <Typography
+                                    variant="body2"
+                                    color={theme.palette.text.secondary}
+                                    sx={{ textAlign: "center" }}
+                                >
+                                    ゲーム開始までお待ちください。
+                                </Typography>
+                            </Stack>
+                        </CardContent>
+                    </Card>
+                </Container>
+            </>
         );
     }
     if (!cachedInfo) {
         return (
-            <Container maxWidth="md" sx={{ mt: 2 }}>
+            <Container maxWidth="sm" sx={{ mt: 4 }}>
                 <Alert severity="error" variant="outlined">
                     予期しないエラーが発生しました。画面を更新してください。
                 </Alert>
@@ -234,7 +266,7 @@ export function LiveContainer({ handle }: { handle: string }) {
         );
     }
     return (
-        <Box>
+        <>
             <LiveHeader
                 userId={data.owner.userId}
                 name={data.owner.name}
@@ -262,6 +294,6 @@ export function LiveContainer({ handle }: { handle: string }) {
                 onPlayEnd={handlePlayEnd}
                 ref={container}
             />
-        </Box>
+        </>
     );
 }

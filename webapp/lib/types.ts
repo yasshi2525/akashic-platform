@@ -357,6 +357,19 @@ export type UserFeedbackResponse =
     | { ok: true; data: UserFeedbackItem[] }
     | { ok: false; reason: UserFeedbackErrorType };
 
+const userHandleErrReasons = [
+    "Unauthorized",
+    "EmptyHandle",
+    "InvalidFormatHandle",
+    "ForbiddenHandle",
+    "HandleAlreadyExists",
+    "InternalError",
+] as const;
+export type UserHandleErrorType = (typeof userHandleErrReasons)[number];
+export type UserHandleResponse =
+    | { ok: true; handle: string }
+    | { ok: false; reason: UserHandleErrorType };
+
 const contentLogListErrReasons = [
     "InvalidParams",
     "Forbidden",

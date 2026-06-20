@@ -1062,13 +1062,13 @@ export function PlayView({
                                         </Stack>
                                     )}
                                 </Stack>
-                                {isGameMaster && (
+                                {isGameMaster && user.authType === "oauth" && (
                                     <Stack spacing={1}>
+                                        <Typography variant="body1">
+                                            あなたのユーザー部屋リンク
+                                        </Typography>
                                         {handle ? (
                                             <>
-                                                <Typography variant="body1">
-                                                    あなたのユーザー部屋リンク
-                                                </Typography>
                                                 <Stack
                                                     direction="row"
                                                     spacing={1}
@@ -1140,16 +1140,26 @@ export function PlayView({
                                                 variant="outlined"
                                                 action={
                                                     <Button
-                                                        size="small"
+                                                        variant="outlined"
                                                         onClick={() =>
                                                             setHandleDialogOpen(
                                                                 true,
                                                             )
                                                         }
+                                                        sx={{
+                                                            borderColor:
+                                                                theme.palette
+                                                                    .primary
+                                                                    .light,
+                                                            color: theme.palette
+                                                                .primary.light,
+                                                            py: 1,
+                                                        }}
                                                     >
                                                         設定する
                                                     </Button>
                                                 }
+                                                sx={{ alignItems: "center" }}
                                             >
                                                 ユーザー部屋リンクを設定すると、いつでもあなたが作成した最新の部屋に案内することができます。
                                             </Alert>

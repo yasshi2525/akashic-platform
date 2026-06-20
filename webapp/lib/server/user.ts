@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@yasshi2525/persist-schema";
+import { UserHandleResponse } from "../types";
 import { getAuth } from "./auth";
 
 const HANDLE_PATTERN = /^[a-z0-9][a-z0-9_-]{1,19}$/;
@@ -76,49 +77,33 @@ export async function updateUserNameAction(
     };
 }
 
-const initialHandleState: UserHandleFormState = {
-    ok: true,
-    submitted: false,
-};
-
-export async function updateUserHandleAction(
-    prevState: UserHandleFormState,
-    formData: FormData,
-): Promise<UserHandleFormState> {
+export async function updateUserHandle(
+    rawHandle: string,
+): Promise<UserHandleResponse> {
     const user = await getAuth();
     if (!user || user.authType !== "oauth") {
         return {
             ok: false,
-            submitted: true,
-            message: "ハンドルの設定にはサインインが必要です。",
-            submittedAt: Date.now(),
+            reason: "Unauthorized",
         };
     }
-    const raw = formData.get("handle")?.toString() ?? "";
-    const handle = raw.toLowerCase().trim();
+    const handle = rawHandle.trim();
     if (!handle) {
         return {
             ok: false,
-            submitted: true,
-            message: "ハンドルを入力してください。",
-            submittedAt: Date.now(),
+            reason: "EmptyHandle",
         };
     }
     if (!HANDLE_PATTERN.test(handle)) {
         return {
             ok: false,
-            submitted: true,
-            message:
-                "ハンドルは2〜20文字の英小文字・数字・アンダースコア・ハイフンで入力してください。先頭は英数字にしてください。",
-            submittedAt: Date.now(),
+            reason: "InvalidFormatHandle",
         };
     }
     if (RESERVED_HANDLES.has(handle)) {
         return {
             ok: false,
-            submitted: true,
-            message: "このハンドルは使用できません。",
-            submittedAt: Date.now(),
+            reason: "ForbiddenHandle",
         };
     }
     try {
@@ -139,23 +124,72 @@ export async function updateUserHandleAction(
         ) {
             return {
                 ok: false,
-                submitted: true,
-                message: "このハンドルはすでに使用されています。",
-                submittedAt: Date.now(),
+                reason: "HandleAlreadyExists",
             };
         }
+        console.warn(
+            `failed to update user handle. (userId = "${user.id}", handle = "${handle}")`,
+            err,
+        );
+        return {
+            ok: false,
+            reason: "InternalError",
+        };
+    }
+    return {
+        ok: true,
+        handle,
+    };
+}
+
+export async function updateUserHandleAction(
+    prevState: UserHandleFormState,
+    formData: FormData,
+): Promise<UserHandleFormState> {
+    const user = await getAuth();
+    if (!user || user.authType !== "oauth") {
         return {
             ok: false,
             submitted: true,
-            message: "更新に失敗しました。",
+            message: "ハンドルの設定にはサインインが必要です。",
             submittedAt: Date.now(),
         };
     }
+    const result = await updateUserHandle(
+        formData.get("handle")?.toString() ?? "",
+    );
+    let message: string | undefined;
+    if (!result.ok) {
+        switch (result.reason) {
+            case "Unauthorized":
+                message = "ハンドルの設定にはサインインが必要です。";
+                break;
+            case "EmptyHandle":
+                message = "ハンドルを入力してください。";
+                break;
+            case "InvalidFormatHandle":
+                message =
+                    "ハンドルは2〜20文字の英小文字・数字・アンダースコア・ハイフンで入力してください。先頭は英数字にしてください。";
+                break;
+            case "ForbiddenHandle":
+                message = "そのハンドルは使用できません。";
+                break;
+            case "HandleAlreadyExists":
+                message = "そのハンドルはすでに使用されています。";
+                break;
+            case "InternalError":
+            default:
+                message =
+                    "予期しないエラーが発生しました。時間をおいてリトライしてください。";
+                break;
+        }
+    }
     revalidatePath(`/user/${user.id}`);
     return {
-        ...initialHandleState,
+        ok: result.ok,
+        handle: result.ok ? result.handle : undefined,
+        message,
         submitted: true,
-        handle,
         submittedAt: Date.now(),
     };
 }

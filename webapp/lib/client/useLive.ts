@@ -7,7 +7,7 @@ const fetcher = async (url: string) => {
     if (!res.ok) {
         switch (res.reason) {
             case "NotFound":
-                throw new Error("このユーザーは存在しません。");
+                throw new Error("指定されたユーザー部屋は存在しません。");
             case "InternalError":
             default:
                 throw new Error(
