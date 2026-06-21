@@ -1,3 +1,4 @@
+import "./tracing";
 import process from "node:process";
 import { installConsoleOverride } from "./logger";
 import { RunnerManager } from "./runnerManager";

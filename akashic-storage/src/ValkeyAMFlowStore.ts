@@ -1,4 +1,11 @@
 import { GlideClusterClient, GlideString } from "@valkey/valkey-glide";
+import {
+    trace,
+    SpanKind,
+    SpanStatusCode,
+    Span,
+    Attributes,
+} from "@opentelemetry/api";
 import type {
     GetStartPointOptions,
     GetTickListOptions,
@@ -27,6 +34,35 @@ import {
     toPermission,
 } from "./valkeySchema";
 import { AMFlowStoreBase } from "./AMFlowStoreBase";
+
+const tracer = trace.getTracer("akashic-storage.valkey");
+
+/**
+ * ElastiCache(Valkey) への読み書きを 1 スパンとして計測する。
+ * valkey-glide には OpenTelemetry 自動計装が存在しないため、ホットパスを
+ * 手動計装することで「Socket.IO ハンドラ → Valkey R/W」のどこで時間を要したか
+ * を可視化する。CLIENT スパンとして親（AMFlow のサーバースパン）にぶら下がる。
+ */
+const withValkeySpan = <T>(
+    name: string,
+    attributes: Attributes,
+    fn: (span: Span) => Promise<T>,
+): Promise<T> =>
+    tracer.startActiveSpan(
+        name,
+        { kind: SpanKind.CLIENT, attributes },
+        async (span) => {
+            try {
+                return await fn(span);
+            } catch (err) {
+                span.recordException(err as Error);
+                span.setStatus({ code: SpanStatusCode.ERROR });
+                throw err;
+            } finally {
+                span.end();
+            }
+        },
+    );
 
 interface ValkeyAMFlowStoreParameterObject {
     valkey: GlideClusterClient;
@@ -79,13 +115,19 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
     }
 
     async authenticate(token: string) {
-        const permissionType = await this._valkey.get(
-            genKey(ValkeyKey.Token, this._hashPlayId, token),
+        return withValkeySpan(
+            "valkey.authenticate",
+            { "db.system": "valkey", "play.id": this.playId, "db.op": "get" },
+            async () => {
+                const permissionType = await this._valkey.get(
+                    genKey(ValkeyKey.Token, this._hashPlayId, token),
+                );
+                if (!permissionType) {
+                    throw new BadRequestError("invalid token");
+                }
+                return toPermission(permissionType as PermissionType);
+            },
         );
-        if (!permissionType) {
-            throw new BadRequestError("invalid token");
-        }
-        return toPermission(permissionType as PermissionType);
     }
 
     sendTickPack(tickPack: TickPack) {
@@ -269,6 +311,26 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         to: number,
         filterIgnorable: boolean,
     ): Promise<TickList> {
+        return withValkeySpan(
+            "valkey.getTickList",
+            {
+                "db.system": "valkey",
+                "play.id": this.playId,
+                "amflow.tick.from": from,
+                "amflow.tick.to": to,
+                "amflow.filter_ignorable": filterIgnorable,
+            },
+            (span) =>
+                this._doGetTickListFromValkey(from, to, filterIgnorable, span),
+        );
+    }
+
+    private async _doGetTickListFromValkey(
+        from: number,
+        to: number,
+        filterIgnorable: boolean,
+        span: Span,
+    ): Promise<TickList> {
         const scores = filterIgnorable
             ? await this._valkey.zrangeWithScores(
                   genKey(ValkeyZSetKey.FilteredEvent, this._hashPlayId),
@@ -286,6 +348,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
                       end: { value: to },
                   },
               );
+        span.setAttribute("amflow.score.count", scores.length);
         if (scores.length === 0) {
             return [from, to];
         }
@@ -334,6 +397,18 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
     }
 
     private async _doPutStartPoint(startPoint: StartPoint) {
+        return withValkeySpan(
+            "valkey.putStartPoint",
+            {
+                "db.system": "valkey",
+                "play.id": this.playId,
+                "amflow.startPoint.frame": startPoint.frame,
+            },
+            () => this._doPutStartPointInner(startPoint),
+        );
+    }
+
+    private async _doPutStartPointInner(startPoint: StartPoint) {
         const startPointKey = genKey(
             ValkeyKey.StartPoint,
             this._hashPlayId,
@@ -501,28 +576,45 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         if (!convertTickPack.isTick(tickPack) || !tickPack[TickIndex.Events]) {
             return;
         }
-        const unfilteredEvents = this._genEventIds(
-            tickPack[TickIndex.Events].filter(
-                (event) =>
-                    !(event[EventIndex.EventFlags] & EventFlagsMask.Transient),
-            ),
+        const frame = tickPack[TickIndex.Frame];
+        return withValkeySpan(
+            "valkey.pushTick",
+            {
+                "db.system": "valkey",
+                "play.id": this.playId,
+                "amflow.tick.frame": frame,
+                // 書き込みキューの滞留量。直列ドレインのため断続ラグの主要因はここに出る。
+                "valkey.write_queue.depth": this._valkeyWriteQueue.length,
+            },
+            async (span) => {
+                const unfilteredEvents = this._genEventIds(
+                    tickPack[TickIndex.Events]!.filter(
+                        (event) =>
+                            !(
+                                event[EventIndex.EventFlags] &
+                                EventFlagsMask.Transient
+                            ),
+                    ),
+                );
+                const filteredEvents = unfilteredEvents.filter(
+                    ({ event }) =>
+                        !(
+                            event[EventIndex.EventFlags] &
+                            EventFlagsMask.Ignorable
+                        ),
+                );
+                span.setAttribute(
+                    "amflow.event.count",
+                    unfilteredEvents.length,
+                );
+                await Promise.all([
+                    this._storeEvents(unfilteredEvents),
+                    this._storeUnfilteredEvents(frame, unfilteredEvents),
+                    this._storeFilteredEvents(frame, filteredEvents),
+                ]);
+                this._nextUnfilteredEventId += unfilteredEvents.length;
+            },
         );
-        const filteredEvents = unfilteredEvents.filter(
-            ({ event }) =>
-                !(event[EventIndex.EventFlags] & EventFlagsMask.Ignorable),
-        );
-        await Promise.all([
-            this._storeEvents(unfilteredEvents),
-            this._storeUnfilteredEvents(
-                tickPack[TickIndex.Frame],
-                unfilteredEvents,
-            ),
-            this._storeFilteredEvents(
-                tickPack[TickIndex.Frame],
-                filteredEvents,
-            ),
-        ]);
-        this._nextUnfilteredEventId += unfilteredEvents.length;
     }
 
     /**

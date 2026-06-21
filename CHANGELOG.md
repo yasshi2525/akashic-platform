@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 1.6.0-rc.0
+
+- Feature
+  - トレーサビリティ強化
+    - `./schema/amflow/common`
+    - `./schema/amflow/server`
+    - `./schema/amflow/client`
+    - `./playlogClient-like`
+    - `./agvw-like`
+    - `./akashic-storage`
+    - `./akashic-server`
+    - `./webapp`
+
 ## 1.5.0
 
 - Feature

@@ -17,6 +17,14 @@ export const internalContentBaseUrl =
 export const publicPlaylogServerUrl =
     process.env.PUBLIC_STORAGE_URL ?? "http://localhost:3031";
 
+/**
+ * ブラウザのトレースを送信する OTLP/HTTP エンドポイント。
+ * 空文字の場合はブラウザ計装を無効化する。
+ * ローカルは Jaeger の `http://localhost:4318/v1/traces` を指定する。
+ */
+export const publicOtelExporterUrl =
+    process.env.PUBLIC_OTEL_EXPORTER_OTLP_ENDPOINT ?? "";
+
 export const internalPlaylogServerUrl =
     process.env.INTERNAL_STORAGE_URL ?? publicPlaylogServerUrl;
 

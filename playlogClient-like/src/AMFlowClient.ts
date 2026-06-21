@@ -1,4 +1,5 @@
 import type { Socket } from "socket.io-client";
+import { context, propagation } from "@opentelemetry/api";
 import type {
     AMFlow,
     GetStartPointOptions,
@@ -29,7 +30,19 @@ import {
     BadRequestError,
     createAMFlowError,
     NotImplementedError,
+    Carrier,
 } from "@yasshi2525/amflow-client-event-schema";
+
+/**
+ * 現在アクティブな trace context を Socket.IO イベントに載せるためのキャリアへ
+ * inject する。OpenTelemetry SDK が未初期化（ブラウザでトレーシング無効など）の
+ * 場合は no-op となり、空のキャリアを返す。
+ */
+const injectCarrier = (): Carrier => {
+    const carrier: Carrier = {};
+    propagation.inject(context.active(), carrier);
+    return carrier;
+};
 
 interface AMFlowClientParameterObject {
     socket: Socket;
@@ -116,6 +129,7 @@ export class AMFlowClient implements AMFlow {
             this._socket.emit(
                 EmitEvent.Authenticate,
                 token,
+                injectCarrier(),
                 (err, permission) => {
                     if (err) {
                         callback(createAMFlowError(err));
@@ -211,6 +225,7 @@ export class AMFlowClient implements AMFlow {
                 this._socket.emit(
                     EmitEvent.GetTickList,
                     { begin: optsOrBegin, end: endOrCallbeck },
+                    injectCarrier(),
                     (err, tickList) => {
                         if (err) {
                             callback(createAMFlowError(err));
@@ -228,6 +243,7 @@ export class AMFlowClient implements AMFlow {
                 this._socket.emit(
                     EmitEvent.GetTickList,
                     optsOrBegin,
+                    injectCarrier(),
                     (err, tickList) => {
                         if (err) {
                             endOrCallbeck(createAMFlowError(err));
@@ -244,13 +260,18 @@ export class AMFlowClient implements AMFlow {
         callback: (error: Error | null) => void,
     ) {
         if (this._assertsOpen(callback)) {
-            this._socket.emit(EmitEvent.PutStartPoint, startPoint, (err) => {
-                if (err) {
-                    callback(createAMFlowError(err));
-                } else {
-                    callback(null);
-                }
-            });
+            this._socket.emit(
+                EmitEvent.PutStartPoint,
+                startPoint,
+                injectCarrier(),
+                (err) => {
+                    if (err) {
+                        callback(createAMFlowError(err));
+                    } else {
+                        callback(null);
+                    }
+                },
+            );
         }
     }
     getStartPoint(
@@ -261,6 +282,7 @@ export class AMFlowClient implements AMFlow {
             this._socket.emit(
                 EmitEvent.GetStartPoint,
                 opts,
+                injectCarrier(),
                 (err, startPoint) => {
                     if (err) {
                         callback(createAMFlowError(err));
@@ -338,8 +360,9 @@ export class AMFlowClient implements AMFlow {
             tick[TickIndex.Events] ||
             this._preservingTicks.length >= this._maxPreservingTickSize
         ) {
+            const carrier = injectCarrier();
             for (const pack of toTickPack(this._preservingTicks)) {
-                this._socket.emit(EmitEvent.SendTickPack, pack);
+                this._socket.emit(EmitEvent.SendTickPack, pack, carrier);
             }
             this._preservingTicks = [];
         }

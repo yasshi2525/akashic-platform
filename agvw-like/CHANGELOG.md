@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.0.5-rc.0
+
+- Feature
+  - トレーサビリティ強化 (Update dependencies.)
+
 ## 1.0.4
 
 - Misc

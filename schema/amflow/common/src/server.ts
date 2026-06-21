@@ -7,6 +7,7 @@ export {
     ServerEventSchema as EmitSchema,
     PlayEndReason,
     PlayExtendPayload,
+    Carrier,
 } from "./common";
 export * from "./tick";
 export * from "./error";

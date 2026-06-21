@@ -7,6 +7,7 @@ import { getAuth } from "@/lib/server/auth";
 import {
     publicContentBaseUrl,
     publicPlaylogServerUrl,
+    publicOtelExporterUrl,
 } from "@/lib/server/akashic";
 import { getDrainState } from "@/lib/server/drain-state";
 import {
@@ -25,6 +26,7 @@ import { CustomDataProvider } from "@/components/custom-data-provider";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ToastMessage } from "@/components/toast-message";
+import { TracingProvider } from "@/components/tracing-provider";
 import { DrainBanner } from "@/components/drain-banner";
 
 const geistSans = Geist({
@@ -52,6 +54,10 @@ export default async function RootLayout({
             className={`${geistSans.className} ${geistMono.className} antialiased`}
         >
             <body>
+                <TracingProvider
+                    otlpEndpoint={publicOtelExporterUrl}
+                    storageUrl={publicPlaylogServerUrl}
+                />
                 <AppRouterCacheProvider>
                     <AkashicProvider
                         playlogServerUrl={publicPlaylogServerUrl}
