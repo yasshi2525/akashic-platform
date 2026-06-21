@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useState, useOptimistic } from "react";
+import { ChangeEvent, useTransition, useState } from "react";
 import { redirect } from "next/navigation";
 import JSZip from "jszip";
 import {
@@ -73,7 +73,7 @@ export function GameForm({
     const [credit, setCredit] = useState(initialCredit ?? "");
     const [streaming, setStreaming] = useState(initialStreaming ?? true);
     const [license, setLicense] = useState<string>();
-    const [sending, setIsSending] = useOptimistic(false, () => true);
+    const [isPending, startTransition] = useTransition();
     const [titleError, setTitleError] = useState<string>();
     const [gameFileError, setGameFileError] = useState<string>();
     const [iconFileError, setIconFileError] = useState<string>();
@@ -194,7 +194,7 @@ export function GameForm({
         }
     }
 
-    async function handleSubmit() {
+    function handleSubmit() {
         if (gameId == null || contentId == null) {
             if (!title) {
                 setTitleError("ゲームタイトルを入力してください。");
@@ -213,10 +213,30 @@ export function GameForm({
             setServerError("サインインしてください。");
         }
         if (user) {
-            setIsSending(true);
-            if (gameId == null || contentId == null) {
-                if (title && gameFile && iconFile && description) {
-                    const res = await registerContent({
+            startTransition(async () => {
+                if (gameId == null || contentId == null) {
+                    if (title && gameFile && iconFile && description) {
+                        const res = await registerContent({
+                            publisherId: user.id,
+                            title,
+                            gameFile,
+                            iconFile,
+                            description,
+                            credit,
+                            streaming,
+                        });
+                        if (res.ok) {
+                            redirect(
+                                `/?${messageKey}=${messages.content.registerSuccessful}`,
+                            );
+                        } else {
+                            handleServerErr(res);
+                        }
+                    }
+                } else {
+                    const res = await editContent({
+                        gameId,
+                        contentId,
                         publisherId: user.id,
                         title,
                         gameFile,
@@ -227,33 +247,13 @@ export function GameForm({
                     });
                     if (res.ok) {
                         redirect(
-                            `/?${messageKey}=${messages.content.registerSuccessful}`,
+                            `/?${messageKey}=${messages.content.editSuccessful}`,
                         );
                     } else {
                         handleServerErr(res);
                     }
                 }
-            } else {
-                const res = await editContent({
-                    gameId,
-                    contentId,
-                    publisherId: user.id,
-                    title,
-                    gameFile,
-                    iconFile,
-                    description,
-                    credit,
-                    streaming,
-                });
-                if (res.ok) {
-                    redirect(
-                        `/?${messageKey}=${messages.content.editSuccessful}`,
-                    );
-                } else {
-                    handleServerErr(res);
-                }
-            }
-            setIsSending(false);
+            });
         }
     }
 
@@ -619,8 +619,8 @@ export function GameForm({
                                             ? "inherit"
                                             : "primary"
                                     }
-                                    loading={sending}
-                                    disabled={sending}
+                                    loading={isPending}
+                                    disabled={isPending}
                                 >
                                     ゲームを{gameId == null ? "投稿" : "更新"}
                                 </Button>

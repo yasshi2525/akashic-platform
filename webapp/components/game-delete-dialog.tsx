@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useOptimistic, useState } from "react";
+import { useTransition, useState } from "react";
 import { redirect } from "next/navigation";
 import {
     Alert,
@@ -22,40 +22,40 @@ export function GameDeleteDialog({
     publisherId: string;
 }) {
     const [open, setOpen] = useState(false);
-    const [sending, setIsSending] = useOptimistic(false, () => true);
+    const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string>();
 
-    async function handleSubmit() {
-        startTransition(() => {
-            setIsSending(true);
-        });
-        const res = await deleteGame({ gameId, publisherId });
-        if (res.ok) {
-            redirect(`/?${messageKey}=${messages.content.deleteSuccessful}`);
-        } else {
-            switch (res.reason) {
-                case "InvalidParams":
-                    setError(
-                        "内部エラーが発生しました。入力内容を確認してもう一度実行してください。",
-                    );
-                    break;
-                case "NotFound":
-                    setError("このゲームが見つかりませんでした。");
-                    break;
-                case "Drain":
-                    setError(
-                        "現在臨時メンテナンス中のため、コンテンツを削除できません。1時間ほど時間をおいてください。",
-                    );
-                    break;
-                case "InternalError":
-                default:
-                    setError(
-                        "予期しないエラーが発生しました。時間をおいてリトライしてください。",
-                    );
-                    break;
+    function handleSubmit() {
+        startTransition(async () => {
+            const res = await deleteGame({ gameId, publisherId });
+            if (res.ok) {
+                redirect(
+                    `/?${messageKey}=${messages.content.deleteSuccessful}`,
+                );
+            } else {
+                switch (res.reason) {
+                    case "InvalidParams":
+                        setError(
+                            "内部エラーが発生しました。入力内容を確認してもう一度実行してください。",
+                        );
+                        break;
+                    case "NotFound":
+                        setError("このゲームが見つかりませんでした。");
+                        break;
+                    case "Drain":
+                        setError(
+                            "現在臨時メンテナンス中のため、コンテンツを削除できません。1時間ほど時間をおいてください。",
+                        );
+                        break;
+                    case "InternalError":
+                    default:
+                        setError(
+                            "予期しないエラーが発生しました。時間をおいてリトライしてください。",
+                        );
+                        break;
+                }
             }
-            setIsSending(false);
-        }
+        });
     }
 
     function handleClick() {
@@ -97,8 +97,8 @@ export function GameDeleteDialog({
                         <Button
                             variant="contained"
                             color="error"
-                            loading={sending}
-                            disabled={sending}
+                            loading={isPending}
+                            disabled={isPending}
                             onClick={handleSubmit}
                         >
                             削除する
@@ -106,8 +106,8 @@ export function GameDeleteDialog({
                         <Button
                             variant="outlined"
                             color="inherit"
-                            loading={sending}
-                            disabled={sending}
+                            loading={isPending}
+                            disabled={isPending}
                             onClick={handleClose}
                         >
                             キャンセル

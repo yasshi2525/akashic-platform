@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useOptimistic, useState } from "react";
+import { ChangeEvent, useTransition, useState } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
@@ -45,7 +45,7 @@ export function PlayForm({
         STORAGE_KEYS.ROOM_JOIN_WORD,
         "",
     );
-    const [sending, setIsSending] = useOptimistic(false, () => true);
+    const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string>();
 
     function handleSearch(event: ChangeEvent<HTMLInputElement>) {
@@ -59,7 +59,7 @@ export function PlayForm({
         setJoinWord(event.target.value);
     }
 
-    async function handleSubmit() {
+    function handleSubmit() {
         if (!selectedContent) {
             setError("ゲームを選択してください。");
         }
@@ -71,56 +71,56 @@ export function PlayForm({
                 setError("限定部屋を作成する場合、入室の言葉が必要です。");
                 return;
             }
-            setIsSending(true);
-            const res = await registerPlay({
-                contentId: selectedContent,
-                gameMasterId: user.id,
-                gmUserId: user.authType !== "guest" ? user.id : undefined,
-                playName,
-                isLimited,
-                joinWord,
+            startTransition(async () => {
+                const res = await registerPlay({
+                    contentId: selectedContent,
+                    gameMasterId: user.id,
+                    gmUserId: user.authType !== "guest" ? user.id : undefined,
+                    playName,
+                    isLimited,
+                    joinWord,
+                });
+                if (res.ok) {
+                    switch (afterCreate.action) {
+                        case "redirect":
+                            redirect(
+                                `/play/${res.playId}?${messageKey}=${messages.play.registerSuccessful}`,
+                            );
+                        case "stay":
+                            afterCreate.cb();
+                            break;
+                        default:
+                            console.error(
+                                "invalid afterCreate action",
+                                afterCreate,
+                            );
+                    }
+                } else {
+                    switch (res.reason) {
+                        case "InvalidParams":
+                            setError(
+                                "内部エラーが発生しました。入力内容を確認してもう一度投稿してください。",
+                            );
+                            break;
+                        case "Drain":
+                            setError(
+                                "現在臨時メンテナンス中のため、部屋を作成できません。1時間ほど時間をおいてください。",
+                            );
+                            break;
+                        case "GuestRoomLimitExceeded":
+                            setError(
+                                "ゲスト状態で作成できる部屋数の上限に達しました。",
+                            );
+                            break;
+                        case "InternalError":
+                        default:
+                            setError(
+                                "予期しないエラーが発生しました。時間をおいてリトライしてください。",
+                            );
+                            break;
+                    }
+                }
             });
-            if (res.ok) {
-                switch (afterCreate.action) {
-                    case "redirect":
-                        redirect(
-                            `/play/${res.playId}?${messageKey}=${messages.play.registerSuccessful}`,
-                        );
-                    case "stay":
-                        afterCreate.cb();
-                        break;
-                    default:
-                        console.error(
-                            "invalid afterCreate action",
-                            afterCreate,
-                        );
-                }
-            } else {
-                switch (res.reason) {
-                    case "InvalidParams":
-                        setError(
-                            "内部エラーが発生しました。入力内容を確認してもう一度投稿してください。",
-                        );
-                        break;
-                    case "Drain":
-                        setError(
-                            "現在臨時メンテナンス中のため、部屋を作成できません。1時間ほど時間をおいてください。",
-                        );
-                        break;
-                    case "GuestRoomLimitExceeded":
-                        setError(
-                            "ゲスト状態で作成できる部屋数の上限に達しました。",
-                        );
-                        break;
-                    case "InternalError":
-                    default:
-                        setError(
-                            "予期しないエラーが発生しました。時間をおいてリトライしてください。",
-                        );
-                        break;
-                }
-            }
-            setIsSending(false);
         }
     }
 
@@ -183,8 +183,8 @@ export function PlayForm({
                             variant="contained"
                             size="large"
                             color="primary"
-                            loading={sending}
-                            disabled={sending}
+                            loading={isPending}
+                            disabled={isPending}
                             sx={{ flexShrink: 0 }}
                         >
                             部屋を作成する
@@ -360,8 +360,8 @@ export function PlayForm({
                 size="large"
                 fullWidth
                 color={!selectedContent ? "inherit" : "primary"}
-                loading={sending}
-                disabled={sending}
+                loading={isPending}
+                disabled={isPending}
             >
                 部屋を作成する
             </Button>
