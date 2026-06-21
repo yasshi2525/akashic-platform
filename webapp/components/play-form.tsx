@@ -292,14 +292,31 @@ export function PlayForm({
 
     if (embedded) {
         return (
-            <Box
+            <Stack
                 component="form"
                 action={handleSubmit}
                 sx={{ mb: selectedContent ? 10 : 0 }}
+                spacing={2}
             >
                 <Card sx={{ width: "100%" }}>{cardContent}</Card>
+                {error && (
+                    <Alert variant="outlined" severity="error">
+                        {error}
+                    </Alert>
+                )}
+                <Button
+                    type="submit"
+                    variant="contained"
+                    size="large"
+                    fullWidth
+                    color={!selectedContent ? "inherit" : "primary"}
+                    loading={isPending}
+                    disabled={isPending}
+                >
+                    部屋を作成する
+                </Button>
                 {bottomBar}
-            </Box>
+            </Stack>
         );
     }
 
