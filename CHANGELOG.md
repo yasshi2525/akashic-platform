@@ -3,7 +3,7 @@
 ## 1.6.0-rc.0
 
 - Feature
-  - トレーサビリティ強化
+  - トレーサビリティ強化 (#77)
     - `./schema/amflow/common`
     - `./schema/amflow/server`
     - `./schema/amflow/client`
