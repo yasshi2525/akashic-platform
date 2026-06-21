@@ -1,6 +1,8 @@
 import { GlideClusterClient, GlideString } from "@valkey/valkey-glide";
 import {
     trace,
+    context,
+    Context,
     SpanKind,
     SpanStatusCode,
     Span,
@@ -92,7 +94,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
     _memoryOldestFrame: number;
     _memoryTickBuffer: MemoryEventEntry[];
 
-    _valkeyWriteQueue: TickPack[];
+    _valkeyWriteQueue: { tickPack: TickPack; ctx: Context }[];
     _isValkeyDraining: boolean;
     _valkeyDrainPromise: Promise<void>;
 
@@ -212,7 +214,11 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
     }
 
     private _enqueueValkeyWrite(tickPack: TickPack) {
-        this._valkeyWriteQueue.push(tickPack);
+        // ドレインが既に走っている場合、この書き込みは後から処理される。
+        // 投入時点のコンテキスト（親スパン・Baggage）を捕捉しておき、実際の
+        // _pushTick をそのコンテキストで実行することで、キューイングされた tick も
+        // 自分自身の sendTickPack に正しく紐づける（ドレイン起点の send に混ざらない）。
+        this._valkeyWriteQueue.push({ tickPack, ctx: context.active() });
         if (!this._isValkeyDraining) {
             this._valkeyDrainPromise = this._drainValkeyQueue();
         }
@@ -221,9 +227,9 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
     private async _drainValkeyQueue() {
         this._isValkeyDraining = true;
         while (this._valkeyWriteQueue.length > 0) {
-            const tickPack = this._valkeyWriteQueue.shift()!;
+            const { tickPack, ctx } = this._valkeyWriteQueue.shift()!;
             try {
-                await this._pushTick(tickPack);
+                await context.with(ctx, () => this._pushTick(tickPack));
             } catch (err) {
                 console.error(
                     `failed to persist tick to valkey (playId = ${this.playId})`,
