@@ -14,7 +14,13 @@ import {
 import { messageKey, messages } from "@/lib/types";
 import { endPlay } from "@/lib/server/play-end";
 
-export function PlayCloseDialog({ playId }: { playId: string }) {
+export function PlayCloseDialog({
+    playId,
+    afterClose,
+}: {
+    playId: string;
+    afterClose: { action: "redirect" } | { action: "stay"; cb: () => void };
+}) {
     const [open, setOpen] = useState(false);
     const [sending, setIsSending] = useOptimistic(false, () => true);
     const [error, setError] = useState<string>();
@@ -25,7 +31,19 @@ export function PlayCloseDialog({ playId }: { playId: string }) {
         });
         const res = await endPlay({ playId, reason: "GAMEMASTER" });
         if (res.ok) {
-            redirect(`/?${messageKey}=${messages.play.endSuccessful}`);
+            switch (afterClose.action) {
+                case "redirect":
+                    redirect(`/?${messageKey}=${messages.play.endSuccessful}`);
+                case "stay":
+                    afterClose.cb();
+                    break;
+                default:
+                    console.error(
+                        "invalide afterClose action type.",
+                        afterClose,
+                    );
+                    break;
+            }
         } else {
             switch (res.reason) {
                 case "InvalidParams":

@@ -354,6 +354,7 @@ export function ClosedPlayView({
                 onClose={() => setCreateDialogOpen(false)}
                 game={game}
                 user={user}
+                afterCreate={{ action: "navigate" }}
             />
         </Container>
     );

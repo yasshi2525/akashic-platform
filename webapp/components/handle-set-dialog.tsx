@@ -37,21 +37,21 @@ export function HandleSetDialog({
         } else {
             switch (res.reason) {
                 case "Unauthorized":
-                    setError("ハンドルの設定にはサインインが必要です。");
+                    setError("あなたの部屋IDの設定にはサインインが必要です。");
                     break;
                 case "EmptyHandle":
-                    setError("ハンドルを入力してください。");
+                    setError("あなたの部屋IDを入力してください。");
                     break;
                 case "InvalidFormatHandle":
                     setError(
-                        "ハンドルは2〜20文字の英小文字・数字・アンダースコア・ハイフンで入力してください。先頭は英数字にしてください。",
+                        "あなたの部屋IDは2〜20文字の英小文字・数字・アンダースコア・ハイフンで入力してください。先頭は英数字にしてください。",
                     );
                     break;
                 case "ForbiddenHandle":
-                    setError("そのハンドルは使用できません。");
+                    setError("その部屋IDは使用できません。");
                     break;
                 case "HandleAlreadyExists":
-                    setError("そのハンドルはすでに使用されています。");
+                    setError("その部屋IDはすでに使用されています。");
                     break;
                 case "InternalError":
                 default:
@@ -72,18 +72,19 @@ export function HandleSetDialog({
 
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
-            <DialogTitle>ユーザー部屋用ハンドルを設定</DialogTitle>
+            <DialogTitle>あなたの部屋IDを設定</DialogTitle>
             <DialogContent>
                 <Typography
                     variant="body2"
                     color={theme.palette.text.secondary}
                     sx={{ mb: 2 }}
                 >
-                    ハンドルを設定すると <strong>/live/[ハンドル]</strong>{" "}
-                    というURLから、いつでも自分が作成した最新の部屋に案内できます。
+                    あなたの部屋IDを設定すると{" "}
+                    <strong>/live/[あなたの部屋ID]</strong>{" "}
+                    というURLから、いつでもあなたが作成した最新の部屋に案内できます。
                 </Typography>
                 <TextField
-                    label="ハンドル"
+                    label="あなたの部屋ID"
                     name="handle"
                     value={handle}
                     onChange={(e) => setHandle(e.target.value)}

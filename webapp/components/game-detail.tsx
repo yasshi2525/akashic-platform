@@ -188,6 +188,7 @@ export function GameDetailClient({
                 onClose={handleCloseCreateDialog}
                 game={gameInfo}
                 user={user}
+                afterCreate={{ action: "navigate" }}
             />
         </Container>
     );

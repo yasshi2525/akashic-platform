@@ -7,7 +7,7 @@ const fetcher = async (url: string) => {
     if (!res.ok) {
         switch (res.reason) {
             case "NotFound":
-                throw new Error("指定されたユーザー部屋は存在しません。");
+                throw new Error("指定されたユーザーの部屋は存在しません。");
             case "InternalError":
             default:
                 throw new Error(
@@ -28,11 +28,11 @@ export function useLive(
     if (joinWord) {
         query.set("joinWord", joinWord);
     }
-    const { isLoading, data, error } = useSWR(
+    const { isLoading, data, error, mutate } = useSWR(
         `/api/live/${handle}?${query.toString()}`,
         fetcher,
         {
-            refreshInterval: polling ? 10000 : 0,
+            refreshInterval: polling ? 4000 : 0,
         },
     );
 
@@ -45,5 +45,6 @@ export function useLive(
               }
             : undefined,
         error: error ? error.message : undefined,
+        mutate,
     };
 }

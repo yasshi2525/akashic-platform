@@ -210,6 +210,22 @@ export interface UserProfile {
     provider?: string;
 }
 
+export type UserNameFormState = {
+    ok: boolean;
+    submitted: boolean;
+    name?: string;
+    message?: string;
+    submittedAt?: number;
+};
+
+export type UserHandleFormState = {
+    ok: boolean;
+    submitted: boolean;
+    handle?: string;
+    message?: string;
+    submittedAt?: number;
+};
+
 export const supportedExternalPlugins = ["send", "coe", "coeLimited"];
 export const supportedAkashicVersions = ["3"];
 export const supportedAkashicModes: NicoliveSupportedModes[] = [
@@ -304,10 +320,6 @@ export type PlayResponse =
     | { ok: true; data: PlayViewInfo }
     | { ok: false; reason: PlayErrorType };
 
-export interface ActiveLiveInfo extends ActivePlayViewInfo {
-    id: number;
-}
-
 export type LiveInfo = {
     owner: {
         userId: string;
@@ -321,7 +333,7 @@ export type LiveInfo = {
       }
     | {
           requiresJoinWord: false;
-          info?: ActiveLiveInfo;
+          info?: ActivePlayViewInfo & { id: number };
       }
 );
 

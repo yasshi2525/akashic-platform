@@ -107,6 +107,8 @@ export function PlayView({
     expiresAt: initialExpiresAt,
     user,
     onPlayEnd,
+    afterPlayClose,
+    pageType,
     ref,
 }: {
     playId: string;
@@ -131,6 +133,8 @@ export function PlayView({
     expiresAt: number;
     user: User;
     onPlayEnd?: (reason: PlayEndReason) => void;
+    afterPlayClose: { action: "redirect" } | { action: "stay"; cb: () => void };
+    pageType: "play" | "live";
     ref: RefObject<HTMLDivElement | null>;
 }) {
     const theme = useTheme();
@@ -673,7 +677,10 @@ export function PlayView({
                         }
                     >
                         {liveCopyStatus === "success"
-                            ? "ユーザー部屋リンクをコピーしました。"
+                            ? (isGameMaster
+                                  ? "あなたの"
+                                  : `${gameMaster.name} さんの`) +
+                              "部屋リンクをコピーしました。"
                             : "クリップボードへのコピーに失敗しました。"}
                     </Alert>
                 </Snackbar>
@@ -962,168 +969,78 @@ export function PlayView({
                                         </Stack>
                                     </Stack>
                                 </Stack>
-                                <Stack spacing={1}>
-                                    <Typography variant="body1">
-                                        招待リンク
-                                    </Typography>
-                                    <Stack
-                                        direction="row"
-                                        spacing={1}
-                                        sx={{
-                                            alignItems: "center",
-                                        }}
-                                    >
-                                        <Typography
-                                            variant="body1"
-                                            sx={{
-                                                p: 1,
-                                                color: theme.palette.text
-                                                    .secondary,
-                                                borderStyle: "solid",
-                                                borderWidth: 1,
-                                                borderRadius: 2,
-                                                borderColor:
-                                                    theme.palette.divider,
-                                                backgroundColor:
-                                                    theme.palette.background
-                                                        .default,
-                                                cursor: "pointer",
-                                                flexGrow: 1,
-                                            }}
-                                            onClick={handleCopyInvite}
-                                        >
-                                            {inviteUrl ?? "リンクを準備中..."}
-                                        </Typography>
-                                        <Button
-                                            startIcon={<ContentCopy />}
-                                            variant="outlined"
-                                            onClick={handleCopyInvite}
-                                            disabled={!inviteUrl}
-                                            sx={{
-                                                borderColor:
-                                                    theme.palette.primary.light,
-                                                color: theme.palette.primary
-                                                    .light,
-                                            }}
-                                        >
-                                            コピー
-                                        </Button>
-                                    </Stack>
-                                    <Typography
-                                        variant="body2"
-                                        color={theme.palette.text.secondary}
-                                    >
-                                        {isLimited
-                                            ? "このリンクを知っている人は誰でも無条件で入室できます。共有先にご注意ください。"
-                                            : "この部屋に招待したい人に上のリンクを共有してください。"}
-                                    </Typography>
-                                    {isLimited && (
-                                        <Stack
-                                            direction="row"
-                                            spacing={1}
-                                            sx={{
-                                                alignItems: "center",
-                                            }}
-                                        >
-                                            <Typography
-                                                variant="body2"
-                                                color={
-                                                    theme.palette.text.secondary
-                                                }
-                                            >
-                                                入室の言葉
-                                            </Typography>
-                                            <Tooltip
-                                                arrow
-                                                title="トップページから入室する場合に求められる合言葉です。入室できない人がいた場合、この言葉を伝えて下さい。"
-                                            >
-                                                <HelpOutlined
-                                                    fontSize="small"
-                                                    sx={{
-                                                        color: theme.palette
-                                                            .text.secondary,
-                                                    }}
-                                                />
-                                            </Tooltip>
-                                            <Typography
-                                                variant="body2"
-                                                sx={{
-                                                    borderRadius: 1,
-                                                    bgcolor:
-                                                        theme.palette.background
-                                                            .default,
-                                                    textDecoration: "none",
-                                                    fontFamily: "monospace",
-                                                    p: 1,
-                                                }}
-                                            >
-                                                {joinWord}
-                                            </Typography>
-                                        </Stack>
-                                    )}
-                                </Stack>
-                                {isGameMaster && user.authType === "oauth" && (
+                                {pageType === "live" && (
                                     <Stack spacing={1}>
                                         <Typography variant="body1">
-                                            あなたのユーザー部屋リンク
+                                            {isGameMaster
+                                                ? "あなたの部屋リンク"
+                                                : `${gameMaster.name} さんの部屋リンク`}
                                         </Typography>
-                                        {handle ? (
-                                            <>
-                                                <Stack
-                                                    direction="row"
-                                                    spacing={1}
-                                                    sx={{
-                                                        alignItems: "center",
-                                                    }}
-                                                >
-                                                    <Typography
-                                                        variant="body1"
-                                                        sx={{
-                                                            p: 1,
-                                                            color: theme.palette
-                                                                .text.secondary,
-                                                            borderStyle:
-                                                                "solid",
-                                                            borderWidth: 1,
-                                                            borderRadius: 2,
-                                                            borderColor:
-                                                                theme.palette
-                                                                    .divider,
-                                                            backgroundColor:
-                                                                theme.palette
-                                                                    .background
-                                                                    .default,
-                                                            cursor: "pointer",
-                                                            flexGrow: 1,
-                                                        }}
-                                                        onClick={
-                                                            handleCopyLiveUrl
-                                                        }
-                                                    >
-                                                        {liveUrl ??
-                                                            "リンクを準備中..."}
-                                                    </Typography>
-                                                    <Button
-                                                        startIcon={
-                                                            <ContentCopy />
-                                                        }
-                                                        variant="outlined"
-                                                        onClick={
-                                                            handleCopyLiveUrl
-                                                        }
-                                                        disabled={!liveUrl}
-                                                        sx={{
-                                                            borderColor:
-                                                                theme.palette
-                                                                    .primary
-                                                                    .light,
-                                                            color: theme.palette
-                                                                .primary.light,
-                                                        }}
-                                                    >
-                                                        コピー
-                                                    </Button>
-                                                </Stack>
+                                        <Stack
+                                            direction={{
+                                                xs: "column",
+                                                sm: "row",
+                                            }}
+                                            spacing={1}
+                                            sx={{
+                                                alignItems: {
+                                                    xs: "stretch",
+                                                    sm: "center",
+                                                },
+                                            }}
+                                        >
+                                            <Typography
+                                                variant="body1"
+                                                sx={{
+                                                    p: 1,
+                                                    color: theme.palette.text
+                                                        .secondary,
+                                                    borderStyle: "solid",
+                                                    borderWidth: 1,
+                                                    borderRadius: 2,
+                                                    borderColor:
+                                                        theme.palette.divider,
+                                                    backgroundColor:
+                                                        theme.palette.background
+                                                            .default,
+                                                    cursor: "pointer",
+                                                    flexGrow: 1,
+                                                    overflow: "auto",
+                                                }}
+                                                onClick={handleCopyLiveUrl}
+                                            >
+                                                {liveUrl ?? "リンクを準備中..."}
+                                            </Typography>
+                                            <Button
+                                                startIcon={<ContentCopy />}
+                                                variant="outlined"
+                                                onClick={handleCopyLiveUrl}
+                                                disabled={!liveUrl}
+                                                sx={{
+                                                    borderColor:
+                                                        theme.palette.primary
+                                                            .light,
+                                                    color: theme.palette.primary
+                                                        .light,
+                                                }}
+                                            >
+                                                コピー
+                                            </Button>
+                                        </Stack>
+                                        <Typography
+                                            variant="body2"
+                                            color={theme.palette.text.secondary}
+                                        >
+                                            {isGameMaster
+                                                ? "このリンクを共有すると、いつでもあなたが作成した最新の部屋に案内できます。"
+                                                : `このリンクを共有すると、いつでも ${gameMaster.name} さんの最新の部屋に案内できます。`}
+                                        </Typography>
+                                        {isLimited && (
+                                            <Stack
+                                                direction="row"
+                                                spacing={1}
+                                                sx={{ alignItems: "center" }}
+                                            >
                                                 <Typography
                                                     variant="body2"
                                                     color={
@@ -1131,44 +1048,279 @@ export function PlayView({
                                                             .secondary
                                                     }
                                                 >
-                                                    このリンクを共有すると、いつでもあなたが作成した最新の部屋に案内することができます。
+                                                    入室の言葉
                                                 </Typography>
-                                            </>
-                                        ) : (
-                                            <Alert
-                                                severity="info"
-                                                variant="outlined"
-                                                action={
-                                                    <Button
-                                                        variant="outlined"
-                                                        onClick={() =>
-                                                            setHandleDialogOpen(
-                                                                true,
-                                                            )
-                                                        }
+                                                <Tooltip
+                                                    arrow
+                                                    title="この部屋は限定公開です。リンクを開いた人が入室するには、この言葉が必要です。共有先に伝えてください。"
+                                                >
+                                                    <HelpOutlined
+                                                        fontSize="small"
                                                         sx={{
-                                                            borderColor:
-                                                                theme.palette
-                                                                    .primary
-                                                                    .light,
                                                             color: theme.palette
-                                                                .primary.light,
-                                                            py: 1,
+                                                                .text.secondary,
                                                         }}
-                                                    >
-                                                        設定する
-                                                    </Button>
-                                                }
-                                                sx={{ alignItems: "center" }}
-                                            >
-                                                ユーザー部屋リンクを設定すると、いつでもあなたが作成した最新の部屋に案内することができます。
-                                            </Alert>
+                                                    />
+                                                </Tooltip>
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{
+                                                        borderRadius: 1,
+                                                        bgcolor:
+                                                            theme.palette
+                                                                .background
+                                                                .default,
+                                                        textDecoration: "none",
+                                                        fontFamily: "monospace",
+                                                        p: 1,
+                                                    }}
+                                                >
+                                                    {joinWord}
+                                                </Typography>
+                                            </Stack>
                                         )}
                                     </Stack>
                                 )}
+                                {pageType === "play" && (
+                                    <Stack spacing={1}>
+                                        <Typography variant="body1">
+                                            招待リンク
+                                        </Typography>
+                                        <Stack
+                                            direction={{
+                                                xs: "column",
+                                                sm: "row",
+                                            }}
+                                            spacing={1}
+                                            sx={{
+                                                alignItems: {
+                                                    xs: "stretch",
+                                                    sm: "center",
+                                                },
+                                            }}
+                                        >
+                                            <Typography
+                                                variant="body1"
+                                                sx={{
+                                                    p: 1,
+                                                    color: theme.palette.text
+                                                        .secondary,
+                                                    borderRadius: 2,
+                                                    borderColor:
+                                                        theme.palette.divider,
+                                                    backgroundColor:
+                                                        theme.palette.background
+                                                            .default,
+                                                    cursor: "pointer",
+                                                    flexGrow: 1,
+                                                    overflow: "auto",
+                                                }}
+                                                onClick={handleCopyInvite}
+                                            >
+                                                {inviteUrl ??
+                                                    "リンクを準備中..."}
+                                            </Typography>
+                                            <Button
+                                                startIcon={<ContentCopy />}
+                                                variant="outlined"
+                                                onClick={handleCopyInvite}
+                                                disabled={!inviteUrl}
+                                                sx={{
+                                                    borderColor:
+                                                        theme.palette.primary
+                                                            .light,
+                                                    color: theme.palette.primary
+                                                        .light,
+                                                }}
+                                            >
+                                                コピー
+                                            </Button>
+                                        </Stack>
+                                        <Typography
+                                            variant="body2"
+                                            color={theme.palette.text.secondary}
+                                        >
+                                            {isLimited
+                                                ? "このリンクを知っている人は誰でも無条件で入室できます。共有先にご注意ください。"
+                                                : "この部屋に招待したい人に上のリンクを共有してください。"}
+                                        </Typography>
+                                        {isLimited && (
+                                            <Stack
+                                                direction="row"
+                                                spacing={1}
+                                                sx={{
+                                                    alignItems: "center",
+                                                }}
+                                            >
+                                                <Typography
+                                                    variant="body2"
+                                                    color={
+                                                        theme.palette.text
+                                                            .secondary
+                                                    }
+                                                >
+                                                    入室の言葉
+                                                </Typography>
+                                                <Tooltip
+                                                    arrow
+                                                    title="トップページから入室する場合に求められる合言葉です。入室できない人がいた場合、この言葉を伝えて下さい。"
+                                                >
+                                                    <HelpOutlined
+                                                        fontSize="small"
+                                                        sx={{
+                                                            color: theme.palette
+                                                                .text.secondary,
+                                                        }}
+                                                    />
+                                                </Tooltip>
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{
+                                                        borderRadius: 1,
+                                                        bgcolor:
+                                                            theme.palette
+                                                                .background
+                                                                .default,
+                                                        textDecoration: "none",
+                                                        fontFamily: "monospace",
+                                                        p: 1,
+                                                    }}
+                                                >
+                                                    {joinWord}
+                                                </Typography>
+                                            </Stack>
+                                        )}
+                                    </Stack>
+                                )}
+                                {pageType === "play" &&
+                                    isGameMaster &&
+                                    user.authType === "oauth" && (
+                                        <Stack spacing={1}>
+                                            <Typography variant="body1">
+                                                あなたの部屋リンク
+                                            </Typography>
+                                            {handle ? (
+                                                <>
+                                                    <Stack
+                                                        direction={{
+                                                            xs: "column",
+                                                            sm: "row",
+                                                        }}
+                                                        spacing={1}
+                                                        sx={{
+                                                            alignItems: {
+                                                                xs: "stretch",
+                                                                sm: "center",
+                                                            },
+                                                        }}
+                                                    >
+                                                        <Typography
+                                                            variant="body1"
+                                                            sx={{
+                                                                p: 1,
+                                                                color: theme
+                                                                    .palette
+                                                                    .text
+                                                                    .secondary,
+                                                                borderRadius: 2,
+                                                                borderColor:
+                                                                    theme
+                                                                        .palette
+                                                                        .divider,
+                                                                backgroundColor:
+                                                                    theme
+                                                                        .palette
+                                                                        .background
+                                                                        .default,
+                                                                cursor: "pointer",
+                                                                flexGrow: 1,
+                                                                overflow:
+                                                                    "auto",
+                                                            }}
+                                                            onClick={
+                                                                handleCopyLiveUrl
+                                                            }
+                                                        >
+                                                            {liveUrl ??
+                                                                "リンクを準備中..."}
+                                                        </Typography>
+                                                        <Button
+                                                            startIcon={
+                                                                <ContentCopy />
+                                                            }
+                                                            variant="outlined"
+                                                            onClick={
+                                                                handleCopyLiveUrl
+                                                            }
+                                                            disabled={!liveUrl}
+                                                            sx={{
+                                                                borderColor:
+                                                                    theme
+                                                                        .palette
+                                                                        .primary
+                                                                        .light,
+                                                                color: theme
+                                                                    .palette
+                                                                    .primary
+                                                                    .light,
+                                                            }}
+                                                        >
+                                                            コピー
+                                                        </Button>
+                                                    </Stack>
+                                                    <Typography
+                                                        variant="body2"
+                                                        color={
+                                                            theme.palette.text
+                                                                .secondary
+                                                        }
+                                                    >
+                                                        このリンクを共有すると、いつでもあなたが作成した最新の部屋に案内することができます。
+                                                    </Typography>
+                                                </>
+                                            ) : (
+                                                <Alert
+                                                    severity="info"
+                                                    variant="outlined"
+                                                    action={
+                                                        <Button
+                                                            variant="outlined"
+                                                            onClick={() =>
+                                                                setHandleDialogOpen(
+                                                                    true,
+                                                                )
+                                                            }
+                                                            sx={{
+                                                                borderColor:
+                                                                    theme
+                                                                        .palette
+                                                                        .primary
+                                                                        .light,
+                                                                color: theme
+                                                                    .palette
+                                                                    .primary
+                                                                    .light,
+                                                                py: 1,
+                                                            }}
+                                                        >
+                                                            設定する
+                                                        </Button>
+                                                    }
+                                                    sx={{
+                                                        alignItems: "center",
+                                                    }}
+                                                >
+                                                    あなたの部屋IDを設定すると、いつでもあなたが作成した最新の部屋に案内できます。
+                                                </Alert>
+                                            )}
+                                        </Stack>
+                                    )}
                                 {isGameMaster && (
                                     <Stack sx={{ justifyContent: "center" }}>
-                                        <PlayCloseDialog playId={playId} />
+                                        <PlayCloseDialog
+                                            playId={playId}
+                                            afterClose={afterPlayClose}
+                                        />
                                     </Stack>
                                 )}
                                 <HandleSetDialog

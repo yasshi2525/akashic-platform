@@ -124,6 +124,8 @@ export function PlayContainer() {
             gameMaster={data.gameMaster}
             game={data.game}
             user={user}
+            afterPlayClose={{ action: "redirect" }}
+            pageType="play"
             ref={container}
         />
     );

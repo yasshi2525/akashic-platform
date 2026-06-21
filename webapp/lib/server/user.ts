@@ -2,36 +2,20 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@yasshi2525/persist-schema";
-import { UserHandleResponse } from "../types";
+import {
+    UserHandleFormState,
+    UserHandleResponse,
+    UserNameFormState,
+} from "../types";
 import { getAuth } from "./auth";
 
 const HANDLE_PATTERN = /^[a-z0-9][a-z0-9_-]{1,19}$/;
 const RESERVED_HANDLES = new Set(["admin", "api", "live", "help", "support"]);
 
-export type UserProfileFormState = {
-    ok: boolean;
-    submitted: boolean;
-    message?: string;
-    submittedAt?: number;
-};
-
-export type UserHandleFormState = {
-    ok: boolean;
-    submitted: boolean;
-    handle?: string;
-    message?: string;
-    submittedAt?: number;
-};
-
-const initialState: UserProfileFormState = {
-    ok: true,
-    submitted: false,
-};
-
 export async function updateUserNameAction(
-    prevState: UserProfileFormState,
+    prevState: UserNameFormState,
     formData: FormData,
-): Promise<UserProfileFormState> {
+): Promise<UserNameFormState> {
     const user = await getAuth();
     if (!user || user.authType !== "oauth") {
         return {
@@ -71,7 +55,8 @@ export async function updateUserNameAction(
 
     revalidatePath(`/user/${user.id}`);
     return {
-        ...initialState,
+        ok: true,
+        name,
         submitted: true,
         submittedAt: Date.now(),
     };
@@ -151,7 +136,7 @@ export async function updateUserHandleAction(
         return {
             ok: false,
             submitted: true,
-            message: "ハンドルの設定にはサインインが必要です。",
+            message: "あなたの部屋IDの設定にはサインインが必要です。",
             submittedAt: Date.now(),
         };
     }
@@ -162,20 +147,20 @@ export async function updateUserHandleAction(
     if (!result.ok) {
         switch (result.reason) {
             case "Unauthorized":
-                message = "ハンドルの設定にはサインインが必要です。";
+                message = "あなたの部屋IDの設定にはサインインが必要です。";
                 break;
             case "EmptyHandle":
-                message = "ハンドルを入力してください。";
+                message = "あなたの部屋IDを入力してください。";
                 break;
             case "InvalidFormatHandle":
                 message =
-                    "ハンドルは2〜20文字の英小文字・数字・アンダースコア・ハイフンで入力してください。先頭は英数字にしてください。";
+                    "あなたの部屋IDは2〜20文字の英小文字・数字・アンダースコア・ハイフンで入力してください。先頭は英数字にしてください。";
                 break;
             case "ForbiddenHandle":
-                message = "そのハンドルは使用できません。";
+                message = "その部屋IDは使用できません。";
                 break;
             case "HandleAlreadyExists":
-                message = "そのハンドルはすでに使用されています。";
+                message = "その部屋IDはすでに使用されています。";
                 break;
             case "InternalError":
             default:

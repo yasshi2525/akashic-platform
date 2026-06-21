@@ -25,11 +25,13 @@ export function PlayCreateDialog({
     onClose,
     game,
     user,
+    afterCreate,
 }: {
     open: boolean;
     onClose: () => void;
     game?: GameInfo;
     user: User | null;
+    afterCreate: { action: "navigate" } | { action: "stay"; cb: () => void };
 }) {
     const router = useRouter();
     const [playName, setPlayName] = useLocalStorage(STORAGE_KEYS.ROOM_NAME, "");
@@ -75,9 +77,22 @@ export function PlayCreateDialog({
             joinWord,
         });
         if (res.ok) {
-            router.push(
-                `/play/${res.playId}?${messageKey}=${messages.play.registerSuccessful}`,
-            );
+            switch (afterCreate.action) {
+                case "navigate":
+                    router.push(
+                        `/play/${res.playId}?${messageKey}=${messages.play.registerSuccessful}`,
+                    );
+                    break;
+                case "stay":
+                    afterCreate.cb();
+                    break;
+                default:
+                    console.error(
+                        "invalid afterCreate action type",
+                        afterCreate,
+                    );
+                    break;
+            }
         } else {
             switch (res.reason) {
                 case "InvalidParams":

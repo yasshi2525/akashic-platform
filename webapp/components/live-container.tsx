@@ -11,15 +11,16 @@ import {
     Container,
     Divider,
     Skeleton,
+    Snackbar,
     Stack,
     TextField,
     Typography,
     useTheme,
 } from "@mui/material";
-import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
-import { ActiveLiveInfo } from "@/lib/types";
+import { ContentCopy } from "@mui/icons-material";
 import { useAuth } from "@/lib/client/useAuth";
 import { useLive } from "@/lib/client/useLive";
+import { PlayForm } from "./play-form";
 import { PlayView } from "./play-view";
 import { UserInline } from "./user-inline";
 
@@ -27,12 +28,14 @@ function LiveHeader({
     userId,
     name,
     iconURL,
+    isOwner,
     isPlaying,
     width,
 }: {
     userId: string;
     name: string;
     iconURL?: string;
+    isOwner: boolean;
     isPlaying: boolean;
     width?: "narrow";
 }) {
@@ -40,50 +43,149 @@ function LiveHeader({
     return (
         <>
             <Container maxWidth={width === "narrow" ? "sm" : "md"}>
-                <Box
+                <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={1}
                     sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        borderColor: "divider",
-                        justifyContent: "flex-start",
                         my: 1,
+                        alignItems: { xs: "stretch", sm: "center" },
                     }}
                 >
-                    <UserInline
-                        user={{
-                            id: userId,
-                            name: name,
-                            image: iconURL,
-                        }}
-                        textVariant="body1"
-                        avatarSize={24}
-                    />
-                    <Typography
-                        variant="body1"
-                        color={theme.palette.text.secondary}
-                        sx={{ ml: 1 }}
+                    <Stack
+                        direction="row"
+                        spacing={1}
+                        sx={{ alignItems: "center", margin: "auto" }}
                     >
-                        さんの部屋
-                    </Typography>
-                    {isPlaying ? (
-                        <Chip
-                            label="ただいまプレイ中"
-                            color="success"
-                            size="small"
-                            sx={{ ml: 1 }}
+                        <UserInline
+                            user={{
+                                id: userId,
+                                name: name,
+                                image: iconURL,
+                            }}
+                            textVariant="body1"
+                            avatarSize={24}
                         />
-                    ) : (
-                        <Chip
-                            label="休憩中"
-                            color="default"
-                            size="small"
-                            sx={{ ml: 1 }}
-                        />
-                    )}
-                </Box>
+                        <Typography
+                            variant="body1"
+                            color={theme.palette.text.secondary}
+                        >
+                            さんの部屋
+                        </Typography>
+                    </Stack>
+                    <Stack
+                        direction="row"
+                        spacing={1}
+                        sx={{ alignItems: "center", margin: "auto", ml: 1 }}
+                    >
+                        {isOwner && (
+                            <Chip
+                                label="あなたの部屋"
+                                size="small"
+                                variant="outlined"
+                            />
+                        )}
+                        {isPlaying ? (
+                            <Chip
+                                label="ただいまプレイ中"
+                                color="success"
+                                size="small"
+                                sx={{ opacity: 0.75 }}
+                            />
+                        ) : (
+                            <Chip label="休憩中" color="default" size="small" />
+                        )}
+                    </Stack>
+                </Stack>
             </Container>
             <Divider />
         </>
+    );
+}
+
+function OwnerIdleGuide({
+    liveUrl,
+    onCopyLiveUrl,
+}: {
+    liveUrl?: string;
+    onCopyLiveUrl: () => void;
+}) {
+    const theme = useTheme();
+    return (
+        <Card>
+            <CardContent>
+                <Stack spacing={2}>
+                    <Typography variant="h6">
+                        ゲームを起動していません
+                    </Typography>
+                    <Typography variant="body1">
+                        ここはあなた専用の部屋です。
+                        ゲームを起動するとこのページを開いている人と一緒に遊べます。
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                        ここで起動したゲームは部屋一覧にも表示されます。
+                    </Typography>
+                    <Box
+                        sx={{
+                            borderRadius: 2,
+                            p: 2,
+                            backgroundColor: theme.palette.background.default,
+                        }}
+                    >
+                        <Stack spacing={1}>
+                            <Typography variant="subtitle1">
+                                みんなを誘おう!
+                            </Typography>
+                            <Stack
+                                direction={{
+                                    xs: "column",
+                                    sm: "row",
+                                }}
+                                spacing={1}
+                                sx={{
+                                    alignItems: {
+                                        xs: "stretch",
+                                        sm: "center",
+                                    },
+                                }}
+                            >
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        p: 1,
+                                        color: theme.palette.text.secondary,
+                                        borderRadius: 2,
+                                        borderColor: theme.palette.divider,
+                                        backgroundColor:
+                                            theme.palette.background.paper,
+                                        cursor: "pointer",
+                                        flexGrow: 1,
+                                        overflow: "auto",
+                                    }}
+                                    onClick={onCopyLiveUrl}
+                                >
+                                    {liveUrl ?? "リンクを準備中..."}
+                                </Typography>
+                                <Button
+                                    startIcon={<ContentCopy />}
+                                    variant="outlined"
+                                    onClick={onCopyLiveUrl}
+                                    disabled={!liveUrl}
+                                    sx={{
+                                        borderColor: theme.palette.primary.main,
+                                        color: theme.palette.primary.main,
+                                    }}
+                                >
+                                    コピー
+                                </Button>
+                            </Stack>
+                            <Typography variant="body2" color="textSecondary">
+                                このリンクから来た人は、あなたがゲームを起動すると自動的に参加します。
+                            </Typography>
+                        </Stack>
+                    </Box>
+                </Stack>
+            </CardContent>
+        </Card>
     );
 }
 
@@ -101,35 +203,61 @@ export function LiveContainer({ handle }: { handle: string }) {
      * NOTE: 直前の id を保持することで待機状態に遷移させる
      */
     const closedPlayId = useRef<number>(undefined);
-    const [cachedInfo, setCachedInfo] = useState<ActiveLiveInfo>();
     const [user] = useAuth();
+    const [liveUrl, setLiveUrl] = useState<string>();
+    const [liveCopyStatus, setLiveCopyStatus] = useState<"success" | "error">();
     const container = useRef<HTMLDivElement>(null);
 
-    const { isLoading, data, error } = useLive(
+    const { isLoading, data, error, mutate } = useLive(
         handle,
         submittedJoinWord,
         !isPlaying.current,
     );
+
+    // 表示中の部屋は常に data から導出する。終了直後の部屋は除外する。
+    const liveInfo =
+        data &&
+        !data.requiresJoinWord &&
+        data.info &&
+        data.info.id !== closedPlayId.current
+            ? data.info
+            : undefined;
+    isPlaying.current = !!liveInfo;
+
     useEffect(() => {
-        if (isPlaying.current) {
+        if (typeof window === "undefined") {
             return;
         }
-        if (
-            !data?.requiresJoinWord &&
-            data?.info &&
-            data.info.id !== closedPlayId.current
-        ) {
-            setCachedInfo(data.info);
-            isPlaying.current = true;
-        }
-    }, [data]);
+        setLiveUrl(
+            new URL(`/live/${handle}`, window.location.origin).toString(),
+        );
+    }, [handle]);
 
-    function handlePlayEnd(_reason: PlayEndReason) {
-        setCachedInfo(undefined);
+    async function handleCopyLiveUrl() {
+        if (!liveUrl) {
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(liveUrl);
+            setLiveCopyStatus("success");
+        } catch (err) {
+            console.warn("failed to copy live url", err);
+            setLiveCopyStatus("error");
+        }
+    }
+
+    function handleAfterCreate() {
+        // 作成直後に最新の部屋を取得してプレイ画面に遷移
+        mutate();
+    }
+
+    function handleAfterPlayClose() {
         setJoinWord("");
-        closedPlayId.current = cachedInfo?.id;
+        closedPlayId.current = liveInfo?.id;
         setSubmittedJoinWord(undefined);
         isPlaying.current = false;
+        // ポーリングを待たずに最新状態へ
+        mutate();
     }
 
     function handleSubmitJoinWord(e: React.FormEvent<HTMLFormElement>) {
@@ -165,6 +293,7 @@ export function LiveContainer({ handle }: { handle: string }) {
                     userId={data.owner.userId}
                     name={data.owner.name}
                     iconURL={data.owner.iconURL}
+                    isOwner={false}
                     isPlaying={true}
                     width="narrow"
                 />
@@ -221,13 +350,61 @@ export function LiveContainer({ handle }: { handle: string }) {
             </Container>
         );
     }
-    if (!isPlaying.current) {
+    if (!liveInfo) {
+        if (data.isGameMaster) {
+            return (
+                <>
+                    <LiveHeader
+                        userId={data.owner.userId}
+                        name={data.owner.name}
+                        iconURL={data.owner.iconURL}
+                        isOwner={true}
+                        isPlaying={false}
+                    />
+                    <Container maxWidth="md" sx={{ mt: 3 }}>
+                        <Stack spacing={3}>
+                            <OwnerIdleGuide
+                                liveUrl={liveUrl}
+                                onCopyLiveUrl={handleCopyLiveUrl}
+                            />
+                            <PlayForm
+                                embedded
+                                afterCreate={{
+                                    action: "stay",
+                                    cb: handleAfterCreate,
+                                }}
+                            />
+                        </Stack>
+                    </Container>
+                    <Snackbar
+                        open={!!liveCopyStatus}
+                        anchorOrigin={{
+                            vertical: "bottom",
+                            horizontal: "left",
+                        }}
+                        autoHideDuration={2500}
+                        onClose={() => setLiveCopyStatus(undefined)}
+                    >
+                        <Alert
+                            severity={
+                                liveCopyStatus === "error" ? "error" : "success"
+                            }
+                        >
+                            {liveCopyStatus === "success"
+                                ? "あなたの部屋リンクをコピーしました。"
+                                : "クリップボードへのコピーに失敗しました。"}
+                        </Alert>
+                    </Snackbar>
+                </>
+            );
+        }
         return (
             <>
                 <LiveHeader
                     userId={data.owner.userId}
                     name={data.owner.name}
                     iconURL={data.owner.iconURL}
+                    isOwner={false}
                     isPlaying={false}
                     width="narrow"
                 />
@@ -256,42 +433,36 @@ export function LiveContainer({ handle }: { handle: string }) {
             </>
         );
     }
-    if (!cachedInfo) {
-        return (
-            <Container maxWidth="sm" sx={{ mt: 4 }}>
-                <Alert severity="error" variant="outlined">
-                    予期しないエラーが発生しました。画面を更新してください。
-                </Alert>
-            </Container>
-        );
-    }
     return (
         <>
             <LiveHeader
                 userId={data.owner.userId}
                 name={data.owner.name}
                 iconURL={data.owner.iconURL}
+                isOwner={data.isGameMaster}
                 isPlaying={true}
             />
             <PlayView
-                key={cachedInfo.id}
-                playId={`${cachedInfo.id}`}
-                playToken={cachedInfo.playToken}
-                playName={cachedInfo.playName}
-                isLimited={cachedInfo.isLimited}
-                joinWord={cachedInfo.joinWord}
-                inviteHash={cachedInfo.inviteHash}
-                game={cachedInfo.game}
-                gameMaster={cachedInfo.gameMaster}
+                key={liveInfo.id}
+                playId={`${liveInfo.id}`}
+                playToken={liveInfo.playToken}
+                playName={liveInfo.playName}
+                isLimited={liveInfo.isLimited}
+                joinWord={liveInfo.joinWord}
+                inviteHash={liveInfo.inviteHash}
+                game={liveInfo.game}
+                gameMaster={liveInfo.gameMaster}
                 isGameMaster={data.isGameMaster}
-                contentWidth={cachedInfo.width}
-                contentHeight={cachedInfo.height}
-                contentExternal={cachedInfo.external}
-                createdAt={cachedInfo.createdAt}
-                remainingMs={cachedInfo.remainingMs}
-                expiresAt={cachedInfo.expiresAt}
+                contentWidth={liveInfo.width}
+                contentHeight={liveInfo.height}
+                contentExternal={liveInfo.external}
+                createdAt={liveInfo.createdAt}
+                remainingMs={liveInfo.remainingMs}
+                expiresAt={liveInfo.expiresAt}
                 user={user}
-                onPlayEnd={handlePlayEnd}
+                onPlayEnd={handleAfterPlayClose}
+                afterPlayClose={{ action: "stay", cb: handleAfterPlayClose }}
+                pageType="live"
                 ref={container}
             />
         </>

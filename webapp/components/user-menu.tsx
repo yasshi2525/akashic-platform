@@ -19,10 +19,12 @@ import {
     Help,
     ListAlt,
     Logout,
+    MeetingRoom,
     Settings,
 } from "@mui/icons-material";
 import { User } from "@/lib/types";
 import { useAuth } from "@/lib/client/useAuth";
+import { useUserProfile } from "@/lib/client/useUserProfile";
 import { UserLabel } from "./user-label";
 import { SignInDialog } from "./sign-in-dialog";
 import { NotificationBell } from "./notification-bell";
@@ -49,6 +51,8 @@ interface AuthorizedMenuProps extends MenuProps {
 function AuthorizedMenu({ user, anchorEl, handleClose }: AuthorizedMenuProps) {
     const theme = useTheme();
     const [signouting, setIsSignouting] = useState(false);
+    const { profile } = useUserProfile(user.id);
+    const handle = profile?.handle;
 
     function handleSignOut() {
         if (signouting) {
@@ -78,6 +82,21 @@ function AuthorizedMenu({ user, anchorEl, handleClose }: AuthorizedMenuProps) {
                     </Typography>
                 </Button>
             </MenuItem>
+            {handle && (
+                <MenuItem>
+                    <Button
+                        href={`/live/${handle}`}
+                        style={{
+                            color: "inherit",
+                        }}
+                    >
+                        <MeetingRoom />
+                        <Typography variant="body1" sx={{ ml: 1 }}>
+                            あなたの部屋
+                        </Typography>
+                    </Button>
+                </MenuItem>
+            )}
             <MenuItem>
                 <Button
                     href="/my-play"
