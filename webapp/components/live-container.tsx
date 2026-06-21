@@ -11,15 +11,15 @@ import {
     Container,
     Divider,
     Skeleton,
-    Snackbar,
     Stack,
     TextField,
     Typography,
     useTheme,
 } from "@mui/material";
-import { ContentCopy } from "@mui/icons-material";
 import { useAuth } from "@/lib/client/useAuth";
+import { useCopyToClipboard } from "@/lib/client/useCopyToClipboard";
 import { useLive } from "@/lib/client/useLive";
+import { CopyLinkBox, CopyStatusSnackbar } from "./copy-link-box";
 import { PlayForm } from "./play-form";
 import { PlayView } from "./play-view";
 import { UserInline } from "./user-inline";
@@ -132,49 +132,11 @@ function OwnerIdleGuide({
                             <Typography variant="subtitle1">
                                 みんなを誘おう!
                             </Typography>
-                            <Stack
-                                direction={{
-                                    xs: "column",
-                                    sm: "row",
-                                }}
-                                spacing={1}
-                                sx={{
-                                    alignItems: {
-                                        xs: "stretch",
-                                        sm: "center",
-                                    },
-                                }}
-                            >
-                                <Typography
-                                    variant="body2"
-                                    color="textSecondary"
-                                    sx={{
-                                        p: 1,
-                                        borderRadius: 2,
-                                        borderColor: theme.palette.divider,
-                                        backgroundColor:
-                                            theme.palette.background.paper,
-                                        cursor: "pointer",
-                                        flexGrow: 1,
-                                        overflow: "auto",
-                                    }}
-                                    onClick={onCopyLiveUrl}
-                                >
-                                    {liveUrl ?? "リンクを準備中..."}
-                                </Typography>
-                                <Button
-                                    startIcon={<ContentCopy />}
-                                    variant="outlined"
-                                    onClick={onCopyLiveUrl}
-                                    disabled={!liveUrl}
-                                    sx={{
-                                        borderColor: theme.palette.primary.main,
-                                        color: theme.palette.primary.main,
-                                    }}
-                                >
-                                    コピー
-                                </Button>
-                            </Stack>
+                            <CopyLinkBox
+                                url={liveUrl}
+                                onCopy={onCopyLiveUrl}
+                                mode="dark"
+                            />
                             <Typography variant="body2" color="textSecondary">
                                 このリンクから来た人は、あなたがゲームを起動すると自動的に参加します。
                             </Typography>
@@ -202,7 +164,11 @@ export function LiveContainer({ handle }: { handle: string }) {
     const closedPlayId = useRef<number>(undefined);
     const [user] = useAuth();
     const [liveUrl, setLiveUrl] = useState<string>();
-    const [liveCopyStatus, setLiveCopyStatus] = useState<"success" | "error">();
+    const {
+        copyStatus: liveCopyStatus,
+        copy: copyLiveUrl,
+        clearCopyStatus: clearLiveCopyStatus,
+    } = useCopyToClipboard();
     const container = useRef<HTMLDivElement>(null);
 
     const { isLoading, data, error, mutate } = useLive(
@@ -230,16 +196,9 @@ export function LiveContainer({ handle }: { handle: string }) {
         );
     }, [handle]);
 
-    async function handleCopyLiveUrl() {
-        if (!liveUrl) {
-            return;
-        }
-        try {
-            await navigator.clipboard.writeText(liveUrl);
-            setLiveCopyStatus("success");
-        } catch (err) {
-            console.warn("failed to copy live url", err);
-            setLiveCopyStatus("error");
+    function handleCopyLiveUrl() {
+        if (liveUrl) {
+            copyLiveUrl(liveUrl);
         }
     }
 
@@ -373,25 +332,11 @@ export function LiveContainer({ handle }: { handle: string }) {
                             />
                         </Stack>
                     </Container>
-                    <Snackbar
-                        open={!!liveCopyStatus}
-                        anchorOrigin={{
-                            vertical: "bottom",
-                            horizontal: "left",
-                        }}
-                        autoHideDuration={2500}
-                        onClose={() => setLiveCopyStatus(undefined)}
-                    >
-                        <Alert
-                            severity={
-                                liveCopyStatus === "error" ? "error" : "success"
-                            }
-                        >
-                            {liveCopyStatus === "success"
-                                ? "あなたの部屋リンクをコピーしました。"
-                                : "クリップボードへのコピーに失敗しました。"}
-                        </Alert>
-                    </Snackbar>
+                    <CopyStatusSnackbar
+                        status={liveCopyStatus}
+                        onClose={clearLiveCopyStatus}
+                        successMessage="あなたの部屋リンクをコピーしました。"
+                    />
                 </>
             );
         }

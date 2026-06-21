@@ -28,7 +28,6 @@ import {
     useTheme,
 } from "@mui/material";
 import {
-    ContentCopy,
     HelpOutlined,
     Lock,
     OpenInNew,
@@ -46,6 +45,7 @@ import { useCustomData } from "@/lib/client/useCustomData";
 import { STORAGE_KEYS, useLocalStorage } from "@/lib/client/useLocalStorage";
 import { ResolvingPlayerInfoRequest } from "@/lib/client/akashic-plugins/coe-limited-plugin";
 import { AkashicContainer } from "@/lib/client/akashic-container";
+import { useCopyToClipboard } from "@/lib/client/useCopyToClipboard";
 import { extendPlay } from "@/lib/server/play-extend";
 import { uploadPlayShareScreenshot } from "@/lib/server/play-share";
 import { PlayCloseDialog } from "./play-close-dialog";
@@ -58,6 +58,7 @@ import { TroubleshootButton } from "./troubleshoot-button";
 import { FavoriteButton } from "./favorite-button";
 import { renderTextWithLinks } from "./text-with-links";
 import { HandleSetDialog } from "./handle-set-dialog";
+import { CopyLinkBox, CopyStatusSnackbar } from "./copy-link-box";
 
 const warnings = ["EVENT_ON_SKIPPING"] as const;
 type WarningType = (typeof warnings)[number];
@@ -161,12 +162,18 @@ export function PlayView({
         useState<ExtensionReminderType>();
     const shownReminders = useRef(new Set<ExtensionReminderType>());
     const [inviteUrl, setInviteUrl] = useState<string>();
-    const [inviteCopyStatus, setInviteCopyStatus] = useState<
-        "success" | "error"
-    >();
+    const {
+        copyStatus: inviteCopyStatus,
+        copy: copyInviteUrl,
+        clearCopyStatus: clearInviteCopyStatus,
+    } = useCopyToClipboard();
     const [handle, setHandle] = useState(gameMaster.handle);
     const [liveUrl, setLiveUrl] = useState<string>();
-    const [liveCopyStatus, setLiveCopyStatus] = useState<"success" | "error">();
+    const {
+        copyStatus: liveCopyStatus,
+        copy: copyLiveUrl,
+        clearCopyStatus: clearLiveCopyStatus,
+    } = useCopyToClipboard();
     const [handleDialogOpen, setHandleDialogOpen] = useState(false);
     const [volumePercent, setVolumePercent] = useLocalStorage(
         STORAGE_KEYS.PLAYER_VOLUME,
@@ -350,29 +357,15 @@ export function PlayView({
         }
     }
 
-    async function handleCopyInvite() {
-        if (!inviteUrl) {
-            return;
-        }
-        try {
-            await navigator.clipboard.writeText(inviteUrl);
-            setInviteCopyStatus("success");
-        } catch (err) {
-            console.warn("failed to copy invite url", err);
-            setInviteCopyStatus("error");
+    function handleCopyInvite() {
+        if (inviteUrl) {
+            copyInviteUrl(inviteUrl);
         }
     }
 
-    async function handleCopyLiveUrl() {
-        if (!liveUrl) {
-            return;
-        }
-        try {
-            await navigator.clipboard.writeText(liveUrl);
-            setLiveCopyStatus("success");
-        } catch (err) {
-            console.warn("failed to copy live url", err);
-            setLiveCopyStatus("error");
+    function handleCopyLiveUrl() {
+        if (liveUrl) {
+            copyLiveUrl(liveUrl);
         }
     }
 
@@ -602,24 +595,11 @@ export function PlayView({
                     <Alert severity="warning">{toMessage(warning)}</Alert>
                 </Snackbar>
             )}
-            {inviteCopyStatus && (
-                <Snackbar
-                    open={!!inviteCopyStatus}
-                    anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-                    autoHideDuration={2500}
-                    onClose={() => setInviteCopyStatus(undefined)}
-                >
-                    <Alert
-                        severity={
-                            inviteCopyStatus === "success" ? "success" : "error"
-                        }
-                    >
-                        {inviteCopyStatus === "success"
-                            ? "招待リンクをコピーしました。"
-                            : "クリップボードへのコピーに失敗しました。"}
-                    </Alert>
-                </Snackbar>
-            )}
+            <CopyStatusSnackbar
+                status={inviteCopyStatus}
+                onClose={clearInviteCopyStatus}
+                successMessage="招待リンクをコピーしました。"
+            />
             {screenshotStatus && (
                 <Snackbar
                     open={!!screenshotStatus}
@@ -664,27 +644,14 @@ export function PlayView({
                     </Alert>
                 </Snackbar>
             )}
-            {liveCopyStatus && (
-                <Snackbar
-                    open={!!liveCopyStatus}
-                    anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-                    autoHideDuration={2500}
-                    onClose={() => setLiveCopyStatus(undefined)}
-                >
-                    <Alert
-                        severity={
-                            liveCopyStatus === "error" ? "error" : "success"
-                        }
-                    >
-                        {liveCopyStatus === "success"
-                            ? (isGameMaster
-                                  ? "あなたの"
-                                  : `${gameMaster.name} さんの`) +
-                              "部屋リンクをコピーしました。"
-                            : "クリップボードへのコピーに失敗しました。"}
-                    </Alert>
-                </Snackbar>
-            )}
+            <CopyStatusSnackbar
+                status={liveCopyStatus}
+                onClose={clearLiveCopyStatus}
+                successMessage={
+                    (isGameMaster ? "あなたの" : `${gameMaster.name} さんの`) +
+                    "部屋リンクをコピーしました。"
+                }
+            />
             {extensionReminderType && (
                 <Snackbar
                     open={!!extensionReminderType}
@@ -963,56 +930,11 @@ export function PlayView({
                                                 ? "あなたの部屋リンク"
                                                 : `${gameMaster.name} さんの部屋リンク`}
                                         </Typography>
-                                        <Stack
-                                            direction={{
-                                                xs: "column",
-                                                sm: "row",
-                                            }}
-                                            spacing={1}
-                                            sx={{
-                                                alignItems: {
-                                                    xs: "stretch",
-                                                    sm: "center",
-                                                },
-                                            }}
-                                        >
-                                            <Typography
-                                                variant="body1"
-                                                color="textSecondary"
-                                                sx={{
-                                                    p: 1,
-                                                    borderStyle: "solid",
-                                                    borderWidth: 1,
-                                                    borderRadius: 2,
-                                                    borderColor:
-                                                        theme.palette.divider,
-                                                    backgroundColor:
-                                                        theme.palette.background
-                                                            .default,
-                                                    cursor: "pointer",
-                                                    flexGrow: 1,
-                                                    overflow: "auto",
-                                                }}
-                                                onClick={handleCopyLiveUrl}
-                                            >
-                                                {liveUrl ?? "リンクを準備中..."}
-                                            </Typography>
-                                            <Button
-                                                startIcon={<ContentCopy />}
-                                                variant="outlined"
-                                                onClick={handleCopyLiveUrl}
-                                                disabled={!liveUrl}
-                                                sx={{
-                                                    borderColor:
-                                                        theme.palette.primary
-                                                            .light,
-                                                    color: theme.palette.primary
-                                                        .light,
-                                                }}
-                                            >
-                                                コピー
-                                            </Button>
-                                        </Stack>
+                                        <CopyLinkBox
+                                            url={liveUrl}
+                                            onCopy={handleCopyLiveUrl}
+                                            mode="light"
+                                        />
                                         <Typography
                                             variant="body2"
                                             color="textSecondary"
@@ -1069,55 +991,11 @@ export function PlayView({
                                         <Typography variant="body1">
                                             招待リンク
                                         </Typography>
-                                        <Stack
-                                            direction={{
-                                                xs: "column",
-                                                sm: "row",
-                                            }}
-                                            spacing={1}
-                                            sx={{
-                                                alignItems: {
-                                                    xs: "stretch",
-                                                    sm: "center",
-                                                },
-                                            }}
-                                        >
-                                            <Typography
-                                                variant="body1"
-                                                color="textSecondary"
-                                                sx={{
-                                                    p: 1,
-                                                    borderRadius: 2,
-                                                    borderColor:
-                                                        theme.palette.divider,
-                                                    backgroundColor:
-                                                        theme.palette.background
-                                                            .default,
-                                                    cursor: "pointer",
-                                                    flexGrow: 1,
-                                                    overflow: "auto",
-                                                }}
-                                                onClick={handleCopyInvite}
-                                            >
-                                                {inviteUrl ??
-                                                    "リンクを準備中..."}
-                                            </Typography>
-                                            <Button
-                                                startIcon={<ContentCopy />}
-                                                variant="outlined"
-                                                onClick={handleCopyInvite}
-                                                disabled={!inviteUrl}
-                                                sx={{
-                                                    borderColor:
-                                                        theme.palette.primary
-                                                            .light,
-                                                    color: theme.palette.primary
-                                                        .light,
-                                                }}
-                                            >
-                                                コピー
-                                            </Button>
-                                        </Stack>
+                                        <CopyLinkBox
+                                            url={inviteUrl}
+                                            onCopy={handleCopyInvite}
+                                            mode="light"
+                                        />
                                         <Typography
                                             variant="body2"
                                             color="textSecondary"
@@ -1180,70 +1058,13 @@ export function PlayView({
                                             </Typography>
                                             {handle ? (
                                                 <>
-                                                    <Stack
-                                                        direction={{
-                                                            xs: "column",
-                                                            sm: "row",
-                                                        }}
-                                                        spacing={1}
-                                                        sx={{
-                                                            alignItems: {
-                                                                xs: "stretch",
-                                                                sm: "center",
-                                                            },
-                                                        }}
-                                                    >
-                                                        <Typography
-                                                            variant="body1"
-                                                            color="textSecondary"
-                                                            sx={{
-                                                                p: 1,
-                                                                borderRadius: 2,
-                                                                borderColor:
-                                                                    theme
-                                                                        .palette
-                                                                        .divider,
-                                                                backgroundColor:
-                                                                    theme
-                                                                        .palette
-                                                                        .background
-                                                                        .default,
-                                                                cursor: "pointer",
-                                                                flexGrow: 1,
-                                                                overflow:
-                                                                    "auto",
-                                                            }}
-                                                            onClick={
-                                                                handleCopyLiveUrl
-                                                            }
-                                                        >
-                                                            {liveUrl ??
-                                                                "リンクを準備中..."}
-                                                        </Typography>
-                                                        <Button
-                                                            startIcon={
-                                                                <ContentCopy />
-                                                            }
-                                                            variant="outlined"
-                                                            onClick={
-                                                                handleCopyLiveUrl
-                                                            }
-                                                            disabled={!liveUrl}
-                                                            sx={{
-                                                                borderColor:
-                                                                    theme
-                                                                        .palette
-                                                                        .primary
-                                                                        .light,
-                                                                color: theme
-                                                                    .palette
-                                                                    .primary
-                                                                    .light,
-                                                            }}
-                                                        >
-                                                            コピー
-                                                        </Button>
-                                                    </Stack>
+                                                    <CopyLinkBox
+                                                        url={liveUrl}
+                                                        onCopy={
+                                                            handleCopyLiveUrl
+                                                        }
+                                                        mode="light"
+                                                    />
                                                     <Typography
                                                         variant="body2"
                                                         color="textSecondary"

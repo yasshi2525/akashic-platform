@@ -16,14 +16,12 @@ import {
     Container,
     Divider,
     Skeleton,
-    Snackbar,
     Stack,
     TextField,
     Typography,
     useTheme,
 } from "@mui/material";
 import {
-    ContentCopy,
     GitHub,
     Google,
     Logout,
@@ -32,6 +30,7 @@ import {
 } from "@mui/icons-material";
 import { GameInfo, UserNameFormState, UserHandleFormState } from "@/lib/types";
 import { useAuth } from "@/lib/client/useAuth";
+import { useCopyToClipboard } from "@/lib/client/useCopyToClipboard";
 import { useUserFeedback } from "@/lib/client/useUserFeedback";
 import { useUserProfile } from "@/lib/client/useUserProfile";
 import { AuthProvider, authProviderNames } from "@/lib/client/auth-providers";
@@ -39,6 +38,7 @@ import {
     updateUserHandleAction,
     updateUserNameAction,
 } from "@/lib/server/user";
+import { CopyLinkBox, CopyStatusSnackbar } from "@/components/copy-link-box";
 import { PlayCreateDialog } from "@/components/play-create-dialog";
 import { UserFeedbackList } from "@/components/user-feedback-list";
 import { UserGameListSection } from "@/components/user-game-list-section";
@@ -247,7 +247,11 @@ export default function UserPage() {
     const [signouting, setIsSignouting] = useState(false);
     const [handle, setHandle] = useState<string>();
     const [liveUrl, setLiveUrl] = useState<string>();
-    const [liveCopyStatus, setLiveCopyStatus] = useState<"success" | "error">();
+    const {
+        copyStatus: liveCopyStatus,
+        copy: copyLiveUrl,
+        clearCopyStatus: clearLiveCopyStatus,
+    } = useCopyToClipboard();
 
     const isOwner = useMemo(() => {
         return user?.authType === "oauth" && user.id === id;
@@ -298,15 +302,9 @@ export default function UserPage() {
         [mutate, userDispatch],
     );
 
-    async function handleCopyLiveUrl() {
-        if (!liveUrl) {
-            return;
-        }
-        try {
-            await navigator.clipboard.writeText(liveUrl);
-            setLiveCopyStatus("success");
-        } catch {
-            setLiveCopyStatus("error");
+    function handleCopyLiveUrl() {
+        if (liveUrl) {
+            copyLiveUrl(liveUrl);
         }
     }
 
@@ -405,81 +403,33 @@ export default function UserPage() {
                                                         },
                                                     }}
                                                 >
-                                                    <Typography
-                                                        variant="body1"
-                                                        color="textSecondary"
-                                                        sx={{
-                                                            p: 1,
-                                                            borderRadius: 2,
-                                                            borderColor:
-                                                                theme.palette
-                                                                    .divider,
-                                                            backgroundColor:
-                                                                theme.palette
-                                                                    .background
-                                                                    .default,
-                                                            cursor: "pointer",
-                                                            flexGrow: 1,
-                                                            overflow: "auto",
-                                                        }}
-                                                        onClick={
+                                                    <CopyLinkBox
+                                                        url={liveUrl}
+                                                        onCopy={
                                                             handleCopyLiveUrl
                                                         }
-                                                    >
-                                                        {liveUrl ??
-                                                            "リンクを準備中..."}
-                                                    </Typography>
-                                                    <Stack
-                                                        direction="row"
-                                                        spacing={1}
-                                                    >
-                                                        <Button
-                                                            startIcon={
-                                                                <ContentCopy />
-                                                            }
-                                                            variant="outlined"
-                                                            onClick={
-                                                                handleCopyLiveUrl
-                                                            }
-                                                            disabled={!liveUrl}
-                                                            sx={{
-                                                                borderColor:
-                                                                    theme
-                                                                        .palette
-                                                                        .primary
-                                                                        .light,
-                                                                color: theme
-                                                                    .palette
+                                                        mode="light"
+                                                    />
+                                                    <Button
+                                                        component={Link}
+                                                        href={`/live/${handle}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        startIcon={
+                                                            <OpenInNew />
+                                                        }
+                                                        variant="outlined"
+                                                        sx={{
+                                                            borderColor:
+                                                                theme.palette
                                                                     .primary
                                                                     .light,
-                                                            }}
-                                                        >
-                                                            コピー
-                                                        </Button>
-                                                        <Button
-                                                            component={Link}
-                                                            href={`/live/${handle}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            startIcon={
-                                                                <OpenInNew />
-                                                            }
-                                                            variant="outlined"
-                                                            sx={{
-                                                                borderColor:
-                                                                    theme
-                                                                        .palette
-                                                                        .primary
-                                                                        .light,
-                                                                color: theme
-                                                                    .palette
-                                                                    .primary
-                                                                    .light,
-                                                            }}
-                                                        >
-                                                            開く
-                                                        </Button>
-                                                    </Stack>
+                                                            color: theme.palette
+                                                                .primary.light,
+                                                        }}
+                                                    >
+                                                        開く
+                                                    </Button>
                                                 </Stack>
                                             </>
                                         )}
@@ -558,24 +508,11 @@ export default function UserPage() {
                 user={user}
                 afterCreate={{ action: "navigate" }}
             />
-            <Snackbar
-                open={liveCopyStatus === "success"}
-                onClose={() => setLiveCopyStatus(undefined)}
-                autoHideDuration={2500}
-                anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-            >
-                <Alert severity="success">リンクをコピーしました</Alert>
-            </Snackbar>
-            <Snackbar
-                open={liveCopyStatus === "error"}
-                onClose={() => setLiveCopyStatus(undefined)}
-                autoHideDuration={2500}
-                anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-            >
-                <Alert severity="error">
-                    クリップボードへのコピーに失敗しました。
-                </Alert>
-            </Snackbar>
+            <CopyStatusSnackbar
+                status={liveCopyStatus}
+                onClose={clearLiveCopyStatus}
+                successMessage="リンクをコピーしました"
+            />
         </Container>
     );
 }
