@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.4.0-rc.0
+
+- Feature
+  - トレース記録用設定追加
+
 ## 1.3.6
 
 - Improve

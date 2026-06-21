@@ -1,3 +1,4 @@
+import "./tracing";
 import process from "node:process";
 import { PlayManager } from "./PlayManager";
 import { HttpServer } from "./HttpServer";

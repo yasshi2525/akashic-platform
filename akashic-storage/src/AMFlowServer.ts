@@ -26,7 +26,9 @@ export class AMFlowServer {
     _clients: Set<Socket>;
     _tickSubscribers: Set<Socket>;
     _eventSubscribers: Set<Socket>;
-    _broadcastTickBound: ListenSchema[typeof ListenEvent.SendTickPack];
+    // store からの tick 購読ハンドラ。SendTickPack イベント自体ではなく
+    // _broadcastTick のシグネチャ（carrier を含まない）に合わせる。
+    _broadcastTickBound: (tickPack: TickPack) => void;
     _broadcastEventBound: ListenSchema[typeof ListenEvent.SendEvent];
 
     constructor(param: AMFlowServerParameterObject) {

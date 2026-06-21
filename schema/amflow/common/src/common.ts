@@ -8,6 +8,14 @@ import type { Event, TickList } from "@akashic/playlog";
 import { AMFlowError } from "./error";
 import { TickPack } from "./tick";
 
+/**
+ * 分散トレーシングのコンテキスト（W3C traceparent / X-Amzn-Trace-Id 等）を
+ * Socket.IO イベントに載せて伝播するためのキャリア。
+ * OpenTelemetry の TextMapPropagator が inject/extract する形式に対応する。
+ * トレーシング無効時は空オブジェクトとなり、挙動には影響しない。
+ */
+export type Carrier = Record<string, string>;
+
 const cliEvents = [
     "amf:open",
     "amf:close",
@@ -68,12 +76,13 @@ const cliSchema = {
     [cliEvMap.Close]: (cb: (err: AMFlowError | null) => void) => {},
     [cliEvMap.Authenticate]: (
         token: string,
+        carrier: Carrier,
         cb: (
             err: AMFlowError | null,
             permission: Permission | undefined,
         ) => void,
     ) => {},
-    [cliEvMap.SendTickPack]: (tickPack: TickPack) => {},
+    [cliEvMap.SendTickPack]: (tickPack: TickPack, carrier: Carrier) => {},
     [cliEvMap.SubscribeTick]: () => {},
     [cliEvMap.UnsubscribeTick]: () => {},
     [cliEvMap.SendEvent]: (event: Event) => {},
@@ -81,6 +90,7 @@ const cliSchema = {
     [cliEvMap.UnsubscribeEvent]: () => {},
     [cliEvMap.GetTickList]: (
         opts: GetTickListOptions,
+        carrier: Carrier,
         cb: (
             err: AMFlowError | null,
             tickList: TickList | null | undefined,
@@ -88,10 +98,12 @@ const cliSchema = {
     ) => {},
     [cliEvMap.PutStartPoint]: (
         startPoint: StartPoint,
+        carrier: Carrier,
         cb: (err: AMFlowError | null) => void,
     ) => {},
     [cliEvMap.GetStartPoint]: (
         opts: GetStartPointOptions,
+        carrier: Carrier,
         cb: (
             err: AMFlowError | null,
             startPoint: StartPoint | null | undefined,
