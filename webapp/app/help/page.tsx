@@ -50,9 +50,9 @@ export default function HelpPage() {
                     <Typography
                         variant="body1"
                         gutterBottom
+                        color="textSecondary"
                         sx={{
                             pl: { xs: 1, sm: 4 },
-                            color: theme.palette.text.secondary,
                         }}
                     >
                         複数人同時プレイ型のゲームを投稿でき、公開されたゲームをみんなで遊べるサイトです。
@@ -79,7 +79,7 @@ export default function HelpPage() {
                                 secondary={
                                     <Typography
                                         variant="body1"
-                                        color={theme.palette.text.secondary}
+                                        color="textSecondary"
                                     >
                                         部屋を立て、表示されたURLを招待したい人に送ります。部屋を立てたり、参加するのにサインインは不要です。
                                         部屋は公開/限定を選べます。
@@ -105,7 +105,7 @@ export default function HelpPage() {
                                 secondary={
                                     <Typography
                                         variant="body1"
-                                        color={theme.palette.text.secondary}
+                                        color="textSecondary"
                                     >
                                         メニューから投稿できます。
                                         投稿にはサインインが必要です。
@@ -136,7 +136,7 @@ export default function HelpPage() {
                                 secondary={
                                     <Typography
                                         variant="body1"
-                                        color={theme.palette.text.secondary}
+                                        color="textSecondary"
                                     >
                                         一部ゲームは名前を使って参加できます。
                                         サインインしていると名前の入力を省略できます。
@@ -160,7 +160,7 @@ export default function HelpPage() {
                                 secondary={
                                     <Typography
                                         variant="body1"
-                                        color={theme.palette.text.secondary}
+                                        color="textSecondary"
                                     >
                                         部屋は30分で自動終了しますが、
                                         残り時間が少なくなったときに参加者の誰かが
@@ -186,7 +186,7 @@ export default function HelpPage() {
                                 secondary={
                                     <Typography
                                         variant="body1"
-                                        color={theme.palette.text.secondary}
+                                        color="textSecondary"
                                     >
                                         部屋を立てた人はいつでも部屋を閉じることができます。
                                     </Typography>
@@ -203,8 +203,8 @@ export default function HelpPage() {
                         variant="body1"
                         sx={{
                             pl: { xs: 1, sm: 4 },
-                            color: theme.palette.text.secondary,
                         }}
+                        color="textSecondary"
                     >
                         <Button
                             component={Link}

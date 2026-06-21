@@ -110,7 +110,7 @@ export function ClientLogDialog({
                     )}
                     <Typography
                         variant="body2"
-                        color={theme.palette.text.secondary}
+                        color="textSecondary"
                         sx={{
                             whiteSpace: "pre-wrap",
                             border: 1,
@@ -130,21 +130,18 @@ export function ClientLogDialog({
                     </Typography>
                     {lastSubmittedComment && (
                         <Box>
-                            <Typography
-                                variant="caption"
-                                color={theme.palette.text.secondary}
-                            >
+                            <Typography variant="caption" color="textSecondary">
                                 前回の送信時のコメント（参考）:
                             </Typography>
                             <Typography
                                 variant="body2"
+                                color="textSecondary"
                                 sx={{
                                     whiteSpace: "pre-wrap",
                                     border: 1,
                                     borderColor: theme.palette.divider,
                                     borderRadius: 1,
                                     p: 0.5,
-                                    color: theme.palette.text.secondary,
                                     fontSize: "0.8rem",
                                 }}
                             >

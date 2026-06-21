@@ -98,10 +98,7 @@ function PlayErrorDetails({
                         </Alert>
                     )}
                     {entries != null && entries.length === 0 && (
-                        <Typography
-                            variant="body2"
-                            color={theme.palette.text.secondary}
-                        >
+                        <Typography variant="body2" color="textSecondary">
                             エラーログはありません。
                         </Typography>
                     )}
@@ -109,7 +106,7 @@ function PlayErrorDetails({
                         <Box key={i} sx={{ mb: 2 }}>
                             <Typography
                                 variant="caption"
-                                color={theme.palette.text.secondary}
+                                color="textSecondary"
                                 sx={{
                                     display: "block",
                                 }}
@@ -159,7 +156,7 @@ function ClientLogDetails({
 
     if (logDeletedAt != null) {
         return (
-            <Typography variant="body2" color={theme.palette.text.secondary}>
+            <Typography variant="body2" color="textSecondary">
                 保存期間が過ぎたため、ログデータは削除されました
             </Typography>
         );
@@ -225,7 +222,7 @@ function ClientLogDetails({
                                 )}
                                 <Typography
                                     variant="caption"
-                                    color={theme.palette.text.secondary}
+                                    color="textSecondary"
                                 >
                                     {submission.reporter?.name ?? "ゲスト"} —
                                     送信{" "}
@@ -238,7 +235,7 @@ function ClientLogDetails({
                                 <Box sx={{ mb: 1 }}>
                                     <Typography
                                         variant="caption"
-                                        color={theme.palette.text.secondary}
+                                        color="textSecondary"
                                         sx={{
                                             display: "block",
                                         }}
@@ -265,7 +262,7 @@ function ClientLogDetails({
                             {submission.entries.length === 0 ? (
                                 <Typography
                                     variant="body2"
-                                    color={theme.palette.text.secondary}
+                                    color="textSecondary"
                                 >
                                     出力されたログがありません。
                                 </Typography>
@@ -287,10 +284,7 @@ function ClientLogDetails({
                                                     key={i}
                                                     variant="caption"
                                                     align="center"
-                                                    color={
-                                                        theme.palette.text
-                                                            .secondary
-                                                    }
+                                                    color="textSecondary"
                                                     sx={{
                                                         display: "block",
                                                         fontSize: "0.75rem",
@@ -310,22 +304,25 @@ function ClientLogDetails({
                                             >
                                                 <Typography
                                                     variant="caption"
-                                                    color={
-                                                        entry.level === "error"
-                                                            ? theme.palette
-                                                                  .error.light
-                                                            : entry.level ===
-                                                                "warn"
-                                                              ? theme.palette
-                                                                    .warning
-                                                                    .light
-                                                              : theme.palette
-                                                                    .text
-                                                                    .secondary
-                                                    }
                                                     sx={{
                                                         fontSize: "0.75rem",
                                                         fontFamily: "monospace",
+                                                        color:
+                                                            entry.level ===
+                                                            "error"
+                                                                ? theme.palette
+                                                                      .error
+                                                                      .light
+                                                                : entry.level ===
+                                                                    "warn"
+                                                                  ? theme
+                                                                        .palette
+                                                                        .warning
+                                                                        .light
+                                                                  : theme
+                                                                        .palette
+                                                                        .text
+                                                                        .secondary,
                                                     }}
                                                 >
                                                     [{entry.level.padEnd(5)}]
@@ -430,25 +427,16 @@ function ContentLogCard({ info }: { info: ContentLogInfo }) {
                             sx={{ width: 20, height: 20 }}
                         />
                     )}
-                    <Typography
-                        variant="body2"
-                        color={theme.palette.text.secondary}
-                    >
+                    <Typography variant="body2" color="textSecondary">
                         {info.gameMaster.name}
                     </Typography>
                 </Stack>
 
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-                    <Typography
-                        variant="body2"
-                        color={theme.palette.text.secondary}
-                    >
+                    <Typography variant="body2" color="textSecondary">
                         開始: {new Date(info.createdAt).toLocaleString("ja-JP")}
                     </Typography>
-                    <Typography
-                        variant="body2"
-                        color={theme.palette.text.secondary}
-                    >
+                    <Typography variant="body2" color="textSecondary">
                         終了:{" "}
                         {info.endedAt
                             ? new Date(info.endedAt).toLocaleString("ja-JP")
@@ -472,10 +460,7 @@ function ContentLogCard({ info }: { info: ContentLogInfo }) {
                 )}
 
                 {info.logDeletedAt != null ? (
-                    <Typography
-                        variant="body2"
-                        color={theme.palette.text.secondary}
-                    >
+                    <Typography variant="body2" color="textSecondary">
                         保存期間が過ぎたため、プレイヤーから報告されたログは削除されました
                     </Typography>
                 ) : info.logUploadedAt ? (
@@ -496,10 +481,7 @@ function ContentLogCard({ info }: { info: ContentLogInfo }) {
                         全てのログをダウンロード
                     </Button>
                 ) : (
-                    <Typography
-                        variant="body2"
-                        color={theme.palette.text.secondary}
-                    >
+                    <Typography variant="body2" color="textSecondary">
                         ログ準備中 (しばらくお待ち下さい)
                     </Typography>
                 )}
@@ -594,11 +576,7 @@ export default function ContentLogs() {
                 </Typography>
                 <Box sx={{ flex: 1 }} />
             </Stack>
-            <Typography
-                variant="body2"
-                color={theme.palette.text.secondary}
-                sx={{ my: 1 }}
-            >
+            <Typography variant="body2" color="textSecondary" sx={{ my: 1 }}>
                 終了した部屋のログのみ表示されます。
                 (反映には若干時間がかかります)
             </Typography>
@@ -612,7 +590,7 @@ export default function ContentLogs() {
                     {contentLogsError}
                 </Alert>
             ) : !list || isEmpty ? (
-                <Typography color={theme.palette.text.secondary}>
+                <Typography color="textSecondary">
                     まだログがありません。
                 </Typography>
             ) : (

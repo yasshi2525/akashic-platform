@@ -45,7 +45,7 @@ function NoResult() {
             <TableCell colSpan={5}>
                 <Typography
                     variant="body1"
-                    color={theme.palette.text.secondary}
+                    color="textSecondary"
                     align="center"
                 >
                     ゲームが見つかりませんでした
@@ -145,10 +145,7 @@ function GameTableCells({
                 />
             </TableCell>
             <TableCell width={120}>
-                <Typography
-                    variant="body2"
-                    sx={{ color: theme.palette.text.secondary }}
-                >
+                <Typography variant="body2" color="textSecondary">
                     {game.playCount.toLocaleString()} 回
                 </Typography>
             </TableCell>
@@ -305,9 +302,7 @@ export function GameList({
                             >
                                 <Typography
                                     variant="body2"
-                                    sx={{
-                                        color: theme.palette.text.secondary,
-                                    }}
+                                    color="textSecondary"
                                 >
                                     プレイ数: {game.playCount.toLocaleString()}{" "}
                                     回
@@ -333,7 +328,7 @@ export function GameList({
                             <StarOutlined fontSize="small" color="warning" />
                             <Typography
                                 variant="subtitle2"
-                                color={theme.palette.text.secondary}
+                                color="textSecondary"
                             >
                                 お気に入り
                             </Typography>
@@ -349,7 +344,7 @@ export function GameList({
                 ) : list == null || isEmpty ? (
                     <Typography
                         variant="body1"
-                        color={theme.palette.text.secondary}
+                        color="textSecondary"
                         align="center"
                     >
                         ゲームが見つかりませんでした
@@ -413,7 +408,7 @@ export function GameList({
                                     />
                                     <Typography
                                         variant="subtitle2"
-                                        color="text.secondary"
+                                        color="textSecondary"
                                     >
                                         お気に入り
                                     </Typography>

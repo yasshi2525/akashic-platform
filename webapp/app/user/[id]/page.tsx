@@ -407,10 +407,9 @@ export default function UserPage() {
                                                 >
                                                     <Typography
                                                         variant="body1"
+                                                        color="textSecondary"
                                                         sx={{
                                                             p: 1,
-                                                            color: theme.palette
-                                                                .text.secondary,
                                                             borderRadius: 2,
                                                             borderColor:
                                                                 theme.palette

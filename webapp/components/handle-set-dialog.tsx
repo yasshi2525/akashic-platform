@@ -76,7 +76,7 @@ export function HandleSetDialog({
             <DialogContent>
                 <Typography
                     variant="body2"
-                    color={theme.palette.text.secondary}
+                    color="textSecondary"
                     sx={{ mb: 2 }}
                 >
                     あなたの部屋IDを設定すると{" "}

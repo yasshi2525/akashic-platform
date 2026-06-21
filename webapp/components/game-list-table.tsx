@@ -40,7 +40,7 @@ function NoResult() {
             <TableCell colSpan={4}>
                 <Typography
                     variant="body1"
-                    color={theme.palette.text.secondary}
+                    color="textSecondary"
                     align="center"
                 >
                     ゲームが見つかりませんでした
@@ -89,18 +89,15 @@ function GameTableCells({
                 </Stack>
             </TableCell>
             <TableCell>
-                <Typography
-                    variant="body2"
-                    sx={{ color: theme.palette.text.secondary }}
-                >
+                <Typography variant="body2" color="textSecondary">
                     {format(game.createdAt, "yyyy/MM/dd")}
                 </Typography>
             </TableCell>
             <TableCell>
                 <Typography
                     variant="body2"
+                    color="textSecondary"
                     sx={{
-                        color: theme.palette.text.secondary,
                         width: "max-content",
                     }}
                 >
@@ -173,7 +170,7 @@ export function GameListTable({
                 ) : list == null || isEmpty ? (
                     <Typography
                         variant="body1"
-                        color={theme.palette.text.secondary}
+                        color="textSecondary"
                         align="center"
                     >
                         ゲームが見つかりませんでした
@@ -239,10 +236,7 @@ export function GameListTable({
                                     >
                                         <Typography
                                             variant="body2"
-                                            sx={{
-                                                color: theme.palette.text
-                                                    .secondary,
-                                            }}
+                                            color="textSecondary"
                                         >
                                             投稿日:{" "}
                                             {format(
@@ -252,10 +246,7 @@ export function GameListTable({
                                         </Typography>
                                         <Typography
                                             variant="body2"
-                                            sx={{
-                                                color: theme.palette.text
-                                                    .secondary,
-                                            }}
+                                            color="textSecondary"
                                         >
                                             プレイ数:{" "}
                                             {game.playCount.toLocaleString()} 回

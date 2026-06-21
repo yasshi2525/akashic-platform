@@ -65,10 +65,7 @@ function LiveHeader({
                             textVariant="body1"
                             avatarSize={24}
                         />
-                        <Typography
-                            variant="body1"
-                            color={theme.palette.text.secondary}
-                        >
+                        <Typography variant="body1" color="textSecondary">
                             さんの部屋
                         </Typography>
                     </Stack>
@@ -150,9 +147,9 @@ function OwnerIdleGuide({
                             >
                                 <Typography
                                     variant="body2"
+                                    color="textSecondary"
                                     sx={{
                                         p: 1,
-                                        color: theme.palette.text.secondary,
                                         borderRadius: 2,
                                         borderColor: theme.palette.divider,
                                         backgroundColor:
@@ -421,7 +418,7 @@ export function LiveContainer({ handle }: { handle: string }) {
                                 </Typography>
                                 <Typography
                                     variant="body2"
-                                    color={theme.palette.text.secondary}
+                                    color="textSecondary"
                                     sx={{ textAlign: "center" }}
                                 >
                                     ゲーム開始までお待ちください。

@@ -165,10 +165,7 @@ export function PlayForm({
                                 minWidth: 0,
                             }}
                         >
-                            <Typography
-                                variant="caption"
-                                color="text.secondary"
-                            >
+                            <Typography variant="caption" color="textSecondary">
                                 選択中のゲーム
                             </Typography>
                             <Typography

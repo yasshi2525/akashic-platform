@@ -151,7 +151,7 @@ export function NotificationBell() {
                                 </Typography>
                                 <Typography
                                     variant="caption"
-                                    color={theme.palette.text.secondary}
+                                    color="textSecondary"
                                 >
                                     {formatDistance(
                                         new Date(notice.createdAt),

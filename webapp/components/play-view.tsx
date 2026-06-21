@@ -796,11 +796,7 @@ export function PlayView({
                                                         />
                                                         <Typography
                                                             variant="body2"
-                                                            color={
-                                                                theme.palette
-                                                                    .text
-                                                                    .secondary
-                                                            }
+                                                            color="textSecondary"
                                                         >
                                                             限定
                                                         </Typography>
@@ -817,9 +813,7 @@ export function PlayView({
                                         >
                                             <Typography
                                                 variant="body2"
-                                                color={
-                                                    theme.palette.text.secondary
-                                                }
+                                                color="textSecondary"
                                             >
                                                 部屋主
                                             </Typography>
@@ -837,17 +831,13 @@ export function PlayView({
                                         <Stack direction="row">
                                             <Typography
                                                 variant="body2"
-                                                color={
-                                                    theme.palette.text.secondary
-                                                }
+                                                color="textSecondary"
                                             >
                                                 作成
                                             </Typography>
                                             <Typography
                                                 variant="body2"
-                                                color={
-                                                    theme.palette.text.secondary
-                                                }
+                                                color="textSecondary"
                                             >
                                                 {formatCreatedAt()}
                                             </Typography>
@@ -941,10 +931,7 @@ export function PlayView({
                                             <Stack direction="row" spacing={2}>
                                                 <Typography
                                                     variant="body1"
-                                                    color={
-                                                        theme.palette.text
-                                                            .secondary
-                                                    }
+                                                    color="textSecondary"
                                                 >
                                                     終了まで
                                                 </Typography>
@@ -991,10 +978,9 @@ export function PlayView({
                                         >
                                             <Typography
                                                 variant="body1"
+                                                color="textSecondary"
                                                 sx={{
                                                     p: 1,
-                                                    color: theme.palette.text
-                                                        .secondary,
                                                     borderStyle: "solid",
                                                     borderWidth: 1,
                                                     borderRadius: 2,
@@ -1029,7 +1015,7 @@ export function PlayView({
                                         </Stack>
                                         <Typography
                                             variant="body2"
-                                            color={theme.palette.text.secondary}
+                                            color="textSecondary"
                                         >
                                             {isGameMaster
                                                 ? "このリンクを共有すると、いつでもあなたが作成した最新の部屋に案内できます。"
@@ -1043,10 +1029,7 @@ export function PlayView({
                                             >
                                                 <Typography
                                                     variant="body2"
-                                                    color={
-                                                        theme.palette.text
-                                                            .secondary
-                                                    }
+                                                    color="textSecondary"
                                                 >
                                                     入室の言葉
                                                 </Typography>
@@ -1101,10 +1084,9 @@ export function PlayView({
                                         >
                                             <Typography
                                                 variant="body1"
+                                                color="textSecondary"
                                                 sx={{
                                                     p: 1,
-                                                    color: theme.palette.text
-                                                        .secondary,
                                                     borderRadius: 2,
                                                     borderColor:
                                                         theme.palette.divider,
@@ -1138,7 +1120,7 @@ export function PlayView({
                                         </Stack>
                                         <Typography
                                             variant="body2"
-                                            color={theme.palette.text.secondary}
+                                            color="textSecondary"
                                         >
                                             {isLimited
                                                 ? "このリンクを知っている人は誰でも無条件で入室できます。共有先にご注意ください。"
@@ -1154,10 +1136,7 @@ export function PlayView({
                                             >
                                                 <Typography
                                                     variant="body2"
-                                                    color={
-                                                        theme.palette.text
-                                                            .secondary
-                                                    }
+                                                    color="textSecondary"
                                                 >
                                                     入室の言葉
                                                 </Typography>
@@ -1216,12 +1195,9 @@ export function PlayView({
                                                     >
                                                         <Typography
                                                             variant="body1"
+                                                            color="textSecondary"
                                                             sx={{
                                                                 p: 1,
-                                                                color: theme
-                                                                    .palette
-                                                                    .text
-                                                                    .secondary,
                                                                 borderRadius: 2,
                                                                 borderColor:
                                                                     theme
@@ -1270,10 +1246,7 @@ export function PlayView({
                                                     </Stack>
                                                     <Typography
                                                         variant="body2"
-                                                        color={
-                                                            theme.palette.text
-                                                                .secondary
-                                                        }
+                                                        color="textSecondary"
                                                     >
                                                         このリンクを共有すると、いつでもあなたが作成した最新の部屋に案内することができます。
                                                     </Typography>
@@ -1448,9 +1421,7 @@ export function PlayView({
                                         >
                                             <Typography
                                                 variant="body2"
-                                                color={
-                                                    theme.palette.text.secondary
-                                                }
+                                                color="textSecondary"
                                             >
                                                 制作者
                                             </Typography>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar, colors, Stack, Typography, useTheme } from "@mui/material";
+import { Avatar, colors, Stack, Typography } from "@mui/material";
 import { User } from "@/lib/types";
 
 function TextIcon({ name }: { name?: string }) {
@@ -40,8 +40,6 @@ function UserIcon({ user }: { user: User | null }) {
 }
 
 export function UserLabel({ user }: { user: User | null }) {
-    const theme = useTheme();
-
     return (
         <Stack
             direction="row"
@@ -53,8 +51,8 @@ export function UserLabel({ user }: { user: User | null }) {
             <UserIcon user={user} />
             <Typography
                 variant="body1"
+                color="textSecondary"
                 sx={{
-                    color: theme.palette.text.secondary,
                     display: {
                         xs: "none",
                         lg: "inherit",
