@@ -28,7 +28,6 @@ import {
     useTheme,
 } from "@mui/material";
 import {
-    ContentCopy,
     HelpOutlined,
     Lock,
     OpenInNew,
@@ -46,6 +45,7 @@ import { useCustomData } from "@/lib/client/useCustomData";
 import { STORAGE_KEYS, useLocalStorage } from "@/lib/client/useLocalStorage";
 import { ResolvingPlayerInfoRequest } from "@/lib/client/akashic-plugins/coe-limited-plugin";
 import { AkashicContainer } from "@/lib/client/akashic-container";
+import { useCopyToClipboard } from "@/lib/client/useCopyToClipboard";
 import { extendPlay } from "@/lib/server/play-extend";
 import { uploadPlayShareScreenshot } from "@/lib/server/play-share";
 import { PlayCloseDialog } from "./play-close-dialog";
@@ -57,6 +57,8 @@ import { ClientLogDialog } from "./client-log-dialog";
 import { TroubleshootButton } from "./troubleshoot-button";
 import { FavoriteButton } from "./favorite-button";
 import { renderTextWithLinks } from "./text-with-links";
+import { HandleSetDialog } from "./handle-set-dialog";
+import { CopyLinkBox, CopyStatusSnackbar } from "./copy-link-box";
 
 const warnings = ["EVENT_ON_SKIPPING"] as const;
 type WarningType = (typeof warnings)[number];
@@ -105,6 +107,9 @@ export function PlayView({
     remainingMs: initialRemainingMs,
     expiresAt: initialExpiresAt,
     user,
+    onPlayEnd,
+    afterPlayClose,
+    pageType,
     ref,
 }: {
     playId: string;
@@ -118,6 +123,7 @@ export function PlayView({
         userId?: string;
         name: string;
         iconURL?: string;
+        handle?: string;
     };
     isGameMaster: boolean;
     contentWidth: number;
@@ -127,6 +133,9 @@ export function PlayView({
     remainingMs: number;
     expiresAt: number;
     user: User;
+    onPlayEnd?: (reason: PlayEndReason) => void;
+    afterPlayClose: { action: "redirect" } | { action: "stay"; cb: () => void };
+    pageType: "play" | "live";
     ref: RefObject<HTMLDivElement | null>;
 }) {
     const theme = useTheme();
@@ -153,9 +162,19 @@ export function PlayView({
         useState<ExtensionReminderType>();
     const shownReminders = useRef(new Set<ExtensionReminderType>());
     const [inviteUrl, setInviteUrl] = useState<string>();
-    const [inviteCopyStatus, setInviteCopyStatus] = useState<
-        "success" | "error"
-    >();
+    const {
+        copyStatus: inviteCopyStatus,
+        copy: copyInviteUrl,
+        clearCopyStatus: clearInviteCopyStatus,
+    } = useCopyToClipboard();
+    const [handle, setHandle] = useState(gameMaster.handle);
+    const [liveUrl, setLiveUrl] = useState<string>();
+    const {
+        copyStatus: liveCopyStatus,
+        copy: copyLiveUrl,
+        clearCopyStatus: clearLiveCopyStatus,
+    } = useCopyToClipboard();
+    const [handleDialogOpen, setHandleDialogOpen] = useState(false);
     const [volumePercent, setVolumePercent] = useLocalStorage(
         STORAGE_KEYS.PLAYER_VOLUME,
         100,
@@ -236,7 +255,12 @@ export function PlayView({
             onOpenTroubleshoot: () => {
                 setTroubleshootOpen(true);
             },
-            onPlayEnd: setPlayEndReason,
+            onPlayEnd: (reason) => {
+                if (onPlayEnd) {
+                    onPlayEnd(reason);
+                }
+                setPlayEndReason(reason);
+            },
             onPlayExtend: (payload) => {
                 shownReminders.current.clear();
                 setExtensionReminderType(undefined);
@@ -294,6 +318,13 @@ export function PlayView({
         setInviteUrl(currentUrl.toString());
     }, [playId, inviteHash, isLimited]);
 
+    useEffect(() => {
+        if (!handle || typeof window === "undefined") return;
+        setLiveUrl(
+            new URL(`/live/${handle}`, window.location.origin).toString(),
+        );
+    }, [handle]);
+
     async function handleExtend() {
         if (extendLoading) {
             return;
@@ -326,16 +357,15 @@ export function PlayView({
         }
     }
 
-    async function handleCopyInvite() {
-        if (!inviteUrl) {
-            return;
+    function handleCopyInvite() {
+        if (inviteUrl) {
+            copyInviteUrl(inviteUrl);
         }
-        try {
-            await navigator.clipboard.writeText(inviteUrl);
-            setInviteCopyStatus("success");
-        } catch (err) {
-            console.warn("failed to copy invite url", err);
-            setInviteCopyStatus("error");
+    }
+
+    function handleCopyLiveUrl() {
+        if (liveUrl) {
+            copyLiveUrl(liveUrl);
         }
     }
 
@@ -565,24 +595,11 @@ export function PlayView({
                     <Alert severity="warning">{toMessage(warning)}</Alert>
                 </Snackbar>
             )}
-            {inviteCopyStatus && (
-                <Snackbar
-                    open={!!inviteCopyStatus}
-                    anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-                    autoHideDuration={2500}
-                    onClose={() => setInviteCopyStatus(undefined)}
-                >
-                    <Alert
-                        severity={
-                            inviteCopyStatus === "success" ? "success" : "error"
-                        }
-                    >
-                        {inviteCopyStatus === "success"
-                            ? "招待リンクをコピーしました。"
-                            : "クリップボードへのコピーに失敗しました。"}
-                    </Alert>
-                </Snackbar>
-            )}
+            <CopyStatusSnackbar
+                status={inviteCopyStatus}
+                onClose={clearInviteCopyStatus}
+                successMessage="招待リンクをコピーしました。"
+            />
             {screenshotStatus && (
                 <Snackbar
                     open={!!screenshotStatus}
@@ -627,6 +644,14 @@ export function PlayView({
                     </Alert>
                 </Snackbar>
             )}
+            <CopyStatusSnackbar
+                status={liveCopyStatus}
+                onClose={clearLiveCopyStatus}
+                successMessage={
+                    (isGameMaster ? "あなたの" : `${gameMaster.name} さんの`) +
+                    "部屋リンクをコピーしました。"
+                }
+            />
             {extensionReminderType && (
                 <Snackbar
                     open={!!extensionReminderType}
@@ -738,11 +763,7 @@ export function PlayView({
                                                         />
                                                         <Typography
                                                             variant="body2"
-                                                            color={
-                                                                theme.palette
-                                                                    .text
-                                                                    .secondary
-                                                            }
+                                                            color="textSecondary"
                                                         >
                                                             限定
                                                         </Typography>
@@ -759,9 +780,7 @@ export function PlayView({
                                         >
                                             <Typography
                                                 variant="body2"
-                                                color={
-                                                    theme.palette.text.secondary
-                                                }
+                                                color="textSecondary"
                                             >
                                                 部屋主
                                             </Typography>
@@ -779,17 +798,13 @@ export function PlayView({
                                         <Stack direction="row">
                                             <Typography
                                                 variant="body2"
-                                                color={
-                                                    theme.palette.text.secondary
-                                                }
+                                                color="textSecondary"
                                             >
                                                 作成
                                             </Typography>
                                             <Typography
                                                 variant="body2"
-                                                color={
-                                                    theme.palette.text.secondary
-                                                }
+                                                color="textSecondary"
                                             >
                                                 {formatCreatedAt()}
                                             </Typography>
@@ -883,10 +898,7 @@ export function PlayView({
                                             <Stack direction="row" spacing={2}>
                                                 <Typography
                                                     variant="body1"
-                                                    color={
-                                                        theme.palette.text
-                                                            .secondary
-                                                    }
+                                                    color="textSecondary"
                                                 >
                                                     終了まで
                                                 </Typography>
@@ -911,111 +923,208 @@ export function PlayView({
                                         </Stack>
                                     </Stack>
                                 </Stack>
-                                <Stack spacing={1}>
-                                    <Typography variant="body1">
-                                        招待リンク
-                                    </Typography>
-                                    <Stack
-                                        direction="row"
-                                        spacing={1}
-                                        sx={{
-                                            alignItems: "center",
-                                        }}
-                                    >
-                                        <Typography
-                                            variant="body1"
-                                            sx={{
-                                                p: 1,
-                                                color: theme.palette.text
-                                                    .secondary,
-                                                borderStyle: "solid",
-                                                borderWidth: 1,
-                                                borderRadius: 2,
-                                                borderColor:
-                                                    theme.palette.divider,
-                                                backgroundColor:
-                                                    theme.palette.background
-                                                        .default,
-                                                cursor: "pointer",
-                                                flexGrow: 1,
-                                            }}
-                                            onClick={handleCopyInvite}
-                                        >
-                                            {inviteUrl ?? "リンクを準備中..."}
+                                {pageType === "live" && (
+                                    <Stack spacing={1}>
+                                        <Typography variant="body1">
+                                            {isGameMaster
+                                                ? "あなたの部屋リンク"
+                                                : `${gameMaster.name} さんの部屋リンク`}
                                         </Typography>
-                                        <Button
-                                            startIcon={<ContentCopy />}
-                                            variant="outlined"
-                                            onClick={handleCopyInvite}
-                                            disabled={!inviteUrl}
-                                            sx={{
-                                                borderColor:
-                                                    theme.palette.primary.light,
-                                                color: theme.palette.primary
-                                                    .light,
-                                            }}
+                                        <CopyLinkBox
+                                            url={liveUrl}
+                                            onCopy={handleCopyLiveUrl}
+                                            mode="light"
+                                        />
+                                        <Typography
+                                            variant="body2"
+                                            color="textSecondary"
                                         >
-                                            コピー
-                                        </Button>
-                                    </Stack>
-                                    <Typography
-                                        variant="body2"
-                                        color={theme.palette.text.secondary}
-                                    >
-                                        {isLimited
-                                            ? "このリンクを知っている人は誰でも無条件で入室できます。共有先にご注意ください。"
-                                            : "この部屋に招待したい人に上のリンクを共有してください。"}
-                                    </Typography>
-                                    {isLimited && (
-                                        <Stack
-                                            direction="row"
-                                            spacing={1}
-                                            sx={{
-                                                alignItems: "center",
-                                            }}
-                                        >
-                                            <Typography
-                                                variant="body2"
-                                                color={
-                                                    theme.palette.text.secondary
-                                                }
+                                            {isGameMaster
+                                                ? "このリンクを共有すると、いつでもあなたが作成した最新の部屋に案内できます。"
+                                                : `このリンクを共有すると、いつでも ${gameMaster.name} さんの最新の部屋に案内できます。`}
+                                        </Typography>
+                                        {isLimited && (
+                                            <Stack
+                                                direction="row"
+                                                spacing={1}
+                                                sx={{ alignItems: "center" }}
                                             >
-                                                入室の言葉
-                                            </Typography>
-                                            <Tooltip
-                                                arrow
-                                                title="トップページから入室する場合に求められる合言葉です。入室できない人がいた場合、この言葉を伝えて下さい。"
-                                            >
-                                                <HelpOutlined
-                                                    fontSize="small"
+                                                <Typography
+                                                    variant="body2"
+                                                    color="textSecondary"
+                                                >
+                                                    入室の言葉
+                                                </Typography>
+                                                <Tooltip
+                                                    arrow
+                                                    title="この部屋は限定公開です。リンクを開いた人が入室するには、この言葉が必要です。共有先に伝えてください。"
+                                                >
+                                                    <HelpOutlined
+                                                        fontSize="small"
+                                                        sx={{
+                                                            color: theme.palette
+                                                                .text.secondary,
+                                                        }}
+                                                    />
+                                                </Tooltip>
+                                                <Typography
+                                                    variant="body2"
                                                     sx={{
-                                                        color: theme.palette
-                                                            .text.secondary,
+                                                        borderRadius: 1,
+                                                        bgcolor:
+                                                            theme.palette
+                                                                .background
+                                                                .default,
+                                                        textDecoration: "none",
+                                                        fontFamily: "monospace",
+                                                        p: 1,
                                                     }}
-                                                />
-                                            </Tooltip>
-                                            <Typography
-                                                variant="body2"
-                                                sx={{
-                                                    borderRadius: 1,
-                                                    bgcolor:
-                                                        theme.palette.background
-                                                            .default,
-                                                    textDecoration: "none",
-                                                    fontFamily: "monospace",
-                                                    p: 1,
-                                                }}
-                                            >
-                                                {joinWord}
-                                            </Typography>
-                                        </Stack>
-                                    )}
-                                </Stack>
-                                {isGameMaster && (
-                                    <Stack sx={{ justifyContent: "center" }}>
-                                        <PlayCloseDialog playId={playId} />
+                                                >
+                                                    {joinWord}
+                                                </Typography>
+                                            </Stack>
+                                        )}
                                     </Stack>
                                 )}
+                                {pageType === "play" && (
+                                    <Stack spacing={1}>
+                                        <Typography variant="body1">
+                                            招待リンク
+                                        </Typography>
+                                        <CopyLinkBox
+                                            url={inviteUrl}
+                                            onCopy={handleCopyInvite}
+                                            mode="light"
+                                        />
+                                        <Typography
+                                            variant="body2"
+                                            color="textSecondary"
+                                        >
+                                            {isLimited
+                                                ? "このリンクを知っている人は誰でも無条件で入室できます。共有先にご注意ください。"
+                                                : "この部屋に招待したい人に上のリンクを共有してください。"}
+                                        </Typography>
+                                        {isLimited && (
+                                            <Stack
+                                                direction="row"
+                                                spacing={1}
+                                                sx={{
+                                                    alignItems: "center",
+                                                }}
+                                            >
+                                                <Typography
+                                                    variant="body2"
+                                                    color="textSecondary"
+                                                >
+                                                    入室の言葉
+                                                </Typography>
+                                                <Tooltip
+                                                    arrow
+                                                    title="トップページから入室する場合に求められる合言葉です。入室できない人がいた場合、この言葉を伝えて下さい。"
+                                                >
+                                                    <HelpOutlined
+                                                        fontSize="small"
+                                                        sx={{
+                                                            color: theme.palette
+                                                                .text.secondary,
+                                                        }}
+                                                    />
+                                                </Tooltip>
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{
+                                                        borderRadius: 1,
+                                                        bgcolor:
+                                                            theme.palette
+                                                                .background
+                                                                .default,
+                                                        textDecoration: "none",
+                                                        fontFamily: "monospace",
+                                                        p: 1,
+                                                    }}
+                                                >
+                                                    {joinWord}
+                                                </Typography>
+                                            </Stack>
+                                        )}
+                                    </Stack>
+                                )}
+                                {pageType === "play" &&
+                                    isGameMaster &&
+                                    user.authType === "oauth" && (
+                                        <Stack spacing={1}>
+                                            <Typography variant="body1">
+                                                あなたの部屋リンク
+                                            </Typography>
+                                            {handle ? (
+                                                <>
+                                                    <CopyLinkBox
+                                                        url={liveUrl}
+                                                        onCopy={
+                                                            handleCopyLiveUrl
+                                                        }
+                                                        mode="light"
+                                                    />
+                                                    <Typography
+                                                        variant="body2"
+                                                        color="textSecondary"
+                                                    >
+                                                        このリンクを共有すると、いつでもあなたが作成した最新の部屋に案内することができます。
+                                                    </Typography>
+                                                </>
+                                            ) : (
+                                                <Alert
+                                                    severity="info"
+                                                    variant="outlined"
+                                                    action={
+                                                        <Button
+                                                            variant="outlined"
+                                                            onClick={() =>
+                                                                setHandleDialogOpen(
+                                                                    true,
+                                                                )
+                                                            }
+                                                            sx={{
+                                                                borderColor:
+                                                                    theme
+                                                                        .palette
+                                                                        .primary
+                                                                        .light,
+                                                                color: theme
+                                                                    .palette
+                                                                    .primary
+                                                                    .light,
+                                                                py: 1,
+                                                            }}
+                                                        >
+                                                            設定する
+                                                        </Button>
+                                                    }
+                                                    sx={{
+                                                        alignItems: "center",
+                                                    }}
+                                                >
+                                                    あなたの部屋IDを設定すると、いつでもあなたが作成した最新の部屋に案内できます。
+                                                </Alert>
+                                            )}
+                                        </Stack>
+                                    )}
+                                {isGameMaster && (
+                                    <Stack sx={{ justifyContent: "center" }}>
+                                        <PlayCloseDialog
+                                            playId={playId}
+                                            afterClose={afterPlayClose}
+                                        />
+                                    </Stack>
+                                )}
+                                <HandleSetDialog
+                                    open={handleDialogOpen}
+                                    onClose={() => setHandleDialogOpen(false)}
+                                    onHandleSet={(newHandle) => {
+                                        setHandle(newHandle);
+                                        setHandleDialogOpen(false);
+                                    }}
+                                />
                             </Stack>
                         </CardContent>
                     </Card>
@@ -1133,9 +1242,7 @@ export function PlayView({
                                         >
                                             <Typography
                                                 variant="body2"
-                                                color={
-                                                    theme.palette.text.secondary
-                                                }
+                                                color="textSecondary"
                                             >
                                                 制作者
                                             </Typography>

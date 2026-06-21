@@ -55,11 +55,7 @@ function NoResult() {
     const theme = useTheme();
     return (
         <Box>
-            <Typography
-                variant="body1"
-                color={theme.palette.text.secondary}
-                align="center"
-            >
+            <Typography variant="body1" color="textSecondary" align="center">
                 ゲームが見つかりませんでした
             </Typography>
         </Box>
@@ -123,7 +119,7 @@ function PlayGrid({ list }: { list: PlayInfo[] }) {
                                         />
                                         <Typography
                                             variant="body2"
-                                            color={theme.palette.text.secondary}
+                                            color="textSecondary"
                                         >
                                             限定
                                         </Typography>
@@ -132,7 +128,7 @@ function PlayGrid({ list }: { list: PlayInfo[] }) {
                             )}
                             <Typography
                                 variant="body2"
-                                color={theme.palette.text.secondary}
+                                color="textSecondary"
                                 sx={{
                                     mb: 1,
                                 }}
@@ -347,10 +343,7 @@ export function PlayList({
                         <Typography variant="h4" component="h1">
                             {title}
                         </Typography>
-                        <Typography
-                            variant="body2"
-                            sx={{ color: theme.palette.text.secondary }}
-                        >
+                        <Typography variant="body2" color="textSecondary">
                             自分が作成した部屋
                         </Typography>
                     </Box>
@@ -390,10 +383,7 @@ export function PlayList({
                     <Typography variant="h4" component="h1">
                         {title}
                     </Typography>
-                    <Typography
-                        variant="body2"
-                        sx={{ color: theme.palette.text.secondary }}
-                    >
+                    <Typography variant="body2" color="textSecondary">
                         {description}
                     </Typography>
                 </Box>

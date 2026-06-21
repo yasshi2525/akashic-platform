@@ -1,35 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Play, prisma } from "@yasshi2525/persist-schema";
+import { prisma } from "@yasshi2525/persist-schema";
 import { GUEST_NAME, PlayResponse } from "@/lib/types";
 import { getAuth } from "@/lib/server/auth";
-import {
-    akashicServerUrl,
-    internalPlaylogServerUrl,
-    publicContentBaseUrl,
-    withAkashicServerAuth,
-} from "@/lib/server/akashic";
+import { publicContentBaseUrl } from "@/lib/server/akashic";
 import { fetchLicense } from "@/lib/server/game-info";
 import { getContentExternal } from "@/lib/server/content-get-external";
-import { fetchGameJson, getContentViewSize } from "@/lib/server/play-utils";
+import {
+    checkLimitedPlayAccess,
+    fetchGameJson,
+    fetchPlayRemaining,
+    fetchPlayToken,
+    getContentViewSize,
+} from "@/lib/server/play-utils";
 import { isFavorited } from "@/lib/server/favorite";
-
-async function fetchPlayToken(play: Pick<Play, "id" | "contentId">) {
-    const res = await fetch(
-        `${internalPlaylogServerUrl}/join?playId=${play.id}`,
-    );
-    if (res.status !== 200) {
-        throw new Error(
-            `playlog server responded error message. (contentId = "${play.contentId}", detail = "${await res.text()}")`,
-        );
-    }
-    const json = (await res.json()) as { playToken: string };
-    if (!json.playToken) {
-        throw new Error(
-            `playlog server responded invalid message. (contentId = "${play.contentId}", detail = "${json}")`,
-        );
-    }
-    return json.playToken;
-}
 
 export async function GET(
     req: NextRequest,
@@ -64,6 +47,7 @@ export async function GET(
                     select: {
                         id: true,
                         name: true,
+                        handle: true,
                         image: true,
                     },
                 },
@@ -115,6 +99,7 @@ export async function GET(
                         userId: play.gmUser?.id ?? undefined,
                         name: play.gmUser?.name ?? GUEST_NAME,
                         iconURL: play.gmUser?.image ?? undefined,
+                        handle: play.gmUser?.handle ?? undefined,
                     },
                     game: {
                         id: play.content.game.id,
@@ -141,48 +126,20 @@ export async function GET(
                 },
             });
         }
-        if (play.isLimited) {
-            if (user?.id !== play.gameMasterId) {
-                if (inviteHash !== play.inviteHash) {
-                    if (!joinWord) {
-                        return NextResponse.json({
-                            ok: false,
-                            reason: "JoinWordRequired",
-                        });
-                    }
-                    if (joinWord !== play.joinWord) {
-                        return NextResponse.json({
-                            ok: false,
-                            reason: "InvalidJoinWord",
-                        });
-                    }
-                }
-            }
+        const denied = await checkLimitedPlayAccess(play, user?.id, {
+            joinWord,
+            inviteHash,
+        });
+        if (denied) {
+            return NextResponse.json(denied);
         }
-        const res = await fetch(
-            `${akashicServerUrl}/remaining?playId=${playId}`,
-            { headers: withAkashicServerAuth() },
-        );
-        if (res.status !== 200) {
-            console.warn(
-                `failed to join because of /remaining error (playId = "${playId}")`,
-                await res.text(),
-            );
-            return NextResponse.json({
-                ok: false,
-                reason: "InternalError",
-            });
-        }
-        const { remainingMs, expiresAt } = (await res.json()) as {
-            remainingMs: number;
-            expiresAt: number;
-        };
+        const { remainingMs, expiresAt } = await fetchPlayRemaining(play.id);
         const gameJson = await fetchGameJson(play.contentId);
         return NextResponse.json({
             ok: true,
             data: {
                 isActive: play.isActive,
-                playToken: await fetchPlayToken(play),
+                playToken: await fetchPlayToken(play.id, play.contentId),
                 playName: play.name,
                 isLimited: play.isLimited,
                 joinWord: play.joinWord ?? undefined,
@@ -192,6 +149,7 @@ export async function GET(
                     userId: play.gmUser?.id ?? undefined,
                     name: play.gmUser?.name ?? GUEST_NAME,
                     iconURL: play.gmUser?.image ?? undefined,
+                    handle: play.gmUser?.handle ?? undefined,
                 },
                 game: {
                     id: play.content.game.id,

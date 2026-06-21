@@ -24,7 +24,7 @@ export function PlayContainer() {
     const inviteHash = searchParams.get("inviteHash") ?? undefined;
     const [joinWord, setJoinWord] = useState("");
     const [submittedJoinWord, setSubmittedJoinWord] = useState<string>();
-    const { isLoading, data, error, requiresJoinWork } = usePlay(
+    const { isLoading, data, error, requiresJoinWord } = usePlay(
         id,
         inviteHash,
         submittedJoinWord,
@@ -32,7 +32,7 @@ export function PlayContainer() {
     const [user] = useAuth();
     const container = useRef<HTMLDivElement>(null);
 
-    function handleSubmitJoinWord(event: FormEvent<HTMLFormElement>) {
+    function handleSubmitJoinWord(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
         setSubmittedJoinWord(joinWord);
     }
@@ -44,7 +44,7 @@ export function PlayContainer() {
             </Container>
         );
     }
-    if (requiresJoinWork) {
+    if (requiresJoinWord) {
         return (
             <Container maxWidth="sm" sx={{ mt: 2 }}>
                 <Card>
@@ -124,6 +124,8 @@ export function PlayContainer() {
             gameMaster={data.gameMaster}
             game={data.game}
             user={user}
+            afterPlayClose={{ action: "redirect" }}
+            pageType="play"
             ref={container}
         />
     );

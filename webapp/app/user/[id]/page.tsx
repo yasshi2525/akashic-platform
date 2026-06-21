@@ -1,8 +1,8 @@
 "use client";
 
-import { JSX, useEffect, useMemo, useState } from "react";
+import { JSX, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useFormState, useFormStatus } from "react-dom";
 import {
@@ -21,13 +21,24 @@ import {
     Typography,
     useTheme,
 } from "@mui/material";
-import { GitHub, Google, Logout, Twitter } from "@mui/icons-material";
-import { GameInfo } from "@/lib/types";
+import {
+    GitHub,
+    Google,
+    Logout,
+    OpenInNew,
+    Twitter,
+} from "@mui/icons-material";
+import { GameInfo, UserNameFormState, UserHandleFormState } from "@/lib/types";
 import { useAuth } from "@/lib/client/useAuth";
+import { useCopyToClipboard } from "@/lib/client/useCopyToClipboard";
 import { useUserFeedback } from "@/lib/client/useUserFeedback";
 import { useUserProfile } from "@/lib/client/useUserProfile";
 import { AuthProvider, authProviderNames } from "@/lib/client/auth-providers";
-import { updateUserNameAction } from "@/lib/server/user";
+import {
+    updateUserHandleAction,
+    updateUserNameAction,
+} from "@/lib/server/user";
+import { CopyLinkBox, CopyStatusSnackbar } from "@/components/copy-link-box";
 import { PlayCreateDialog } from "@/components/play-create-dialog";
 import { UserFeedbackList } from "@/components/user-feedback-list";
 import { UserGameListSection } from "@/components/user-game-list-section";
@@ -54,13 +65,6 @@ function UserAuthProvider({ provider }: { provider?: string }) {
     );
 }
 
-type UserNameFormState = {
-    ok: boolean;
-    submitted: boolean;
-    message?: string;
-    submittedAt?: number;
-};
-
 const initialUserNameState: UserNameFormState = {
     ok: true,
     submitted: false,
@@ -75,7 +79,6 @@ function UserNameForm({
     currentName: string;
     onUpdated: (name: string) => void;
 }) {
-    const router = useRouter();
     const [name, setName] = useState(currentName);
     const [state, action] = useFormState(
         updateUserNameAction,
@@ -87,11 +90,10 @@ function UserNameForm({
     }, [currentName]);
 
     useEffect(() => {
-        if (state.submitted && state.ok && state.submittedAt) {
-            onUpdated(name);
-            router.refresh();
+        if (state.submitted && state.ok && state.name) {
+            onUpdated(state.name);
         }
-    }, [state.submitted, state.ok, state.submittedAt, router, onUpdated, name]);
+    }, [state.submitted, state.ok, state.name, state.submittedAt, onUpdated]);
 
     return (
         <form action={action}>
@@ -121,6 +123,72 @@ function UserNameForm({
 }
 
 function UserNameSubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" variant="contained" disabled={pending}>
+            変更
+        </Button>
+    );
+}
+
+const initialUserHandleState: UserHandleFormState = {
+    ok: true,
+    submitted: false,
+};
+
+function UserHandleForm({
+    currentHandle,
+    onUpdated,
+}: {
+    currentHandle?: string;
+    onUpdated: (handle: string) => void;
+}) {
+    const [handle, setHandle] = useState(currentHandle ?? "");
+    const [state, action] = useFormState(
+        updateUserHandleAction,
+        initialUserHandleState,
+    );
+
+    useEffect(() => {
+        setHandle(currentHandle ?? "");
+    }, [currentHandle]);
+
+    useEffect(() => {
+        if (state.submitted && state.ok && state.handle) {
+            onUpdated(state.handle);
+        }
+    }, [state.submitted, state.ok, state.handle, state.submittedAt, onUpdated]);
+
+    return (
+        <form action={action}>
+            <Stack spacing={2}>
+                <TextField
+                    label="あなたの部屋ID"
+                    name="handle"
+                    value={handle}
+                    onChange={(e) => setHandle(e.target.value)}
+                    placeholder="例: user12345"
+                    helperText="2〜20文字の英小文字・数字・ _ ・ - が使えます。先頭は英数字にしてください。"
+                    fullWidth
+                    slotProps={{ htmlInput: { maxLength: 20 } }}
+                />
+                {!state.ok && state.submitted && (
+                    <Alert severity="error" variant="outlined">
+                        {state.message}
+                    </Alert>
+                )}
+                {state.ok && state.submitted && (
+                    <Alert severity="success" variant="outlined">
+                        あなたの部屋IDを更新しました。
+                    </Alert>
+                )}
+                <UserHandleSubmitButton />
+            </Stack>
+        </form>
+    );
+}
+
+function UserHandleSubmitButton() {
     const { pending } = useFormStatus();
     return (
         <Button type="submit" variant="contained" disabled={pending}>
@@ -177,10 +245,32 @@ export default function UserPage() {
     const [selectedGame, setSelectedGame] = useState<GameInfo>();
     const [dialogOpen, setDialogOpen] = useState(false);
     const [signouting, setIsSignouting] = useState(false);
+    const [handle, setHandle] = useState<string>();
+    const [liveUrl, setLiveUrl] = useState<string>();
+    const {
+        copyStatus: liveCopyStatus,
+        copy: copyLiveUrl,
+        clearCopyStatus: clearLiveCopyStatus,
+    } = useCopyToClipboard();
 
     const isOwner = useMemo(() => {
         return user?.authType === "oauth" && user.id === id;
     }, [user, id]);
+
+    useEffect(() => {
+        if (profile) {
+            setHandle(profile.handle);
+        }
+    }, [profile]);
+
+    useEffect(() => {
+        if (!handle || typeof window === "undefined") {
+            return;
+        }
+        setLiveUrl(
+            new URL(`/live/${handle}`, window.location.origin).toString(),
+        );
+    }, [handle]);
 
     function handleSignOut() {
         if (signouting) {
@@ -199,14 +289,23 @@ export default function UserPage() {
         setDialogOpen(false);
     }
 
-    function handleProfileUpdated(name: string) {
-        mutate();
-        userDispatch({
-            type: "update-profile",
-            update: {
-                name,
-            },
-        });
+    const handleProfileUpdated = useCallback(
+        (name: string) => {
+            mutate();
+            userDispatch({
+                type: "update-profile",
+                update: {
+                    name,
+                },
+            });
+        },
+        [mutate, userDispatch],
+    );
+
+    function handleCopyLiveUrl() {
+        if (liveUrl) {
+            copyLiveUrl(liveUrl);
+        }
     }
 
     if (isLoading) {
@@ -269,6 +368,72 @@ export default function UserPage() {
                                             currentName={profile.name}
                                             onUpdated={handleProfileUpdated}
                                         />
+                                        <Typography variant="h6">
+                                            あなたの部屋ID
+                                        </Typography>
+                                        <Typography
+                                            variant="body2"
+                                            color="textSecondary"
+                                        >
+                                            あなたの部屋IDを設定すると{" "}
+                                            <strong>
+                                                /live/[あなたの部屋ID]
+                                            </strong>{" "}
+                                            という固定URLで、いつでもあなたの最新の部屋に案内できます。
+                                        </Typography>
+                                        <UserHandleForm
+                                            currentHandle={handle}
+                                            onUpdated={setHandle}
+                                        />
+                                        {handle && (
+                                            <>
+                                                <Typography variant="h6">
+                                                    あなたの部屋リンク
+                                                </Typography>
+                                                <Stack
+                                                    direction={{
+                                                        xs: "column",
+                                                        sm: "row",
+                                                    }}
+                                                    spacing={1}
+                                                    sx={{
+                                                        alignItems: {
+                                                            xs: "stretch",
+                                                            sm: "center",
+                                                        },
+                                                    }}
+                                                >
+                                                    <CopyLinkBox
+                                                        url={liveUrl}
+                                                        onCopy={
+                                                            handleCopyLiveUrl
+                                                        }
+                                                        mode="light"
+                                                    />
+                                                    <Button
+                                                        component={Link}
+                                                        href={`/live/${handle}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        startIcon={
+                                                            <OpenInNew />
+                                                        }
+                                                        variant="outlined"
+                                                        sx={{
+                                                            borderColor:
+                                                                theme.palette
+                                                                    .primary
+                                                                    .light,
+                                                            color: theme.palette
+                                                                .primary.light,
+                                                        }}
+                                                    >
+                                                        開く
+                                                    </Button>
+                                                </Stack>
+                                            </>
+                                        )}
+                                        <Divider />
                                         <Box>
                                             <Button
                                                 variant="outlined"
@@ -276,10 +441,10 @@ export default function UserPage() {
                                                 onClick={handleSignOut}
                                                 sx={{
                                                     borderColor:
-                                                        theme.palette.primary
-                                                            .light,
-                                                    color: theme.palette.primary
-                                                        .light,
+                                                        theme.palette.warning
+                                                            .main,
+                                                    color: theme.palette.warning
+                                                        .main,
                                                 }}
                                             >
                                                 サインアウト
@@ -341,6 +506,12 @@ export default function UserPage() {
                 onClose={handleCloseDialog}
                 game={selectedGame}
                 user={user}
+                afterCreate={{ action: "navigate" }}
+            />
+            <CopyStatusSnackbar
+                status={liveCopyStatus}
+                onClose={clearLiveCopyStatus}
+                successMessage="リンクをコピーしました"
             />
         </Container>
     );

@@ -10,6 +10,7 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
+    Stack,
     TextField,
     Typography,
     useTheme,
@@ -93,7 +94,7 @@ export function ClientLogDialog({
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
             <DialogTitle>投稿主に不具合を報告する</DialogTitle>
             <DialogContent>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <Stack sx={{ gap: 2, mb: 1 }}>
                     <Typography variant="body2">
                         投稿主に自身のログデータを送信します。送信した情報は投稿主のみ閲覧できます。
                         (※送信する情報に個人情報は含まれません)
@@ -109,7 +110,7 @@ export function ClientLogDialog({
                     )}
                     <Typography
                         variant="body2"
-                        color={theme.palette.text.secondary}
+                        color="textSecondary"
                         sx={{
                             whiteSpace: "pre-wrap",
                             border: 1,
@@ -129,21 +130,18 @@ export function ClientLogDialog({
                     </Typography>
                     {lastSubmittedComment && (
                         <Box>
-                            <Typography
-                                variant="caption"
-                                color={theme.palette.text.secondary}
-                            >
+                            <Typography variant="caption" color="textSecondary">
                                 前回の送信時のコメント（参考）:
                             </Typography>
                             <Typography
                                 variant="body2"
+                                color="textSecondary"
                                 sx={{
                                     whiteSpace: "pre-wrap",
                                     border: 1,
                                     borderColor: theme.palette.divider,
                                     borderRadius: 1,
                                     p: 0.5,
-                                    color: theme.palette.text.secondary,
                                     fontSize: "0.8rem",
                                 }}
                             >
@@ -168,33 +166,33 @@ export function ClientLogDialog({
                             {submitError}
                         </Alert>
                     )}
-                </Box>
+                </Stack>
+                <DialogActions>
+                    <Button
+                        variant="outlined"
+                        color="inherit"
+                        onClick={handleClose}
+                        disabled={loading}
+                    >
+                        キャンセル
+                    </Button>
+                    <Button
+                        variant="contained"
+                        onClick={handleSubmit}
+                        disabled={loading}
+                        startIcon={
+                            loading && (
+                                <CircularProgress size={16} color="inherit" />
+                            )
+                        }
+                        sx={{
+                            backgroundColor: theme.palette.primary.main,
+                        }}
+                    >
+                        送信する
+                    </Button>
+                </DialogActions>
             </DialogContent>
-            <DialogActions>
-                <Button
-                    variant="outlined"
-                    color="inherit"
-                    onClick={handleClose}
-                    disabled={loading}
-                >
-                    キャンセル
-                </Button>
-                <Button
-                    variant="contained"
-                    onClick={handleSubmit}
-                    disabled={loading}
-                    startIcon={
-                        loading && (
-                            <CircularProgress size={16} color="inherit" />
-                        )
-                    }
-                    sx={{
-                        backgroundColor: theme.palette.primary.main,
-                    }}
-                >
-                    送信する
-                </Button>
-            </DialogActions>
         </Dialog>
     );
 }

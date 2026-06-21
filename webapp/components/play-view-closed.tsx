@@ -115,9 +115,7 @@ export function ClosedPlayView({
                                             />
                                             <Typography
                                                 variant="body2"
-                                                color={
-                                                    theme.palette.text.secondary
-                                                }
+                                                color="textSecondary"
                                             >
                                                 限定
                                             </Typography>
@@ -138,7 +136,7 @@ export function ClosedPlayView({
                                 >
                                     <Typography
                                         variant="body2"
-                                        color={theme.palette.text.secondary}
+                                        color="textSecondary"
                                     >
                                         部屋主
                                     </Typography>
@@ -155,7 +153,7 @@ export function ClosedPlayView({
                                 <Stack direction="row" spacing={1}>
                                     <Typography
                                         variant="body2"
-                                        color={theme.palette.text.secondary}
+                                        color="textSecondary"
                                     >
                                         開始
                                     </Typography>
@@ -166,7 +164,7 @@ export function ClosedPlayView({
                                 <Stack direction="row" spacing={1}>
                                     <Typography
                                         variant="body2"
-                                        color={theme.palette.text.secondary}
+                                        color="textSecondary"
                                     >
                                         終了
                                     </Typography>
@@ -268,13 +266,13 @@ export function ClosedPlayView({
                                     >
                                         <Typography
                                             variant="body2"
-                                            color={theme.palette.text.secondary}
+                                            color="textSecondary"
                                         >
                                             制作者
                                         </Typography>
                                         <Typography
                                             variant="body2"
-                                            color={theme.palette.text.secondary}
+                                            color="textSecondary"
                                         >
                                             プレイ数:{" "}
                                             {game.playCount.toLocaleString()} 回
@@ -354,6 +352,7 @@ export function ClosedPlayView({
                 onClose={() => setCreateDialogOpen(false)}
                 game={game}
                 user={user}
+                afterCreate={{ action: "navigate" }}
             />
         </Container>
     );

@@ -32,7 +32,7 @@ const fetcher = async (url: string) => {
     return res.data;
 };
 
-const requiresJoinWork = (err?: Error) =>
+const requiresJoinWord = (err?: Error) =>
     err?.name === "InvalidJoinWord" || err?.name === "JoinWordRequired";
 
 export function usePlay(
@@ -60,7 +60,7 @@ export function usePlay(
                   isGameMaster: !!user && user.id === data.gameMaster.id,
               }
             : undefined,
-        requiresJoinWork: requiresJoinWork(error),
+        requiresJoinWord: requiresJoinWord(error),
         error: error ? error.message : undefined,
     };
 }

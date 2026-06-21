@@ -82,6 +82,7 @@ export function GameEditor() {
                 onClose={handleCloseDialog}
                 game={selectedGame}
                 user={user}
+                afterCreate={{ action: "navigate" }}
             />
         </Container>
     );

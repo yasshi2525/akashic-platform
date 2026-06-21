@@ -75,8 +75,8 @@ export function CreditPanel({
                             </Typography>
                             <Typography
                                 variant="body2"
+                                color="textSecondary"
                                 sx={{
-                                    color: theme.palette.text.secondary,
                                     fontSize: "small",
                                     fontFamily: "monospace",
                                     whiteSpace: "pre-wrap",

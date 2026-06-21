@@ -202,12 +202,29 @@ export interface NotificationInfo {
 export interface UserProfile {
     id: string;
     name: string;
+    handle?: string;
     image?: string;
     /**
      * 自分自身の場合のみ値が格納。サインイン中のプロパイダ
      */
     provider?: string;
 }
+
+export type UserNameFormState = {
+    ok: boolean;
+    submitted: boolean;
+    name?: string;
+    message?: string;
+    submittedAt?: number;
+};
+
+export type UserHandleFormState = {
+    ok: boolean;
+    submitted: boolean;
+    handle?: string;
+    message?: string;
+    submittedAt?: number;
+};
 
 export const supportedExternalPlugins = ["send", "coe", "coeLimited"];
 export const supportedAkashicVersions = ["3"];
@@ -279,6 +296,7 @@ interface BasePlayViewInfo {
         userId?: string;
         name: string;
         iconURL?: string;
+        handle?: string;
     };
     createdAt: Date;
 }
@@ -301,6 +319,29 @@ export interface ClosedPlayViewInfo extends BasePlayViewInfo {
 export type PlayResponse =
     | { ok: true; data: PlayViewInfo }
     | { ok: false; reason: PlayErrorType };
+
+export type LiveInfo = {
+    owner: {
+        userId: string;
+        name: string;
+        iconURL?: string;
+    };
+} & (
+    | {
+          requiresJoinWord: true;
+          reason: "JoinWordRequired" | "InvalidJoinWord";
+      }
+    | {
+          requiresJoinWord: false;
+          info?: ActivePlayViewInfo & { id: number };
+      }
+);
+
+const liveErrReasons = ["NotFound", "InternalError"] as const;
+export type LiveErrorType = (typeof liveErrReasons)[number];
+export type LiveResponse =
+    | { ok: true; data: LiveInfo }
+    | { ok: false; reason: LiveErrorType };
 
 const feedbackErrReasons = [
     "InvalidParams",
@@ -327,6 +368,19 @@ export type UserFeedbackErrorType = (typeof userFeedbackErrReasons)[number];
 export type UserFeedbackResponse =
     | { ok: true; data: UserFeedbackItem[] }
     | { ok: false; reason: UserFeedbackErrorType };
+
+const userHandleErrReasons = [
+    "Unauthorized",
+    "EmptyHandle",
+    "InvalidFormatHandle",
+    "ForbiddenHandle",
+    "HandleAlreadyExists",
+    "InternalError",
+] as const;
+export type UserHandleErrorType = (typeof userHandleErrReasons)[number];
+export type UserHandleResponse =
+    | { ok: true; handle: string }
+    | { ok: false; reason: UserHandleErrorType };
 
 const contentLogListErrReasons = [
     "InvalidParams",

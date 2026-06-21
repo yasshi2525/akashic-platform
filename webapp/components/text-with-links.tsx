@@ -41,8 +41,8 @@ export function GameDescription({
             <Typography
                 ref={textRef}
                 variant="body2"
+                color="textSecondary"
                 sx={{
-                    color: theme.palette.text.secondary,
                     overflowWrap: "anywhere",
                     wordBreak: "break-word",
                     ...(expanded

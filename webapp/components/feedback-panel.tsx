@@ -152,9 +152,7 @@ export function FeedbackPanel({
                                             )}
                                             <Typography
                                                 variant="caption"
-                                                color={
-                                                    theme.palette.text.secondary
-                                                }
+                                                color="textSecondary"
                                             >
                                                 {formatDistance(
                                                     new Date(post.createdAt),
@@ -220,11 +218,7 @@ export function FeedbackPanel({
                                                         )}
                                                         <Typography
                                                             variant="caption"
-                                                            color={
-                                                                theme.palette
-                                                                    .text
-                                                                    .secondary
-                                                            }
+                                                            color="textSecondary"
                                                         >
                                                             {formatDistance(
                                                                 new Date(

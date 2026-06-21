@@ -92,10 +92,7 @@ export function UserFeedbackList({
                                             <Stack spacing={0.5}>
                                                 <Typography
                                                     variant="subtitle2"
-                                                    color={
-                                                        theme.palette.text
-                                                            .secondary
-                                                    }
+                                                    color="textSecondary"
                                                 >
                                                     フィードバック先
                                                 </Typography>
@@ -138,10 +135,7 @@ export function UserFeedbackList({
                                                 )}
                                                 <Typography
                                                     variant="caption"
-                                                    color={
-                                                        theme.palette.text
-                                                            .secondary
-                                                    }
+                                                    color="textSecondary"
                                                 >
                                                     {formatDistance(
                                                         new Date(
@@ -213,12 +207,7 @@ export function UserFeedbackList({
                                                             )}
                                                             <Typography
                                                                 variant="caption"
-                                                                color={
-                                                                    theme
-                                                                        .palette
-                                                                        .text
-                                                                        .secondary
-                                                                }
+                                                                color="textSecondary"
                                                             >
                                                                 {formatDistance(
                                                                     new Date(
@@ -268,9 +257,7 @@ export function UserFeedbackList({
                                         ) : (
                                             <Typography
                                                 variant="body2"
-                                                color={
-                                                    theme.palette.text.secondary
-                                                }
+                                                color="textSecondary"
                                             >
                                                 返信待ち
                                             </Typography>

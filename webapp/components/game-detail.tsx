@@ -97,7 +97,7 @@ export function GameDetailClient({
                                 >
                                     <Typography
                                         variant="body2"
-                                        color={theme.palette.text.secondary}
+                                        color="textSecondary"
                                     >
                                         投稿者
                                     </Typography>
@@ -120,7 +120,7 @@ export function GameDetailClient({
                                 >
                                     <Typography
                                         variant="body2"
-                                        color={theme.palette.text.secondary}
+                                        color="textSecondary"
                                     >
                                         プレイ数:{" "}
                                         {gameInfo.playCount.toLocaleString()} 回
@@ -188,6 +188,7 @@ export function GameDetailClient({
                 onClose={handleCloseCreateDialog}
                 game={gameInfo}
                 user={user}
+                afterCreate={{ action: "navigate" }}
             />
         </Container>
     );
