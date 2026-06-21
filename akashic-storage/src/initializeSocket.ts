@@ -23,6 +23,7 @@ import {
 } from "@yasshi2525/amflow-server-event-schema";
 import { AMFlowServerManager } from "./AMFlowServerManager";
 import { AMFlowServer } from "./AMFlowServer";
+import { applyBaggageAttributes } from "./tracingAttributes";
 
 const tracer = trace.getTracer("akashic-storage.amflow");
 
@@ -44,6 +45,7 @@ const withAmflowSpan = async <T>(
             name,
             { kind: SpanKind.SERVER, attributes },
             async (span) => {
+                applyBaggageAttributes(span);
                 try {
                     return await fn(span);
                 } catch (err) {

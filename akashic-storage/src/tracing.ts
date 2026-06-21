@@ -7,6 +7,7 @@ import { ExpressInstrumentation } from "@opentelemetry/instrumentation-express";
 import { SocketIoInstrumentation } from "@opentelemetry/instrumentation-socket.io";
 import { AWSXRayPropagator } from "@opentelemetry/propagator-aws-xray";
 import { AWSXRayIdGenerator } from "@opentelemetry/id-generator-aws-xray";
+import { CompositePropagator, W3CBaggagePropagator } from "@opentelemetry/core";
 
 /**
  * OpenTelemetry のトレーシングを初期化する。
@@ -35,7 +36,11 @@ export const startTracing = (): void => {
         traceExporter: new OTLPTraceExporter(),
         // X-Ray のトレース ID 形式（先頭8桁が epoch 秒）に合わせる
         idGenerator: new AWSXRayIdGenerator(),
-        textMapPropagator: new AWSXRayPropagator(),
+        // X-Ray のトレースコンテキストに加え、Baggage（play.id / content.id 等の
+        // 横断的な識別子）も伝播・抽出できるよう合成する。
+        textMapPropagator: new CompositePropagator({
+            propagators: [new AWSXRayPropagator(), new W3CBaggagePropagator()],
+        }),
         instrumentations: [
             new HttpInstrumentation(),
             new ExpressInstrumentation(),

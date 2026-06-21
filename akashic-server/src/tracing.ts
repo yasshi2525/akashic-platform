@@ -6,6 +6,7 @@ import { HttpInstrumentation } from "@opentelemetry/instrumentation-http";
 import { ExpressInstrumentation } from "@opentelemetry/instrumentation-express";
 import { AWSXRayPropagator } from "@opentelemetry/propagator-aws-xray";
 import { AWSXRayIdGenerator } from "@opentelemetry/id-generator-aws-xray";
+import { CompositePropagator, W3CBaggagePropagator } from "@opentelemetry/core";
 
 /**
  * akashic-server 用の OpenTelemetry トレーシング初期化。
@@ -31,7 +32,11 @@ export const startTracing = (): void => {
         }),
         traceExporter: new OTLPTraceExporter(),
         idGenerator: new AWSXRayIdGenerator(),
-        textMapPropagator: new AWSXRayPropagator(),
+        // X-Ray のトレースコンテキストに加え、Baggage（play.id / content.id）も
+        // emit 時に carrier へ inject できるよう合成する。
+        textMapPropagator: new CompositePropagator({
+            propagators: [new AWSXRayPropagator(), new W3CBaggagePropagator()],
+        }),
         instrumentations: [
             new HttpInstrumentation(),
             new ExpressInstrumentation(),

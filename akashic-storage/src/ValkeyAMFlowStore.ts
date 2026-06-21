@@ -34,6 +34,7 @@ import {
     toPermission,
 } from "./valkeySchema";
 import { AMFlowStoreBase } from "./AMFlowStoreBase";
+import { applyBaggageAttributes } from "./tracingAttributes";
 
 const tracer = trace.getTracer("akashic-storage.valkey");
 
@@ -52,6 +53,7 @@ const withValkeySpan = <T>(
         name,
         { kind: SpanKind.CLIENT, attributes },
         async (span) => {
+            applyBaggageAttributes(span);
             try {
                 return await fn(span);
             } catch (err) {

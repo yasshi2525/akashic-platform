@@ -7,6 +7,7 @@ import { FetchInstrumentation } from "@opentelemetry/instrumentation-fetch";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 import { AWSXRayPropagator } from "@opentelemetry/propagator-aws-xray";
+import { CompositePropagator, W3CBaggagePropagator } from "@opentelemetry/core";
 
 let initialized = false;
 
@@ -48,7 +49,10 @@ export const initBrowserTracing = (params: {
 
     provider.register({
         contextManager: new ZoneContextManager(),
-        propagator: new AWSXRayPropagator(),
+        // storage / server と同じ伝播器構成に揃える（X-Ray + Baggage）
+        propagator: new CompositePropagator({
+            propagators: [new AWSXRayPropagator(), new W3CBaggagePropagator()],
+        }),
     });
 
     registerInstrumentations({

@@ -11,6 +11,7 @@ import {
     SessionLike,
 } from "@yasshi2525/playlog-client-like";
 import { playStorage } from "./logger";
+import { withPlayBaggage } from "./playBaggage";
 import { createContentLogUpload } from "./s3Logger";
 
 /**
@@ -82,35 +83,38 @@ export class Runner {
 
         return await playStorage.run(
             { playId, contentId: this._param.contentId, logStream },
-            async () => {
-                try {
-                    const playToken = await this._fetchPlayToken(playId);
-                    this._session = this._openSession(playId, playToken);
-                    const amflow = await this._createAMFlow(this._session);
-                    this._subscribePlayEnd(amflow);
-                    this._runner = await this._createRunner(
-                        playId,
-                        playToken,
-                        amflow,
-                    );
-                    this._initGame(amflow);
-                    this._setTimer(Date.now() + PLAY_DURATION_MS);
-                    return playId;
-                } catch (err) {
-                    this._clearTimer();
-                    logStream.destroy();
-                    upload.abort().catch((err) => {
-                        console.warn(
-                            `upload was aborted in initialization`,
-                            err,
+            // play.id / content.id を Baggage として載せる。ここで起動する
+            // ゲームループの tick emit まで伝播し、storage 側スパンに属性が付く。
+            () =>
+                withPlayBaggage(playId, this._param.contentId, async () => {
+                    try {
+                        const playToken = await this._fetchPlayToken(playId);
+                        this._session = this._openSession(playId, playToken);
+                        const amflow = await this._createAMFlow(this._session);
+                        this._subscribePlayEnd(amflow);
+                        this._runner = await this._createRunner(
+                            playId,
+                            playToken,
+                            amflow,
                         );
-                    });
-                    this._logStream = undefined;
-                    this._upload = undefined;
-                    this._deletePlayId(playId);
-                    throw err;
-                }
-            },
+                        this._initGame(amflow);
+                        this._setTimer(Date.now() + PLAY_DURATION_MS);
+                        return playId;
+                    } catch (err) {
+                        this._clearTimer();
+                        logStream.destroy();
+                        upload.abort().catch((err) => {
+                            console.warn(
+                                `upload was aborted in initialization`,
+                                err,
+                            );
+                        });
+                        this._logStream = undefined;
+                        this._upload = undefined;
+                        this._deletePlayId(playId);
+                        throw err;
+                    }
+                }),
         );
     }
 
@@ -125,7 +129,10 @@ export class Runner {
                     contentId: this._param.contentId,
                     logStream: this._logStream,
                 },
-                () => this.end(reason, notifyPlaylogServer),
+                () =>
+                    withPlayBaggage(this._playId!, this._param.contentId, () =>
+                        this.end(reason, notifyPlaylogServer),
+                    ),
             );
         }
         this._clearTimer();
@@ -196,7 +203,10 @@ export class Runner {
         if (this._playId != null && playStorage.getStore() == null) {
             return playStorage.run(
                 { playId: this._playId, contentId: this._param.contentId },
-                () => this.extend(),
+                () =>
+                    withPlayBaggage(this._playId!, this._param.contentId, () =>
+                        this.extend(),
+                    ),
             );
         }
         if (this._expiresAt == null || this._playId == null) {
