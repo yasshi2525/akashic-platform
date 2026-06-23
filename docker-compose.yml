@@ -260,9 +260,11 @@ services:
       CLIENT_LOG_RATE_LIMIT_SECONDS: 30
       CLIENT_LOG_CACHE_MAX_ENTRIES: 1000
       DRAIN_REFRESH_INTERVAL: 30000
-      # ブラウザのトレース送信先（Jaeger OTLP/HTTP）。ブラウザはホストから
-      # アクセスするため localhost を指定する。空にすると計装無効。
-      PUBLIC_OTEL_EXPORTER_OTLP_ENDPOINT: http://localhost:4318/v1/traces
+      # ブラウザのトレース送信先。同一オリジン proxy（Route Handler）を使うため
+      # 相対パスを指定する（CORS 不要）。空にすると計装無効。
+      PUBLIC_OTEL_EXPORTER_OTLP_ENDPOINT: /api/otel/v1/traces
+      # proxy(/api/otel/v1/traces) の転送先。docker ネットワーク内の Jaeger OTLP/HTTP。
+      INTERNAL_OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
     env_file:
       - .env
     depends_on:

@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.6.1
+
+- Feature
+  - OpenTelemetry転送用 Route Handler 実装
+
 ## 1.6.0
 
 - Feature
