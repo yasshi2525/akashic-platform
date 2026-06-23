@@ -20,10 +20,20 @@ export const publicPlaylogServerUrl =
 /**
  * ブラウザのトレースを送信する OTLP/HTTP エンドポイント。
  * 空文字の場合はブラウザ計装を無効化する。
- * ローカルは Jaeger の `http://localhost:4318/v1/traces` を指定する。
+ * 推奨は同一オリジン proxy `/api/otel/v1/traces`（CORS 不要）。直接コレクタへ
+ * 送る場合は Jaeger の `http://localhost:4318/v1/traces` 等を指定する。
  */
 export const publicOtelExporterUrl =
     process.env.PUBLIC_OTEL_EXPORTER_OTLP_ENDPOINT ?? "";
+
+/**
+ * 同一オリジン proxy（`/api/otel/v1/traces` Route Handler）がブラウザのトレースを
+ * 中継する転送先。内部コレクタの OTLP/HTTP traces エンドポイントを指す。
+ * 空文字の場合は proxy を無効化（204 を返して送信を黙殺する）。
+ * ローカルは docker ネットワーク内の `http://jaeger:4318/v1/traces`。
+ */
+export const internalOtelExporterUrl =
+    process.env.INTERNAL_OTEL_EXPORTER_OTLP_ENDPOINT ?? "";
 
 export const internalPlaylogServerUrl =
     process.env.INTERNAL_STORAGE_URL ?? publicPlaylogServerUrl;
