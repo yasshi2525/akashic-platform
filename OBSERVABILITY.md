@@ -78,6 +78,11 @@ receivers:
     protocols:
       grpc:
         endpoint: 0.0.0.0:4317
+      # webapp の同一オリジン proxy（/api/otel/v1/traces）からブラウザのトレースを
+      # OTLP/HTTP で受けるため HTTP receiver も有効化する。proxy 経由なので
+      # CORS 設定は不要（ブラウザは webapp と同一オリジンへ送る）。
+      http:
+        endpoint: 0.0.0.0:4318
 processors:
   batch:
     timeout: 5s
@@ -91,6 +96,11 @@ service:
       processors: [batch]
       exporters: [awsxray]
 ```
+
+storage / server（gRPC）と webapp の proxy（HTTP）が同じコレクタを共有してよい。
+webapp タスクにも Collector をサイドカーとして同居させる場合は、webapp の
+`INTERNAL_OTEL_EXPORTER_OTLP_ENDPOINT` を `http://localhost:4318/v1/traces` に向ける
+（HTTP receiver が無いと proxy は接続失敗して 502 を返し、ブラウザトレースは届かない）。
 
 ### タスク定義（抜粋）
 
@@ -110,6 +120,26 @@ service:
       ],
     },
     {
+      // webapp タスク。ブラウザのトレースは webapp の同一オリジン proxy
+      // (/api/otel/v1/traces) が受け、同居する Collector の HTTP receiver(4318) へ転送する。
+      "name": "webapp",
+      "environment": [
+        {
+          "name": "PUBLIC_OTEL_EXPORTER_OTLP_ENDPOINT",
+          "value": "/api/otel/v1/traces",
+        },
+        {
+          "name": "INTERNAL_OTEL_EXPORTER_OTLP_ENDPOINT",
+          "value": "http://localhost:4318/v1/traces",
+        },
+      ],
+      "dependsOn": [
+        { "containerName": "aws-otel-collector", "condition": "START" },
+      ],
+    },
+    {
+      // 上記「collector 設定」(grpc:4317 + http:4318) を渡す。storage/server/webapp の
+      // 各タスクにサイドカーとして同居させる。
       "name": "aws-otel-collector",
       "image": "public.ecr.aws/aws-observability/aws-otel-collector:latest",
       "command": ["--config=/etc/ecs/ecs-default-config.yaml"],
@@ -124,7 +154,8 @@ service:
 }
 ```
 
-タスクロールに `xray:PutTraceSegments`, `xray:PutTelemetryRecords` を付与すること。
+タスクロールに `xray:PutTraceSegments`, `xray:PutTelemetryRecords` を付与すること
+（webapp タスクにも Collector を同居させる場合は webapp のタスクロールにも付与する）。
 
 ## ローカル（docker-compose）での確認手順
 
@@ -289,14 +320,21 @@ ECS(Fargate 想定) で X-Ray にトレースを送るための最小手順。
    - 環境（シークレット） `AOT_CONFIG_CONTENT` = 手順2の SSM パラメータ
 3. アプリコンテナ（akashic-storage / akashic-server）に環境変数
    `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317` を追加。
-4. アプリコンテナの **起動順序の依存関係** に `aws-otel-collector`(START) を追加。
-5. リビジョンを作成し、**サービスを更新**して新リビジョンをデプロイ。
+4. **webapp タスク**にも同様に Collector サイドカーを追加し（手順 2 の HTTP receiver
+   付き設定を使う）、webapp コンテナに環境変数
+   `PUBLIC_OTEL_EXPORTER_OTLP_ENDPOINT=/api/otel/v1/traces` と
+   `INTERNAL_OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318/v1/traces` を追加する。
+   （webapp と Collector を別タスクにする場合は、localhost を Collector の到達先
+   ホストに置き換える。）
+5. アプリコンテナの **起動順序の依存関係** に `aws-otel-collector`(START) を追加。
+6. リビジョンを作成し、**サービスを更新**して新リビジョンをデプロイ。
 
 ### 4. X-Ray でトレースを確認
 
 1. **CloudWatch** → 左メニュー **X-Ray トレース** → **トレースマップ** /
    **トレース**（リージョンは Collector の `region` と一致させること）。
 2. サービスマップに `akashic-storage` が現れ、配下に `valkey.*` スパンが連なる。
+   ブラウザ計装が有効なら `webapp-browser` も現れる（HTTP 起動経路の fetch スパン）。
 3. **トレース** で所要時間や `valkey.write_queue.depth` 等の属性を確認し、
    ElastiCache の CloudWatch メトリクスと時刻を突き合わせる。
 
