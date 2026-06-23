@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 1.2.0-rc.0
+## 1.2.0
 
 - Feature
   - Carrier 情報の注入処理追加 (トレーサビリティ強化)

@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 1.0.5-rc.0
+## 1.0.5
 
 - Feature
   - トレーサビリティ強化 (Update dependencies.)

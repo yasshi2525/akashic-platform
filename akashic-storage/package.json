@@ -1,6 +1,6 @@
 {
   "name": "@yasshi2525/akashic-storage",
-  "version": "1.2.0-rc.0",
+  "version": "1.2.0",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -38,7 +38,7 @@
     "@opentelemetry/sdk-node": "^0.219.0",
     "@opentelemetry/semantic-conventions": "^1.41.1",
     "@valkey/valkey-glide": "^2.3.1",
-    "@yasshi2525/amflow-server-event-schema": "^1.1.0-rc.0",
+    "@yasshi2525/amflow-server-event-schema": "^1.1.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "js-sha256": "^0.11.1",

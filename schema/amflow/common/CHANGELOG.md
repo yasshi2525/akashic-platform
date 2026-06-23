@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 1.1.0-rc.0
+## 1.1.0
 
 - Feature
   - `Carrier` を追加 (トレーサビリティ強化のため)
