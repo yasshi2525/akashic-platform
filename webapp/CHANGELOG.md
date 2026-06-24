@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.6.3
+
+- Improve
+  - 投稿コンテンツS3アップロード時に Content-Type を設定
+
 ## 1.6.2
 
 - Improve
