@@ -233,6 +233,14 @@ export function PlayView({
         setWarning(undefined);
     }
 
+    // ゲーム起動直後、待機画面でスクロールした位置のままだとゲーム画面が画面外になるため、先頭へスクロールする
+    useEffect(() => {
+        if (typeof window === "undefined") {
+            return;
+        }
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }, []);
+
     useEffect(() => {
         if (!ref.current) {
             return;
