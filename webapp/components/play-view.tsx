@@ -42,6 +42,7 @@ import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
 import { GameInfo, User } from "@/lib/types";
 import { useAkashic } from "@/lib/client/useAkashic";
 import { useCustomData } from "@/lib/client/useCustomData";
+import { usePlayLeaveGuard } from "@/lib/client/usePlayLeaveGuard";
 import { STORAGE_KEYS, useLocalStorage } from "@/lib/client/useLocalStorage";
 import { ResolvingPlayerInfoRequest } from "@/lib/client/akashic-plugins/coe-limited-plugin";
 import { AkashicContainer } from "@/lib/client/akashic-container";
@@ -49,6 +50,7 @@ import { useCopyToClipboard } from "@/lib/client/useCopyToClipboard";
 import { extendPlay } from "@/lib/server/play-extend";
 import { uploadPlayShareScreenshot } from "@/lib/server/play-share";
 import { PlayCloseDialog } from "./play-close-dialog";
+import { PlayLeaveDialog } from "./play-leave-dialog";
 import { PlayEndNotification } from "./play-end-notification";
 import { PlayPlayerInfoResolver } from "./play-player-info-resolver";
 import { CreditPanel } from "./credit-panel";
@@ -141,6 +143,7 @@ export function PlayView({
     const theme = useTheme();
     const { playlogServerUrl } = useAkashic();
     const { niconicommonsWorkUrl, clientLogCacheMaxEntries } = useCustomData();
+    const leaveGuard = usePlayLeaveGuard({ playId, enabled: isGameMaster });
     useEffect(() => {
         container.setClientLogMaxEntries(clientLogCacheMaxEntries);
     }, [clientLogCacheMaxEntries]);
@@ -585,6 +588,14 @@ export function PlayView({
                 <PlayPlayerInfoResolver request={requestPlayerInfo} />
             )}
             {playEndReason && <PlayEndNotification reason={playEndReason} />}
+            <PlayLeaveDialog
+                open={leaveGuard.leaveDialogOpen}
+                isClosing={leaveGuard.isClosing}
+                closeError={leaveGuard.closeError}
+                onCloseRoomAndLeave={leaveGuard.closeRoomAndLeave}
+                onLeaveWithoutClosing={leaveGuard.leaveWithoutClosing}
+                onCancel={leaveGuard.cancelLeave}
+            />
             {warning && (
                 <Snackbar
                     open={!!warning}

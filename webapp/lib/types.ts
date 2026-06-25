@@ -320,6 +320,13 @@ export type PlayResponse =
     | { ok: true; data: PlayViewInfo }
     | { ok: false; reason: PlayErrorType };
 
+const playParticipantsErrReasons = ["InvalidParams", "InternalError"] as const;
+export type PlayParticipantsErrorType =
+    (typeof playParticipantsErrReasons)[number];
+export type PlayParticipantsResponse =
+    | { ok: true; participants: number }
+    | { ok: false; reason: PlayParticipantsErrorType };
+
 export type LiveInfo = {
     owner: {
         userId: string;

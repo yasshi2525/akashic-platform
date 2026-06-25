@@ -26,6 +26,11 @@ const ProtocolType = {
 const PLAY_DURATION_MS = 30 * 60 * 1000;
 const EXTEND_WINDOW_MS = 10 * 60 * 1000;
 const EXTEND_MS = 30 * 60 * 1000;
+// 参加者(ブラウザ接続)が 0 人のまま継続したら部屋を自動終了する猶予時間。
+// リロードや一時的な回線切れに耐えるため余裕をもたせている。
+const IDLE_GRACE_MS = 5 * 60 * 1000;
+// 参加者数をポーリングする間隔。猶予よりも十分短くする。
+const IDLE_POLL_INTERVAL_MS = 30 * 1000;
 
 export interface RunnerParameterObject {
     publicWebappUrl: string;
@@ -55,6 +60,8 @@ export class Runner {
     _playId?: number;
     _expiresAt?: number;
     _timeoutId?: NodeJS.Timeout;
+    _idleIntervalId?: NodeJS.Timeout;
+    _emptySince?: number;
     _crashing = false;
     _errorLogged = false;
     _logStream?: PassThrough;
@@ -99,9 +106,11 @@ export class Runner {
                         );
                         this._initGame(amflow);
                         this._setTimer(Date.now() + PLAY_DURATION_MS);
+                        this._startIdleWatch(playId);
                         return playId;
                     } catch (err) {
                         this._clearTimer();
+                        this._clearIdleWatch();
                         logStream.destroy();
                         upload.abort().catch((err) => {
                             console.warn(
@@ -136,6 +145,7 @@ export class Runner {
             );
         }
         this._clearTimer();
+        this._clearIdleWatch();
         if (this._runner) {
             const playId = parseInt(this._runner.playId);
             // playlogServer に終了要求を出すと PlayEnd が飛んでくる。
@@ -560,6 +570,57 @@ export class Runner {
             this._timeoutId = undefined;
         }
         this._expiresAt = undefined;
+    }
+
+    // 参加者(ブラウザ接続)が 0 人のまま IDLE_GRACE_MS を超えて続いたら部屋を自動終了する。
+    // 終了は正規パスである this.end() に合流させ、DB 更新・storage destroy・ログ upload を行う。
+    // 参加者(ブラウザ接続)が 0 人のまま IDLE_GRACE_MS を超えて続いたら部屋を自動終了する。
+    // 作成直後に部屋主のブラウザが接続するまでの数秒の 0 人は、5 分の猶予が十分に吸収する。
+    _startIdleWatch(playId: number) {
+        this._clearIdleWatch();
+        this._emptySince = undefined;
+        this._idleIntervalId = setInterval(async () => {
+            let participants: number;
+            try {
+                const res = await fetch(
+                    `${this._param.storagePublicUrl}/participants?playId=${playId}`,
+                );
+                if (res.status !== 200) {
+                    throw new Error(await res.text());
+                }
+                participants = ((await res.json()) as { participants: number })
+                    .participants;
+            } catch (err) {
+                // 取得に失敗したら参加者数不明として保守的に何もしない(閉じない)。
+                console.warn(
+                    `failed to get participants for idle watch (playId = "${playId}")`,
+                    err,
+                );
+                return;
+            }
+            if (participants > 0) {
+                this._emptySince = undefined;
+                return;
+            }
+            if (this._emptySince == null) {
+                this._emptySince = Date.now();
+                return;
+            }
+            if (Date.now() - this._emptySince >= IDLE_GRACE_MS) {
+                console.log(
+                    `idle watch triggers auto close (playId = "${playId}")`,
+                );
+                await this.end("IDLE");
+            }
+        }, IDLE_POLL_INTERVAL_MS);
+    }
+
+    _clearIdleWatch() {
+        if (this._idleIntervalId) {
+            clearInterval(this._idleIntervalId);
+            this._idleIntervalId = undefined;
+        }
+        this._emptySince = undefined;
     }
 
     async _createClientLogSubmittedNotification(
