@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.6.3
+
+- Improve
+  - `./webapp`
+    - 投稿コンテンツS3アップロード時に Content-Type を設定 (#63)
+
 ## 1.6.2
 
 - Improve

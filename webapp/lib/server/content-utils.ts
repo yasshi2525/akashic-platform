@@ -28,6 +28,38 @@ export interface GameForm {
 let s3Client: S3Client | undefined;
 export const s3KeyPrefix = process.env.S3_KEY_PREFIX ?? "";
 
+const contentTypeByExt: Record<string, string> = {
+    ".json": "application/json",
+    ".jsonl": "application/x-ndjson",
+    ".js": "text/javascript",
+    ".css": "text/css",
+    ".html": "text/html",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".webp": "image/webp",
+    ".svg": "image/svg+xml",
+    ".ogg": "audio/ogg",
+    ".aac": "audio/aac",
+    ".m4a": "audio/mp4",
+    ".mp4": "audio/mp4",
+    ".txt": "text/plain",
+    ".woff2": "font/woff2",
+};
+
+/**
+ * ファイル名（拡張子）から配信用の Content-Type を導出する。
+ * 別オリジンから no-cors で読み込まれる画像・音声が Firefox の
+ * OpaqueResponseBlocking でブロックされるのを防ぐため、アップロード時に付与する。
+ */
+export function contentTypeFromName(name: string): string {
+    return (
+        contentTypeByExt[path.extname(name).toLowerCase()] ??
+        "application/octet-stream"
+    );
+}
+
 export function getS3Client() {
     if (!s3Client) {
         s3Client = new S3Client({
@@ -149,6 +181,7 @@ async function extractFile(contentId: number, file: JSZipObject) {
             Bucket: getBucket(),
             Key: `${s3KeyPrefix}${contentId}/${file.name}`,
             Body: await file.async("nodebuffer"),
+            ContentType: contentTypeFromName(file.name),
         }),
     );
 }
@@ -171,6 +204,7 @@ export async function deployIconFile(
             Bucket: getBucket(),
             Key: `${s3KeyPrefix}${contentId}/${iconPath}`,
             Body: await iconFile.bytes(),
+            ContentType: contentTypeFromName(iconPath),
         }),
     );
 }

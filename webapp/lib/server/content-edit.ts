@@ -17,6 +17,7 @@ import {
     getBucket,
     getS3Client,
     s3KeyPrefix,
+    contentTypeFromName,
 } from "./content-utils";
 import { isWriteBlocked } from "./drain-state";
 
@@ -138,6 +139,10 @@ export async function copyIconFile(
             Bucket: bucket,
             Key: `${s3KeyPrefix}${toContentId}/${iconPath}`,
             CopySource: `${bucket}/${s3KeyPrefix}${fromContentId}/${iconPath}`,
+            // コピー元（旧アイコン）に Content-Type が無い場合でも正しく付与するため
+            // メタデータを引き継がず再設定する
+            MetadataDirective: "REPLACE",
+            ContentType: contentTypeFromName(iconPath),
         }),
     );
 }
