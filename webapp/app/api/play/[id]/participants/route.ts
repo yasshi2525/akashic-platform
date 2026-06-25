@@ -21,12 +21,18 @@ export async function GET(
             console.warn(
                 `failed to get participants. (playId = "${playId}", cause = "${await res.text()}")`,
             );
-            return NextResponse.json({ ok: true, participants: 0 });
+            return NextResponse.json(
+                { ok: false, reason: "InternalError" },
+                { status: 502 },
+            );
         }
         const participants = (await res.json()).participants as number;
         return NextResponse.json({ ok: true, participants });
     } catch (err) {
         console.warn(`failed to get participants. (playId = "${playId}")`, err);
-        return NextResponse.json({ ok: true, participants: 0 });
+        return NextResponse.json(
+            { ok: false, reason: "InternalError" },
+            { status: 502 },
+        );
     }
 }
