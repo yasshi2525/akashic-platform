@@ -117,7 +117,28 @@ async function waitUntilDestroyed(view: AkashicGameView) {
             },
         );
         view.removeAllContents();
+        // ゲームエンジンは iframe 内で動いており、終了処理(GameDriver#initialize/
+        // destroy)はその iframe realm の Promise マイクロタスクに依存する。
+        // React の再構成(PlayView のアンマウント)で iframe を含む親要素が
+        // DOM から切り離されると、ブラウザによっては realm のマイクロタスクが
+        // 破棄され、終了処理(driver.destroy の hook)が完了しない(Firefox で確認)。
+        // この場合は待っても完了しないため、切り離しを検知したら待たずに完了とみなす。
+        if (!isViewElementConnected(view)) {
+            resolve();
+        }
     });
+}
+
+/**
+ * AkashicGameView の DOM 要素が document に接続されているかを返す。
+ */
+function isViewElementConnected(view: AkashicGameView): boolean {
+    const element = (
+        view._gameContentShared?.gameViewElement as unknown as {
+            _htmlElement?: HTMLElement;
+        }
+    )?._htmlElement;
+    return !!element && element.isConnected;
 }
 
 function getGameContents(view: AkashicGameView) {
