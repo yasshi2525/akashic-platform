@@ -274,6 +274,28 @@ export function PlayView({
                 "webkitfullscreenchange",
                 syncFullscreen,
             );
+            // アンマウント時にネイティブ全画面を解除する。
+            // 全画面要素は document.documentElement のため
+            if (nativeFullscreenRequestedRef.current) {
+                nativeFullscreenRequestedRef.current = false;
+                const doc = document as Document & {
+                    webkitFullscreenElement?: Element | null;
+                    webkitExitFullscreen?: () => Promise<void> | void;
+                };
+                const nativeActive =
+                    doc.fullscreenElement ?? doc.webkitFullscreenElement;
+                if (nativeActive) {
+                    try {
+                        if (doc.exitFullscreen) {
+                            void doc.exitFullscreen();
+                        } else if (doc.webkitExitFullscreen) {
+                            void doc.webkitExitFullscreen();
+                        }
+                    } catch (err) {
+                        console.warn("failed to exit fullscreen", err);
+                    }
+                }
+            }
         };
     }, []);
 
