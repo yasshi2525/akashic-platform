@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.6.7
+
+- Improve
+  - `./akashic-storage`
+    - Valkey 書き込み間隔を削減 (環境変数 `CHUNK_SIZE`) (#89)
+
 ## 1.6.6
 
 - Improve

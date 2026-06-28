@@ -1,15 +1,15 @@
 import type { Permission } from "@akashic/amflow";
 import { InvalidStatusError } from "@yasshi2525/amflow-server-event-schema";
 
-const keys = ["amf:token", "amf:event", "amf:startpoint"] as const;
+const keys = ["amf:token", "amf:startpoint", "amf:ticks"] as const;
 type KeyType = (typeof keys)[number];
 
-const keyNames = ["Token", "Event", "StartPoint"] as const;
+const keyNames = ["Token", "StartPoint", "TickChunk"] as const;
 type KeyNameType = (typeof keyNames)[number];
 
 export const ValkeyKey = {
     Token: "amf:token",
-    Event: "amf:event",
+    TickChunk: "amf:ticks",
     StartPoint: "amf:startpoint",
 } as const satisfies Record<KeyNameType, KeyType>;
 
@@ -23,35 +23,6 @@ export const genKey = (type: string, ...params: (string | number)[]) =>
             }
         })
         .join(":")}`;
-
-const zsetKeys = [
-    "amf:events:unfiltered",
-    "amf:events:filtered",
-    "amf:startpoints",
-    "amf:startpoints:frame",
-    "amf:startpoints:timestamp",
-] as const;
-type ZSetKeyType = (typeof zsetKeys)[number];
-
-const zsetKeyNames = [
-    "UnfilteredEvent",
-    "FilteredEvent",
-    "StartPointByFrame",
-    "StartPointByTimestamp",
-] as const;
-type ZSetKeyNameType = (typeof zsetKeyNames)[number];
-
-/**
- * NOTE:
- * * UnfilteredEvent: 非transient なもの（ignorable を含む）。transient なものは無視するが、現状存在しない
- * * FilteredEvent: 非transient かつ 非ignorable なもの。transient と ignorable なものを無視する
- */
-export const ValkeyZSetKey = {
-    UnfilteredEvent: "amf:events:unfiltered",
-    FilteredEvent: "amf:events:filtered",
-    StartPointByFrame: "amf:startpoints:frame",
-    StartPointByTimestamp: "amf:startpoints:timestamp",
-} as const satisfies Record<ZSetKeyNameType, ZSetKeyType>;
 
 const activePermission: Permission = {
     readTick: true,

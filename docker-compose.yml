@@ -1,6 +1,6 @@
 services:
   valkey-1:
-    image: valkey/valkey:8
+    image: valkey/valkey-bundle:8
     command: >
       valkey-server
       --port 7001
@@ -11,6 +11,7 @@ services:
       --cluster-announce-hostname valkey-1
       --cluster-announce-port 7001
       --cluster-announce-bus-port 17001
+      --cluster-preferred-endpoint-type hostname
     ports:
       - "7001:7001"
     healthcheck:
@@ -23,7 +24,7 @@ services:
         ipv4_address: 172.30.0.11
 
   valkey-2:
-    image: valkey/valkey:8
+    image: valkey/valkey-bundle:8
     command: >
       valkey-server
       --port 7002
@@ -34,6 +35,7 @@ services:
       --cluster-announce-hostname valkey-2
       --cluster-announce-port 7002
       --cluster-announce-bus-port 17002
+      --cluster-preferred-endpoint-type hostname
     ports:
       - "7002:7002"
     healthcheck:
@@ -46,7 +48,7 @@ services:
         ipv4_address: 172.30.0.12
 
   valkey-3:
-    image: valkey/valkey:8
+    image: valkey/valkey-bundle:8
     command: >
       valkey-server
       --port 7003
@@ -57,6 +59,7 @@ services:
       --cluster-announce-hostname valkey-3
       --cluster-announce-port 7003
       --cluster-announce-bus-port 17003
+      --cluster-preferred-endpoint-type hostname
     ports:
       - "7003:7003"
     healthcheck:
@@ -87,6 +90,30 @@ services:
         set -e
       '
     restart: no
+    networks:
+      - apnet
+
+  valkey-admin:
+    image: valkey/valkey-admin:latest
+    ports:
+      - "8080:8080"
+    depends_on:
+      valkey-1:
+        condition: service_healthy
+      valkey-2:
+        condition: service_healthy
+      valkey-3:
+        condition: service_healthy
+    environment:
+      DEPLOYMENT_MODE: Web
+      VALKEY_HOST: valkey-1
+      VALKEY_PORT: 7001
+      VALKEY_TLS: "false"
+      VALKEY_AUTH_TYPE: password
+      VALKEY_USERNAME:
+      VALKEY_PASSWORD:
+      VALKEY_ENDPOINT_TYPE: "cluster-endpoint"
+    restart: unless-stopped
     networks:
       - apnet
 

@@ -1,8 +1,6 @@
-import { GlideClusterClient, GlideString } from "@valkey/valkey-glide";
+import { GlideClusterClient } from "@valkey/valkey-glide";
 import {
     trace,
-    context,
-    Context,
     SpanKind,
     SpanStatusCode,
     Span,
@@ -20,7 +18,6 @@ import {
     TickIndex,
     EventIndex,
     EventFlagsMask,
-    TickListIndex,
 } from "@akashic/playlog";
 import {
     BadRequestError,
@@ -32,7 +29,6 @@ import {
     genKey,
     PermissionType,
     ValkeyKey,
-    ValkeyZSetKey,
     toPermission,
 } from "./valkeySchema";
 import { AMFlowStoreBase } from "./AMFlowStoreBase";
@@ -71,51 +67,52 @@ const withValkeySpan = <T>(
 interface ValkeyAMFlowStoreParameterObject {
     valkey: GlideClusterClient;
     playId: string;
-    memoryTickBufferSize: number;
+    chunkSize: number;
 }
 
-interface MemoryEventEntry {
+interface StartPointIndexEntry {
+    id: number;
     frame: number;
-    unfilteredEvents: Event[];
-    filteredEvents: Event[];
+    timestamp: number;
 }
 
+/**
+ * playlog（Tick）の保存方式:
+ *
+ * `chunkSize` フレーム分の Tick をまとめて 1 キー(チャンク)に直列化する。 1チャンク分たまったら永続化。
+ * StartPoint は数が少ないため `(id, frame, timestamp)` の索引をメモリに常駐。本体のみ永続化。
+ */
 export class ValkeyAMFlowStore extends AMFlowStoreBase {
     _valkey: GlideClusterClient;
     _latestTickFrame: number;
-    _nextUnfilteredEventId: number;
     _nextSnapshotId: number;
     _isDestroyed: boolean;
     _hashPlayId: string;
+    /** destroy 時に unlink するキー一覧 */
     _keyList: string[];
-    _startPointQueue: Promise<void>;
-
-    _memoryTickBufferSize: number;
-    _memoryOldestFrame: number;
-    _memoryTickBuffer: MemoryEventEntry[];
-
-    _valkeyWriteQueue: { tickPack: TickPack; ctx: Context }[];
-    _isValkeyDraining: boolean;
-    _valkeyDrainPromise: Promise<void>;
+    _chunkSize: number;
+    _currentChunkIndex: number;
+    _currentChunkTicks: Tick[];
+    _pendingChunks: Map<number, Tick[]>;
+    _startPointIndex: StartPointIndexEntry[];
+    _pendingStartPoints: Map<number, StartPoint>;
+    _inflightWrites: Set<Promise<void>>;
 
     constructor(param: ValkeyAMFlowStoreParameterObject) {
         super(param.playId);
         this._valkey = param.valkey;
         this._latestTickFrame = -1;
-        this._nextUnfilteredEventId = 1;
         this._nextSnapshotId = 1;
         this._isDestroyed = false;
         this._hashPlayId = `{${this.playId}}`;
         this._keyList = [];
-        this._startPointQueue = Promise.resolve();
-
-        this._memoryTickBufferSize = param.memoryTickBufferSize;
-        this._memoryOldestFrame = -1;
-        this._memoryTickBuffer = [];
-
-        this._valkeyWriteQueue = [];
-        this._isValkeyDraining = false;
-        this._valkeyDrainPromise = Promise.resolve();
+        this._chunkSize = param.chunkSize;
+        this._currentChunkIndex = -1;
+        this._currentChunkTicks = [];
+        this._pendingChunks = new Map();
+        this._startPointIndex = [];
+        this._pendingStartPoints = new Map();
+        this._inflightWrites = new Set();
     }
 
     async authenticate(token: string) {
@@ -135,20 +132,17 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
     }
 
     sendTickPack(tickPack: TickPack) {
-        const accepted = this._updateMemoryState(tickPack);
+        const accepted = this._updateState(tickPack);
         if (!accepted) {
             return Promise.resolve();
         }
         for (const tick of toTickList(tickPack)) {
             this.sendTick(tick);
         }
-        if (convertTickPack.isTick(tickPack) && tickPack[TickIndex.Events]) {
-            this._enqueueValkeyWrite(tickPack);
-        }
         return Promise.resolve();
     }
 
-    private _updateMemoryState(tickPack: TickPack) {
+    private _updateState(tickPack: TickPack) {
         let frame: number;
 
         if (convertTickPack.isNumber(tickPack)) {
@@ -169,27 +163,17 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
                 return false;
             }
             frame = tickPack[TickIndex.Frame];
-            if (tickPack[TickIndex.Events]) {
-                const unfilteredEvents = tickPack[TickIndex.Events].filter(
+            const events = tickPack[TickIndex.Events];
+            if (events) {
+                const unfilteredEvents = events.filter(
                     (event) =>
                         !(
                             event[EventIndex.EventFlags] &
                             EventFlagsMask.Transient
                         ),
                 );
-                const filteredEvents = unfilteredEvents.filter(
-                    (event) =>
-                        !(
-                            event[EventIndex.EventFlags] &
-                            EventFlagsMask.Ignorable
-                        ),
-                );
                 if (unfilteredEvents.length > 0) {
-                    this._memoryTickBuffer.push({
-                        frame,
-                        unfilteredEvents,
-                        filteredEvents,
-                    });
+                    this._appendTick(frame, unfilteredEvents);
                 }
             }
         } else {
@@ -197,50 +181,58 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         }
 
         this._latestTickFrame = frame;
-        if (this._memoryOldestFrame === -1) {
-            this._memoryOldestFrame = frame;
-        }
-        const evictBefore = frame - this._memoryTickBufferSize;
-        if (evictBefore > this._memoryOldestFrame) {
-            while (
-                this._memoryTickBuffer.length > 0 &&
-                this._memoryTickBuffer[0].frame < evictBefore
-            ) {
-                this._memoryTickBuffer.shift();
-            }
-            this._memoryOldestFrame = evictBefore;
-        }
         return true;
     }
 
-    private _enqueueValkeyWrite(tickPack: TickPack) {
-        // ドレインが既に走っている場合、この書き込みは後から処理される。
-        // 投入時点のコンテキスト（親スパン・Baggage）を捕捉しておき、実際の
-        // _pushTick をそのコンテキストで実行することで、キューイングされた tick も
-        // 自分自身の sendTickPack に正しく紐づける（ドレイン起点の send に混ざらない）。
-        this._valkeyWriteQueue.push({ tickPack, ctx: context.active() });
-        if (!this._isValkeyDraining) {
-            this._valkeyDrainPromise = this._drainValkeyQueue();
+    private _appendTick(frame: number, events: Event[]) {
+        const chunkIndex = Math.floor(frame / this._chunkSize);
+        if (this._currentChunkIndex === -1) {
+            this._currentChunkIndex = chunkIndex;
+        } else if (chunkIndex > this._currentChunkIndex) {
+            // 境界跨ぎ
+            this._sealCurrentChunk();
+            this._currentChunkIndex = chunkIndex;
+            this._currentChunkTicks = [];
         }
+        this._currentChunkTicks.push([frame, events]);
     }
 
-    private async _drainValkeyQueue() {
-        this._isValkeyDraining = true;
-        while (this._valkeyWriteQueue.length > 0) {
-            const { tickPack, ctx } = this._valkeyWriteQueue.shift()!;
-            try {
-                await context.with(ctx, () => this._pushTick(tickPack));
-            } catch (err) {
+    private _sealCurrentChunk() {
+        if (this._currentChunkTicks.length === 0) {
+            return;
+        }
+        const chunkIndex = this._currentChunkIndex;
+        const ticks = this._currentChunkTicks;
+        const key = genKey(ValkeyKey.TickChunk, this._hashPlayId, chunkIndex);
+        // SET 完了までメモリに保持
+        this._pendingChunks.set(chunkIndex, ticks);
+        this._keyList.push(key);
+        const write = withValkeySpan(
+            "valkey.sealChunk",
+            {
+                "db.system": "valkey",
+                "play.id": this.playId,
+                "amflow.chunk.index": chunkIndex,
+                "amflow.chunk.tick_count": ticks.length,
+            },
+            () => this._valkey.set(key, JSON.stringify(ticks)),
+        )
+            .then(() => {
+                this._pendingChunks.delete(chunkIndex);
+            })
+            .catch((err) => {
                 console.error(
-                    `failed to persist tick to valkey (playId = ${this.playId})`,
+                    `failed to persist tick chunk to valkey (playId = ${this.playId}, chunkIndex = ${chunkIndex})`,
                     err,
                 );
-            }
-        }
-        this._isValkeyDraining = false;
+            })
+            .finally(() => {
+                this._inflightWrites.delete(write);
+            });
+        this._inflightWrites.add(write);
     }
 
-    async getTickList(opts: GetTickListOptions) {
+    async getTickList(opts: GetTickListOptions): Promise<TickList | null> {
         const from = opts.begin;
         const to = Math.min(opts.end - 1, this._latestTickFrame);
         if (to < from) {
@@ -248,275 +240,231 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         }
         const filterIgnorable = opts.excludeEventFlags?.ignorable ?? false;
 
-        // 要求範囲が完全にメモリバッファ内
-        if (this._memoryOldestFrame !== -1 && from >= this._memoryOldestFrame) {
-            return this._getTickListFromMemory(from, to, filterIgnorable);
-        }
-
-        // 要求範囲がメモリバッファと Valkey をまたぐ場合
-        // Valkey 書き込みラグで直近 tick が Valkey に未反映の可能性があるため両方を合成する
-        if (this._memoryOldestFrame !== -1 && to >= this._memoryOldestFrame) {
-            const [valkeyList, memoryList] = await Promise.all([
-                this._getTickListFromValkey(
-                    from,
-                    this._memoryOldestFrame - 1,
-                    filterIgnorable,
-                ),
-                Promise.resolve(
-                    this._getTickListFromMemory(
-                        this._memoryOldestFrame,
-                        to,
-                        filterIgnorable,
-                    ),
-                ),
-            ]);
-            return this._mergeTickLists(from, to, valkeyList, memoryList);
-        }
-
-        // 要求範囲が完全に Valkey 内
-        return this._getTickListFromValkey(from, to, filterIgnorable);
+        const ticks = await this._collectTicks(from, to, filterIgnorable);
+        return ticks.length > 0 ? [from, to, ticks] : [from, to];
     }
 
-    private _mergeTickLists(
+    private async _collectTicks(
         from: number,
         to: number,
-        ...lists: TickList[]
-    ): TickList {
-        const ticks: Tick[] = [];
-        for (const list of lists) {
-            if (list[TickListIndex.Ticks]) {
-                ticks.push(...list[TickListIndex.Ticks]);
+        filterIgnorable: boolean,
+    ) {
+        const firstChunk = Math.floor(from / this._chunkSize);
+        const lastChunk = Math.floor(to / this._chunkSize);
+
+        const chunkTicksByIndex = new Map<number, Tick[]>();
+        const valkeyChunkIndices: number[] = [];
+        for (let idx = firstChunk; idx <= lastChunk; idx++) {
+            const memTicks = this._getMemoryChunk(idx);
+            if (memTicks) {
+                chunkTicksByIndex.set(idx, memTicks);
+            } else {
+                valkeyChunkIndices.push(idx);
             }
         }
-        return ticks.length > 0 ? [from, to, ticks] : [from, to];
-    }
 
-    private _getTickListFromMemory(
-        from: number,
-        to: number,
-        filterIgnorable: boolean,
-    ): TickList {
-        const entries = this._memoryTickBuffer.filter(
-            ({ frame }) => frame >= from && frame <= to,
-        );
-        if (entries.length === 0) {
-            return [from, to];
+        if (valkeyChunkIndices.length > 0) {
+            const fetched =
+                await this._fetchChunksFromValkey(valkeyChunkIndices);
+            for (const [idx, ticks] of fetched) {
+                chunkTicksByIndex.set(idx, ticks);
+            }
         }
-        const ticks: Tick[] = entries
-            .map(
-                ({ frame, unfilteredEvents, filteredEvents }) =>
-                    [
-                        frame,
-                        filterIgnorable ? filteredEvents : unfilteredEvents,
-                    ] as Tick,
-            )
-            .filter((tick) => tick[TickIndex.Events]);
-        return ticks.length > 0 ? [from, to, ticks] : [from, to];
+
+        const result: Tick[] = [];
+        for (let idx = firstChunk; idx <= lastChunk; idx++) {
+            const ticks = chunkTicksByIndex.get(idx);
+            if (!ticks) {
+                continue;
+            }
+            for (const tick of ticks) {
+                const frame = tick[TickIndex.Frame];
+                if (frame < from || frame > to) {
+                    continue;
+                }
+                const events = this._filterEvents(tick, filterIgnorable);
+                if (events && events.length > 0) {
+                    result.push([frame, events]);
+                }
+            }
+        }
+        return result;
     }
 
-    private async _getTickListFromValkey(
-        from: number,
-        to: number,
-        filterIgnorable: boolean,
-    ): Promise<TickList> {
+    private _getMemoryChunk(chunkIndex: number) {
+        if (chunkIndex === this._currentChunkIndex) {
+            return this._currentChunkTicks;
+        }
+        return this._pendingChunks.get(chunkIndex);
+    }
+
+    private _filterEvents(tick: Tick, filterIgnorable: boolean) {
+        const events = tick[TickIndex.Events];
+        if (!events) {
+            return null;
+        }
+        if (!filterIgnorable) {
+            return events;
+        }
+        return events.filter(
+            (event) =>
+                !(event[EventIndex.EventFlags] & EventFlagsMask.Ignorable),
+        );
+    }
+
+    private async _fetchChunksFromValkey(chunkIndices: number[]) {
         return withValkeySpan(
             "valkey.getTickList",
             {
                 "db.system": "valkey",
                 "play.id": this.playId,
-                "amflow.tick.from": from,
-                "amflow.tick.to": to,
-                "amflow.filter_ignorable": filterIgnorable,
+                "amflow.chunk.count": chunkIndices.length,
+                "amflow.chunk.first": chunkIndices[0],
+                "amflow.chunk.last": chunkIndices[chunkIndices.length - 1],
             },
-            (span) =>
-                this._doGetTickListFromValkey(from, to, filterIgnorable, span),
+            async () => {
+                const keys = chunkIndices.map((idx) =>
+                    genKey(ValkeyKey.TickChunk, this._hashPlayId, idx),
+                );
+                const values = await this._valkey.mget(keys);
+                const result = new Map<number, Tick[]>();
+                values.forEach((value, i) => {
+                    if (value == null) {
+                        return;
+                    }
+                    const chunkIndex = chunkIndices[i];
+                    try {
+                        result.set(
+                            chunkIndex,
+                            JSON.parse(value.toString()) as Tick[],
+                        );
+                    } catch (err) {
+                        console.warn(
+                            `failed to parse tick chunk (playId = ${this.playId}, chunkIndex = ${chunkIndex})`,
+                            err,
+                        );
+                    }
+                });
+                return result;
+            },
         );
-    }
-
-    private async _doGetTickListFromValkey(
-        from: number,
-        to: number,
-        filterIgnorable: boolean,
-        span: Span,
-    ): Promise<TickList> {
-        const scores = filterIgnorable
-            ? await this._valkey.zrangeWithScores(
-                  genKey(ValkeyZSetKey.FilteredEvent, this._hashPlayId),
-                  {
-                      type: "byScore",
-                      start: { value: from },
-                      end: { value: to },
-                  },
-              )
-            : await this._valkey.zrangeWithScores(
-                  genKey(ValkeyZSetKey.UnfilteredEvent, this._hashPlayId),
-                  {
-                      type: "byScore",
-                      start: { value: from },
-                      end: { value: to },
-                  },
-              );
-        span.setAttribute("amflow.score.count", scores.length);
-        if (scores.length === 0) {
-            return [from, to];
-        }
-        const rawEvList = await Promise.all(
-            scores
-                .map(({ score, element }) => ({
-                    tick: score,
-                    eventId: parseInt(element.toString()),
-                }))
-                .map(async ({ tick, eventId }) => ({
-                    tick,
-                    eventId,
-                    event: await this._valkey.get(
-                        genKey(ValkeyKey.Event, this._hashPlayId, eventId),
-                    ),
-                })),
-        );
-        this._warnIfNotFoundEventRecord(filterIgnorable, rawEvList);
-        const evList = rawEvList
-            .filter(({ event }) => event)
-            .map(({ tick, eventId, event }) => {
-                try {
-                    return {
-                        tick,
-                        event: JSON.parse(event!.toString()) as Event,
-                    };
-                } catch (err) {
-                    console.warn(
-                        `failed to parse event data "${event}" (playId = ${this.playId}, eventId = ${eventId}, tick = ${tick})`,
-                    );
-                    return {
-                        tick,
-                        event: null,
-                    };
-                }
-            })
-            .filter(({ event }) => event) as { tick: number; event: Event }[];
-        return [from, to, this._toTickList(evList)];
     }
 
     putStartPoint(startPoint: StartPoint) {
-        this._startPointQueue = this._startPointQueue
-            .catch(() => {})
-            .then(() => this._doPutStartPoint(startPoint));
-        return this._startPointQueue;
-    }
-
-    private async _doPutStartPoint(startPoint: StartPoint) {
-        return withValkeySpan(
+        const id = this._nextSnapshotId++;
+        this._startPointIndex.push({
+            id,
+            frame: startPoint.frame,
+            timestamp: startPoint.timestamp,
+        });
+        this._pendingStartPoints.set(id, startPoint);
+        const key = genKey(ValkeyKey.StartPoint, this._hashPlayId, id);
+        this._keyList.push(key);
+        const write = withValkeySpan(
             "valkey.putStartPoint",
             {
                 "db.system": "valkey",
                 "play.id": this.playId,
                 "amflow.startPoint.frame": startPoint.frame,
             },
-            () => this._doPutStartPointInner(startPoint),
-        );
-    }
-
-    private async _doPutStartPointInner(startPoint: StartPoint) {
-        const startPointKey = genKey(
-            ValkeyKey.StartPoint,
-            this._hashPlayId,
-            this._nextSnapshotId,
-        );
-        await this._valkey.set(startPointKey, JSON.stringify(startPoint));
-        this._keyList.push(startPointKey);
-        await this._valkey.zadd(
-            genKey(ValkeyZSetKey.StartPointByFrame, this._hashPlayId),
-            [
-                {
-                    score: startPoint.frame,
-                    element: this._nextSnapshotId.toString(),
-                },
-            ],
-        );
-        await this._valkey.zadd(
-            genKey(ValkeyZSetKey.StartPointByTimestamp, this._hashPlayId),
-            [
-                {
-                    score: startPoint.timestamp,
-                    element: this._nextSnapshotId.toString(),
-                },
-            ],
-        );
-        this._nextSnapshotId++;
+            () => this._valkey.set(key, JSON.stringify(startPoint)),
+        )
+            .then(() => {
+                this._pendingStartPoints.delete(id);
+            })
+            .catch((err) => {
+                console.error(
+                    `failed to persist startpoint to valkey (playId = ${this.playId}, startpointId = ${id})`,
+                    err,
+                );
+            })
+            .finally(() => {
+                this._inflightWrites.delete(write);
+            });
+        this._inflightWrites.add(write);
+        return write;
     }
 
     async getStartPoint(opts: GetStartPointOptions) {
         const isFirst =
             opts.frame === 0 || (opts.frame == null && opts.timestamp == null);
 
+        let target: StartPointIndexEntry | null = null;
         if (isFirst) {
-            const ids = await this._valkey.zrange(
-                genKey(ValkeyZSetKey.StartPointByFrame, this._hashPlayId),
-                {
-                    start: 0,
-                    end: 0,
-                },
-            );
-            return this._restoreStartPointFromIds(ids);
+            target = this._startPointIndex[0] ?? null;
         } else if (opts.timestamp != null) {
-            const ids = await this._valkey.zrange(
-                genKey(ValkeyZSetKey.StartPointByTimestamp, this._hashPlayId),
-                {
-                    start: {
-                        value: opts.timestamp,
-                        isInclusive: false,
-                    },
-                    end: {
-                        value: 0,
-                    },
-                    type: "byScore",
-                    limit: {
-                        offset: 0,
-                        count: 1,
-                    },
-                },
-                {
-                    reverse: true,
-                },
+            target = this._findLatest(
+                (entry) => entry.timestamp < opts.timestamp!,
+                (entry) => entry.timestamp,
             );
-            return this._restoreStartPointFromIds(ids);
         } else if (opts.frame != null) {
-            const ids = await this._valkey.zrange(
-                genKey(ValkeyZSetKey.StartPointByFrame, this._hashPlayId),
-                {
-                    start: {
-                        value: opts.frame - 1,
-                    },
-                    end: {
-                        value: 0,
-                    },
-                    type: "byScore",
-                    limit: {
-                        offset: 0,
-                        count: 1,
-                    },
-                },
-                {
-                    reverse: true,
-                },
+            target = this._findLatest(
+                (entry) => entry.frame < opts.frame!,
+                (entry) => entry.frame,
             );
-            return this._restoreStartPointFromIds(ids);
         }
-        return null;
+        if (!target) {
+            return null;
+        }
+        return this._restoreStartPoint(target.id);
+    }
+
+    private _findLatest(
+        predicate: (entry: StartPointIndexEntry) => boolean,
+        score: (entry: StartPointIndexEntry) => number,
+    ) {
+        let best: StartPointIndexEntry | null = null;
+        for (const entry of this._startPointIndex) {
+            if (predicate(entry) && (!best || score(entry) >= score(best))) {
+                best = entry;
+            }
+        }
+        return best;
+    }
+
+    private async _restoreStartPoint(id: number) {
+        const pending = this._pendingStartPoints.get(id);
+        if (pending) {
+            return pending;
+        }
+        const startpoint = await withValkeySpan(
+            "valkey.getStartPoint",
+            {
+                "db.system": "valkey",
+                "play.id": this.playId,
+                "amflow.startPoint.id": id,
+            },
+            () =>
+                this._valkey.get(
+                    genKey(ValkeyKey.StartPoint, this._hashPlayId, id),
+                ),
+        );
+        if (startpoint == null) {
+            console.warn(
+                `${id} does not exist in ${ValkeyKey.StartPoint} even though index refer (playId = ${this.playId})`,
+            );
+            return null;
+        }
+        try {
+            return JSON.parse(startpoint.toString()) as StartPoint;
+        } catch (err) {
+            console.warn(
+                `failed to parse startpoint "${startpoint}" (playId = ${this.playId}, startpointId = ${id})`,
+                err,
+            );
+            return null;
+        }
     }
 
     async destroy() {
         if (this._isDestroyed) {
             return;
         }
-        await this._valkeyDrainPromise;
-        await this._valkey.unlink([
-            genKey(ValkeyZSetKey.UnfilteredEvent, this._hashPlayId),
-            genKey(ValkeyZSetKey.FilteredEvent, this._hashPlayId),
-            genKey(ValkeyZSetKey.StartPointByFrame, this._hashPlayId),
-            genKey(ValkeyZSetKey.StartPointByTimestamp, this._hashPlayId),
-            ...this._keyList,
-        ]);
+        // 進行中の書き込みを待ってから unlink する
+        await Promise.all([...this._inflightWrites]);
+        if (this._keyList.length > 0) {
+            await this._valkey.unlink(this._keyList);
+        }
         this._isDestroyed = true;
     }
 
@@ -533,198 +481,5 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         await this._valkey.set(key, permissionType);
         this._keyList.push(key);
         return token;
-    }
-
-    _toTickList(evList: { tick: number; event: Event }[]) {
-        const tickList: Tick[] = [];
-        if (evList.length === 0) {
-            return tickList;
-        }
-        let currentTick = evList[0].tick;
-        let evs: Event[] = [];
-        for (const { tick, event } of evList) {
-            if (tick !== currentTick) {
-                tickList.push([currentTick, evs]);
-                currentTick = tick;
-                evs = [];
-            }
-            evs.push(event);
-        }
-        tickList.push([currentTick, evs]);
-        return tickList;
-    }
-
-    /**
-     * null な ev はデータ不整合が起きていることを示すので、念の為ログにだす
-     */
-    _warnIfNotFoundEventRecord(
-        filterIgnorable: boolean,
-        eventList: {
-            tick: number;
-            eventId: number;
-            event: GlideString | null;
-        }[],
-    ) {
-        const notFoundEvents = eventList.filter(({ event }) => event == null);
-        if (notFoundEvents.length > 0) {
-            const sourceZsetKey = filterIgnorable
-                ? ValkeyZSetKey.FilteredEvent
-                : ValkeyZSetKey.UnfilteredEvent;
-            console.warn(
-                `following id does not exist in ${ValkeyKey.Event} even though ${sourceZsetKey} refer`,
-                notFoundEvents.map(
-                    ({ tick, eventId }) =>
-                        `:${eventId} (playId = ${this.playId}, tick = ${tick})`,
-                ),
-            );
-        }
-    }
-
-    async _pushTick(tickPack: TickPack) {
-        if (!convertTickPack.isTick(tickPack) || !tickPack[TickIndex.Events]) {
-            return;
-        }
-        const frame = tickPack[TickIndex.Frame];
-        return withValkeySpan(
-            "valkey.pushTick",
-            {
-                "db.system": "valkey",
-                "play.id": this.playId,
-                "amflow.tick.frame": frame,
-                // 書き込みキューの滞留量。直列ドレインのため断続ラグの主要因はここに出る。
-                "valkey.write_queue.depth": this._valkeyWriteQueue.length,
-            },
-            async (span) => {
-                const unfilteredEvents = this._genEventIds(
-                    tickPack[TickIndex.Events]!.filter(
-                        (event) =>
-                            !(
-                                event[EventIndex.EventFlags] &
-                                EventFlagsMask.Transient
-                            ),
-                    ),
-                );
-                const filteredEvents = unfilteredEvents.filter(
-                    ({ event }) =>
-                        !(
-                            event[EventIndex.EventFlags] &
-                            EventFlagsMask.Ignorable
-                        ),
-                );
-                span.setAttribute(
-                    "amflow.event.count",
-                    unfilteredEvents.length,
-                );
-                await Promise.all([
-                    this._storeEvents(unfilteredEvents),
-                    this._storeUnfilteredEvents(frame, unfilteredEvents),
-                    this._storeFilteredEvents(frame, filteredEvents),
-                ]);
-                this._nextUnfilteredEventId += unfilteredEvents.length;
-            },
-        );
-    }
-
-    /**
-     * Event の順序性を保つため EventID を採番しているが、 Redis の仕様上 string 型にしなければならない。
-     * そのため桁が変わる場合のみ 0埋めする。
-     */
-    _genEventIds(events: Event[]) {
-        const offset = this._nextUnfilteredEventId;
-        // 同一 TickFrame の eventId のみ辞書順オーダーであればよいため、このフレームで採番しうる最大のIDを求めている
-        const maxId = (offset + events.length).toString();
-        return events.map((event, i) => ({
-            id: this._toPaddedEventId(offset + i, maxId),
-            event,
-        }));
-    }
-
-    async _storeUnfilteredEvents(
-        tick: number,
-        events: { event: Event; id: string }[],
-    ) {
-        await Promise.all(
-            events.map(async ({ id }) => {
-                await this._valkey.zadd(
-                    genKey(ValkeyZSetKey.UnfilteredEvent, this._hashPlayId),
-                    [
-                        {
-                            score: tick,
-                            element: id,
-                        },
-                    ],
-                );
-            }),
-        );
-    }
-
-    async _storeFilteredEvents(
-        tick: number,
-        events: { event: Event; id: string }[],
-    ) {
-        await Promise.all(
-            events.map(async ({ id }) => {
-                await this._valkey.zadd(
-                    genKey(ValkeyZSetKey.FilteredEvent, this._hashPlayId),
-                    [
-                        {
-                            score: tick,
-                            element: id,
-                        },
-                    ],
-                );
-            }),
-        );
-    }
-
-    async _storeEvents(events: { event: Event; id: string }[]) {
-        const evs = events.map(({ event, id }) => ({
-            key: genKey(ValkeyKey.Event, this._hashPlayId, parseInt(id)),
-            value: JSON.stringify(event),
-        }));
-        await Promise.all(
-            evs.map(({ key, value }) => this._valkey.set(key, value)),
-        );
-        this._keyList.push(...evs.map(({ key }) => key));
-    }
-
-    _toPaddedEventId(current: number, max: string) {
-        const currentId = current.toString();
-        if (currentId.length === max.length) {
-            return currentId;
-        } else {
-            const pad = new Array(max.length - currentId.length).fill("0");
-            return pad.join("") + currentId;
-        }
-    }
-
-    async _restoreStartPointFromIds(ids: GlideString[]) {
-        if (ids.length === 0) {
-            return null;
-        } else {
-            return await this._restoreStartPoint(parseInt(ids[0].toString()));
-        }
-    }
-
-    async _restoreStartPoint(id: number) {
-        const startpoint = await this._valkey.get(
-            genKey(ValkeyKey.StartPoint, this._hashPlayId, id),
-        );
-        if (startpoint == null) {
-            console.warn(
-                `${id} does not exist in ${ValkeyKey.StartPoint} even though zset refer`,
-            );
-            return null;
-        }
-        try {
-            // 解析に失敗した場合、その前のStartPointを取得しリトライする戦法も考えられるが、
-            // 異常系のため StartPoint なし として結果を返す
-            return JSON.parse(startpoint.toString()) as StartPoint;
-        } catch (err) {
-            console.warn(
-                `failed to parse startpoint "${startpoint}" (playId = ${this.playId}, startpointId = ${id})`,
-            );
-            return null;
-        }
     }
 }

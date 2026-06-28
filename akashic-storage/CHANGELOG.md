@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.2.1
+
+- Improve
+  - Valkey 書き込み間隔を削減 (環境変数 `CHUNK_SIZE`)
+
 ## 1.2.0
 
 - Feature
