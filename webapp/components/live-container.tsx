@@ -296,7 +296,13 @@ export function LiveContainer({ handle }: { handle: string }) {
             </>
         );
     }
-    if (error || !data || !user) {
+    // error は一過性の場合があるため、error があっても（data と user が揃っていれば）描画を継続
+    // 理由:
+    //   - idle（liveInfo なし）の場合は、もとより data から待機画面を描くだけで error は描画に影響しない。
+    //   - liveInfo がある場合は、表示に必要なデータが既に揃っているため error は描画に影響しない。
+    //   - error はポーリングによって解消する場合がある（特にプレイ終了付近）。一過性 error で
+    //     全画面をエラーに潰すと、その間だけ正常な内容が消えてしまう。
+    if (!data || !user) {
         return (
             <Container maxWidth="sm" sx={{ mt: 4 }}>
                 <Alert severity="error" variant="outlined">
