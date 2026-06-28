@@ -10,18 +10,18 @@ import { AMFlowServer } from "./AMFlowServer";
 
 interface AMFlowServerManagerParameterObject {
     valkey: GlideClusterClient;
-    memoryTickBufferSize: number;
+    chunkSize: number;
 }
 
 export class AMFlowServerManager {
     _valkey: GlideClusterClient;
-    _memoryTickBufferSize: number;
+    _chunkSize: number;
     _servers: Map<string, AMFlowServer>;
     _clients: Set<Socket>;
 
     constructor(param: AMFlowServerManagerParameterObject) {
         this._valkey = param.valkey;
-        this._memoryTickBufferSize = param.memoryTickBufferSize;
+        this._chunkSize = param.chunkSize;
         this._servers = new Map();
         this._clients = new Set();
     }
@@ -35,7 +35,7 @@ export class AMFlowServerManager {
             store: new ValkeyAMFlowStore({
                 playId,
                 valkey: this._valkey,
-                memoryTickBufferSize: this._memoryTickBufferSize,
+                chunkSize: this._chunkSize,
             }),
         });
         this._servers.set(playId, server);
