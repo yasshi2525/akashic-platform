@@ -2,6 +2,12 @@
 
 ## 1.6.7
 
+- Feature
+  - `./webapp`
+    - 全画面モード追加 (#88)
+
+## 1.6.7
+
 - Improve
   - `./akashic-storage`
     - Valkey 書き込み間隔を削減 (環境変数 `CHUNK_SIZE`) (#89)

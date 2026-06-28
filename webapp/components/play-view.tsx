@@ -5,6 +5,7 @@ import {
     RefObject,
     TouchEvent,
     useEffect,
+    useMemo,
     useRef,
     useState,
 } from "react";
@@ -14,6 +15,7 @@ import {
     Alert,
     alpha,
     Avatar,
+    Box,
     Button,
     Card,
     CardContent,
@@ -28,6 +30,8 @@ import {
     useTheme,
 } from "@mui/material";
 import {
+    Fullscreen,
+    FullscreenExit,
     HelpOutlined,
     Lock,
     OpenInNew,
@@ -197,6 +201,15 @@ export function PlayView({
     const [isXSharing, setIsXSharing] = useState(false);
     const [troubleshootOpen, setTroubleshootOpen] = useState(false);
     const [lastSubmittedComment, setLastSubmittedComment] = useState("");
+    const fullscreenRef = useRef<HTMLDivElement>(null);
+    const [fullscreenOn, setFullscreenOn] = useState(false);
+    // ネイティブ全画面を要求したか（ESC や端末操作での解除をオーバーレイに反映するため）
+    const nativeFullscreenRequestedRef = useRef(false);
+    const [fullscreenViewport, setFullscreenViewport] = useState<{
+        width: number;
+        height: number;
+    } | null>(null);
+    const [fullscreenGuideOpen, setFullscreenGuideOpen] = useState(false);
 
     function formatRemaining(ms: number | undefined) {
         if (ms == null) {
@@ -235,6 +248,156 @@ export function PlayView({
     function handleClose() {
         setWarning(undefined);
     }
+
+    // ネイティブ全画面が ESC や端末操作で解除されたら、オーバーレイ表示も解除する
+    useEffect(() => {
+        if (typeof document === "undefined") {
+            return;
+        }
+        function syncFullscreen() {
+            const doc = document as Document & {
+                webkitFullscreenElement?: Element | null;
+            };
+            const active = !!(
+                doc.fullscreenElement ?? doc.webkitFullscreenElement
+            );
+            if (!active && nativeFullscreenRequestedRef.current) {
+                nativeFullscreenRequestedRef.current = false;
+                setFullscreenOn(false);
+            }
+        }
+        document.addEventListener("fullscreenchange", syncFullscreen);
+        document.addEventListener("webkitfullscreenchange", syncFullscreen);
+        return () => {
+            document.removeEventListener("fullscreenchange", syncFullscreen);
+            document.removeEventListener(
+                "webkitfullscreenchange",
+                syncFullscreen,
+            );
+        };
+    }, []);
+
+    async function handleToggleFullscreen() {
+        const doc = document as Document & {
+            webkitFullscreenElement?: Element | null;
+            webkitExitFullscreen?: () => Promise<void> | void;
+        };
+        // 全画面を解除する
+        if (fullscreenOn) {
+            setFullscreenOn(false);
+            nativeFullscreenRequestedRef.current = false;
+            const nativeActive =
+                doc.fullscreenElement ?? doc.webkitFullscreenElement;
+            if (nativeActive) {
+                try {
+                    if (doc.exitFullscreen) {
+                        await doc.exitFullscreen();
+                    } else if (doc.webkitExitFullscreen) {
+                        await doc.webkitExitFullscreen();
+                    }
+                } catch (err) {
+                    console.warn("failed to exit fullscreen", err);
+                }
+            }
+            return;
+        }
+        // 全画面にする。CSS オーバーレイは常に適用し、加えてブラウザのツールバーを
+        // 隠すため <html> をネイティブ全画面にする（body 配下のモーダルも全画面内に表示される）
+        setFullscreenOn(true);
+        const el = document.documentElement as HTMLElement & {
+            webkitRequestFullscreen?: () => Promise<void> | void;
+        };
+        try {
+            if (el.requestFullscreen) {
+                nativeFullscreenRequestedRef.current = true;
+                await el.requestFullscreen();
+            } else if (el.webkitRequestFullscreen) {
+                nativeFullscreenRequestedRef.current = true;
+                await el.webkitRequestFullscreen();
+            }
+        } catch (err) {
+            // ネイティブ全画面が拒否されても CSS オーバーレイで全画面表示は維持する
+            nativeFullscreenRequestedRef.current = false;
+            console.warn("failed to enter native fullscreen", err);
+        }
+    }
+
+    // 全画面表示領域のサイズを計測し、終了ガイドの吹き出しを一定時間表示する
+    useEffect(() => {
+        if (!fullscreenOn) {
+            setFullscreenViewport(null);
+            setFullscreenGuideOpen(false);
+            return;
+        }
+        function measure() {
+            const el = fullscreenRef.current;
+            if (el) {
+                const rect = el.getBoundingClientRect();
+                setFullscreenViewport({
+                    width: rect.width,
+                    height: rect.height,
+                });
+            }
+        }
+        measure();
+        setFullscreenGuideOpen(true);
+        const timer = setTimeout(() => setFullscreenGuideOpen(false), 5000);
+        window.addEventListener("resize", measure);
+        window.addEventListener("orientationchange", measure);
+        return () => {
+            clearTimeout(timer);
+            window.removeEventListener("resize", measure);
+            window.removeEventListener("orientationchange", measure);
+        };
+    }, [fullscreenOn]);
+
+    const exitButtonLayout = useMemo(() => {
+        const BUTTON_SIZE = 48;
+        const MARGIN = 8;
+        // inBar=false は黒帯が無くゲーム描画に重なるフォールバック。視認性のため強調表示する
+        const fallback = {
+            position: { top: MARGIN, right: MARGIN },
+            tooltipPlacement: "bottom" as const,
+            inBar: false,
+        };
+        if (!fullscreenViewport) {
+            return fallback;
+        }
+        const { width: vw, height: vh } = fullscreenViewport;
+        if (vw <= 0 || vh <= 0) {
+            return fallback;
+        }
+        const ratio = contentWidth / contentHeight;
+        const viewRatio = vw / vh;
+        if (viewRatio > ratio) {
+            // ピラーボックス: 左右に黒帯。右帯に配置する
+            const barWidth = (vw - vh * ratio) / 2;
+            if (barWidth >= BUTTON_SIZE + MARGIN) {
+                return {
+                    position: {
+                        top: MARGIN,
+                        right: Math.max(MARGIN, (barWidth - BUTTON_SIZE) / 2),
+                    },
+                    tooltipPlacement: "left" as const,
+                    inBar: true,
+                };
+            }
+        } else {
+            // レターボックス: 上下に黒帯。上帯に配置する
+            const barHeight = (vh - vw / ratio) / 2;
+            if (barHeight >= BUTTON_SIZE + MARGIN) {
+                return {
+                    position: {
+                        top: Math.max(MARGIN, (barHeight - BUTTON_SIZE) / 2),
+                        right: MARGIN,
+                    },
+                    tooltipPlacement: "bottom" as const,
+                    inBar: true,
+                };
+            }
+        }
+        return fallback;
+    }, [fullscreenViewport, contentWidth, contentHeight]);
 
     // ゲーム起動直後、待機画面でスクロールした位置のままだとゲーム画面が画面外になるため、先頭へスクロールする
     useEffect(() => {
@@ -542,27 +705,132 @@ export function PlayView({
                     </Alert>
                 </Container>
             )}
-            <Container
-                component="div"
-                ref={ref}
+            <Box
+                ref={fullscreenRef}
                 sx={{
-                    aspectRatio: contentWidth / contentHeight,
-                    "@media (orientation: landscape) and (max-height: 600px)": {
-                        width: `min(100%, calc(100svh * ${contentWidth / contentHeight}))`,
-                    },
-                    userSelect: "none",
-                    WebkitUserSelect: "none",
-                    WebkitTapHighlightColor: "transparent",
-                    touchAction: "none",
+                    ...(fullscreenOn && {
+                        position: "fixed",
+                        inset: 0,
+                        zIndex: theme.zIndex.appBar + 1,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: "#000",
+                    }),
                 }}
-                onMouseDown={handleMouseEvent}
-                onMouseMove={handleMouseEvent}
-                onMouseUp={handleMouseEvent}
-                onTouchStart={handleTouchEvent}
-                onTouchMove={handleTouchEvent}
-                onTouchEnd={handleTouchEvent}
-                onClick={handleMouseEvent}
-            />
+            >
+                <Container
+                    component="div"
+                    ref={ref}
+                    sx={
+                        fullscreenOn
+                            ? {
+                                  width: "100%",
+                                  height: "100%",
+                                  maxWidth: "none",
+                                  px: 0,
+                                  isolation: "isolate",
+                                  userSelect: "none",
+                                  WebkitUserSelect: "none",
+                                  WebkitTapHighlightColor: "transparent",
+                                  touchAction: "none",
+                              }
+                            : {
+                                  aspectRatio: contentWidth / contentHeight,
+                                  contain: "size",
+                                  "@media (orientation: landscape) and (max-height: 600px)":
+                                      {
+                                          width: `min(100%, calc(100svh * ${contentWidth / contentHeight}))`,
+                                      },
+                                  userSelect: "none",
+                                  WebkitUserSelect: "none",
+                                  WebkitTapHighlightColor: "transparent",
+                                  touchAction: "none",
+                              }
+                    }
+                    onMouseDown={handleMouseEvent}
+                    onMouseMove={handleMouseEvent}
+                    onMouseUp={handleMouseEvent}
+                    onTouchStart={handleTouchEvent}
+                    onTouchMove={handleTouchEvent}
+                    onTouchEnd={handleTouchEvent}
+                    onClick={handleMouseEvent}
+                />
+                {fullscreenOn && (
+                    <>
+                        {!exitButtonLayout.inBar && (
+                            <Box
+                                aria-hidden
+                                sx={{
+                                    position: "absolute",
+                                    top: 0,
+                                    right: 0,
+                                    width: 50,
+                                    height: 50,
+                                    zIndex: 1,
+                                    pointerEvents: "none",
+                                    background:
+                                        "radial-gradient(circle at top right, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0) 72%)",
+                                }}
+                            />
+                        )}
+                        <Tooltip
+                            arrow
+                            open={fullscreenGuideOpen}
+                            onOpen={() => setFullscreenGuideOpen(true)}
+                            onClose={() => setFullscreenGuideOpen(false)}
+                            placement={exitButtonLayout.tooltipPlacement}
+                            title="ここをタップすると全画面を終了します"
+                            // ネイティブ全画面では全画面要素の外(body)に描画すると見えないため、
+                            // ポータルを無効化して全画面要素内に描画する
+                            slotProps={{
+                                popper: {
+                                    disablePortal: true,
+                                },
+                            }}
+                        >
+                            <IconButton
+                                aria-label="全画面を終了"
+                                onClick={handleToggleFullscreen}
+                                sx={{
+                                    position: "absolute",
+                                    ...exitButtonLayout.position,
+                                    zIndex: 2,
+                                    color: "#fff",
+                                    transition:
+                                        "opacity 0.2s, background-color 0.2s",
+                                    ...(exitButtonLayout.inBar
+                                        ? {
+                                              opacity: 0.6,
+                                              backgroundColor: alpha(
+                                                  "#000",
+                                                  0.35,
+                                              ),
+                                          }
+                                        : {
+                                              opacity: 0.92,
+                                              backgroundColor: alpha(
+                                                  "#000",
+                                                  0.6,
+                                              ),
+                                              boxShadow:
+                                                  "0 0 8px rgba(0,0,0,0.7)",
+                                          }),
+                                    "&:hover": {
+                                        opacity: 1,
+                                        backgroundColor: alpha("#000", 0.7),
+                                    },
+                                    "&:active": {
+                                        backgroundColor: alpha("#fff", 0.3),
+                                    },
+                                }}
+                            >
+                                <FullscreenExit fontSize="large" />
+                            </IconButton>
+                        </Tooltip>
+                    </>
+                )}
+            </Box>
             <ClientLogDialog
                 open={troubleshootOpen}
                 contentId={game.contentId}
@@ -843,6 +1111,8 @@ export function PlayView({
                                             sx={{
                                                 alignItems: "center",
                                                 width: "100%",
+                                                flexWrap: "wrap",
+                                                rowGap: 1,
                                             }}
                                         >
                                             <Stack
@@ -850,7 +1120,7 @@ export function PlayView({
                                                 spacing={1}
                                                 sx={{
                                                     alignItems: "center",
-                                                    mr: 3,
+                                                    mr: 1,
                                                 }}
                                             >
                                                 <IconButton
@@ -893,6 +1163,31 @@ export function PlayView({
                                             >
                                                 <X fontSize="large" />
                                             </IconButton>
+                                            <Tooltip
+                                                arrow
+                                                title={
+                                                    fullscreenOn
+                                                        ? "全画面を終了"
+                                                        : "全画面で表示"
+                                                }
+                                            >
+                                                <IconButton
+                                                    aria-label={
+                                                        fullscreenOn
+                                                            ? "全画面を終了"
+                                                            : "全画面で表示"
+                                                    }
+                                                    onClick={
+                                                        handleToggleFullscreen
+                                                    }
+                                                >
+                                                    {fullscreenOn ? (
+                                                        <FullscreenExit fontSize="large" />
+                                                    ) : (
+                                                        <Fullscreen fontSize="large" />
+                                                    )}
+                                                </IconButton>
+                                            </Tooltip>
                                             <TroubleshootButton
                                                 onClick={() => {
                                                     setTroubleshootOpen(true);

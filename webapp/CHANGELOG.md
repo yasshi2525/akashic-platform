@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.6.7
+
+- Feature
+  - 全画面モード追加
+
 ## 1.6.6
 
 - Improve
