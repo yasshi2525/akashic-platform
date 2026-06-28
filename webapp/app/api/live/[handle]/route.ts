@@ -113,7 +113,18 @@ export async function GET(
                 },
             });
         }
-        const { remainingMs, expiresAt } = await fetchPlayRemaining(play.id);
+        const remaining = await fetchPlayRemaining(play.id);
+        if (!remaining) {
+            // play 終了直後はまだ active だが、セッションは既に破棄済み。終了扱い
+            return NextResponse.json({
+                ok: true,
+                data: {
+                    owner,
+                    requiresJoinWord: false,
+                },
+            });
+        }
+        const { remainingMs, expiresAt } = remaining;
         const gameJson = await fetchGameJson(play.contentId);
         return NextResponse.json({
             ok: true,

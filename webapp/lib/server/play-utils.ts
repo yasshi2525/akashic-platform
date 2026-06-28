@@ -73,6 +73,11 @@ export async function fetchPlayRemaining(playId: number) {
     const res = await fetch(`${akashicServerUrl}/remaining?playId=${playId}`, {
         headers: withAkashicServerAuth(),
     });
+    // 終了済みの場合と他のエラーを区別。
+    // 終了直後は DB isActive = true で、終了した部屋に関する問い合わせがくるため
+    if (res.status === 404) {
+        return null;
+    }
     if (res.status !== 200) {
         throw new Error(
             `akashic server /remaining responded error. (playId = "${playId}", detail = "${await res.text()}")`,
