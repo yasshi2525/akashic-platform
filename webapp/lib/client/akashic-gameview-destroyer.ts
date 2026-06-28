@@ -16,6 +16,13 @@ export async function destroyAkashicGameView(view: AkashicGameView) {
     await waitUntilDestroyed(view);
     if (view._hasOwnGameViewShared) {
         if (!view._gameViewShared.destroyed()) {
+            // 通常は stopGame() 内の _releasePlaylogClientAMFlow() が playlog
+            // セッション(WebSocket)を閉じるが、これは GameDriver#initialize の
+            // コールバック内にあり、切り離し検知で待たずに完了した場合や終了が
+            // 完了しなかった場合は発火しない。GameViewSharedObject#destroy() は
+            // sessionManager を null するだけでセッションを閉じないため、ここで
+            // 明示的に閉じてリーク(サーバ側セッションの残留)を防ぐ。
+            releasePlaylogSessions(view);
             view._gameViewShared.destroy();
         }
         view._hasOwnGameViewShared = false;
@@ -127,6 +134,38 @@ async function waitUntilDestroyed(view: AkashicGameView) {
             resolve();
         }
     });
+}
+
+/**
+ * SessionManager が保持する playlog セッション(WebSocket)を明示的に閉じる。
+ *
+ * 通常は TrustedGameLoader._releasePlaylogClientAMFlow() 経由で閉じられるが、
+ * 終了処理が完了しない経路では呼ばれないため、ここで直接 close する。
+ */
+function releasePlaylogSessions(view: AkashicGameView): void {
+    const sessionManager = view._gameViewShared?.sessionManager as
+        | {
+              _activeSessionTable: Record<
+                  string,
+                  { session: { close(cb: (msg: string) => void): void } } | null
+              >;
+          }
+        | undefined;
+    const table = sessionManager?._activeSessionTable;
+    if (!table) {
+        return;
+    }
+    for (const url of Object.keys(table)) {
+        const activeSession = table[url];
+        if (activeSession) {
+            try {
+                activeSession.session.close(() => {});
+            } catch (err) {
+                console.debug(err);
+            }
+            table[url] = null;
+        }
+    }
 }
 
 /**
