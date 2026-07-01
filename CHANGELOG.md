@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.7.1
+
+- Improve
+  - `./webapp`
+    - 部屋作成バーに属性（限定、ゲスト参加禁止）を表示
+
 ## 1.7.0
 
 - Feature
