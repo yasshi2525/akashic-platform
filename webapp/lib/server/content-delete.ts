@@ -51,7 +51,9 @@ async function validateParam(
         };
     } catch (err) {
         console.warn(
-            `failed to delete game (publisherId = "${param.publisherId}", gameId = "${param.gameId}")`,
+            'failed to delete game (publisherId = "%s", gameId = "%s")',
+            param.publisherId,
+            param.gameId,
             err,
         );
         return {
@@ -112,7 +114,11 @@ export async function deleteGame(
             ok: true,
         };
     } catch (err) {
-        console.warn(`failed to delete game (gameId = "${param.gameId}")`, err);
+        console.warn(
+            'failed to delete game (gameId = "%s")',
+            param.gameId,
+            err,
+        );
         return {
             ok: false,
             reason: "InternalError",

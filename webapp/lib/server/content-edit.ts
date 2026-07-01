@@ -63,7 +63,9 @@ async function validateParam({
         });
     } catch (err) {
         console.warn(
-            `failed to register content (pulisherId = "${publisherId}", gameId = "${gameId}")`,
+            'failed to register content (pulisherId = "%s", gameId = "%s")',
+            publisherId,
+            gameId,
             err,
         );
         return {
@@ -210,7 +212,8 @@ export async function editContent(
         }
     } catch (err) {
         console.warn(
-            `failed to edit content (contentId = "${param.contentId}")`,
+            'failed to edit content (contentId = "%s")',
+            param.contentId,
             err,
         );
         return {

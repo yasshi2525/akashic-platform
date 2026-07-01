@@ -17,8 +17,6 @@ export async function GET(
         asset_base_url: `${internalContentBaseUrl}/${contentId}`,
         untrusted: false,
         content_id: contentId,
-        external: await fetchContentExternal(
-            `${internalContentBaseUrl}/${contentId}/game.json`,
-        ),
+        external: await fetchContentExternal(contentId),
     });
 }

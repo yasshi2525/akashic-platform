@@ -36,7 +36,9 @@ export async function isFavorited(
         return !!favorite;
     } catch (err) {
         console.warn(
-            `failed to check favorite (userId = ${user.id}, gameId = ${gameId})`,
+            "failed to check favorite (userId = %s, gameId = %s)",
+            user.id,
+            gameId,
             err,
         );
         return false;
@@ -61,7 +63,7 @@ export async function getFavoriteList(user: User | null, gameIds: number[]) {
         });
         return favorites.map((f) => f.gameId);
     } catch (err) {
-        console.warn(`failed to get favorite list (userId = ${user.id})`, err);
+        console.warn("failed to get favorite list (userId = %s)", user.id, err);
         return [];
     }
 }
@@ -103,7 +105,9 @@ export async function addFavorite(
         };
     } catch (err) {
         console.warn(
-            `failed to add favorite (userId = ${userId}, gameId = ${gameId})`,
+            "failed to add favorite (userId = %s, gameId = %s)",
+            userId,
+            gameId,
             err,
         );
         return {
@@ -143,7 +147,9 @@ export async function deleteFavorite(
         };
     } catch (err) {
         console.warn(
-            `failed to delete favorite (userId = ${userId}, gameId = ${gameId})`,
+            "failed to delete favorite (userId = %s, gameId = %s)",
+            userId,
+            gameId,
             err,
         );
         return {

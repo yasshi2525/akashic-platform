@@ -43,6 +43,17 @@ export const createProxyAudioPluginClass = (
         _modifyPath(path: string) {
             return path;
         }
+
+        // NOTE: pdi-browser の Asset 基底には存在するが pdi-common-impl には無いため、
+        // AudioPlugin の型 (pdi-browser の AudioAsset) と互換にするための差分。
+        // ProxyAudioAsset は handlerSet 経由でロードするため、これらは実際には使用されない。
+        _withCredentials: boolean | RegExp = false;
+
+        _createLoader(): never {
+            throw new Error(
+                "_createLoader is not supported in ProxyAudioAsset",
+            );
+        }
     }
 
     class ProxyAudioAsset extends AudioAsset {

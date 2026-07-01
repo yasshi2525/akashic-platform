@@ -18,7 +18,7 @@ const licensePlugin: Plugin = {
             const sep = path.sep === "\\" ? "\\\\" : "\\/";
             const match = entryPath.match(
                 new RegExp(
-                    `(.*${sep}node_modules${sep}socket\.io-client)${sep}`,
+                    `(.*${sep}node_modules${sep}socket\\.io-client)${sep}`,
                 ),
             );
             return {

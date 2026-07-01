@@ -99,7 +99,8 @@ export async function registerContent(
         }
     } catch (err) {
         console.warn(
-            `failed to register content (pulisherId = "${param.publisherId}")`,
+            'failed to register content (pulisherId = "%s")',
+            param.publisherId,
             err,
         );
         return {

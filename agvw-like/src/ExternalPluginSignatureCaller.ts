@@ -58,7 +58,7 @@ export class ExternalPluginSignatureCaller {
             const targetFunction = thisArg[propName] as Function;
             if (metadata.callbackProp) {
                 const args = metadata.callbackProp.match(
-                    /arguments\[(\d+)\]\.(.+)$/,
+                    /^arguments\[(\d+)\]\.(.+)$/,
                 );
                 if (null == args) {
                     throw new Error("invalid callbackProp geven");

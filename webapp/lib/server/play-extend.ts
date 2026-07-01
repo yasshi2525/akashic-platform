@@ -63,7 +63,7 @@ export async function extendPlay({
         }
         return json as ExtendPlayResponse;
     } catch (err) {
-        console.warn(`failed to extend. (playId = "${playId}")`, err);
+        console.warn('failed to extend. (playId = "%s")', playId, err);
         return { ok: false, reason: "InternalError" };
     }
 }
