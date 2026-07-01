@@ -16,8 +16,10 @@ import { STORAGE_KEYS, useLocalStorage } from "@/lib/client/useLocalStorage";
 
 export function PlayPlayerInfoResolver({
     request,
+    requireSignIn,
 }: {
     request: ResolvingPlayerInfoRequest;
+    requireSignIn: boolean;
 }) {
     const [user] = useAuth();
     const [remainingSeconds, setRemainingSeconds] = useState(
@@ -52,7 +54,12 @@ export function PlayPlayerInfoResolver({
                 const next = current - 1;
                 if (next <= 0) {
                     clearInterval(intervalId);
-                    handleDeny();
+                    // サインイン必須部屋は匿名参加禁止
+                    if (requireSignIn) {
+                        handleAccept();
+                    } else {
+                        handleDeny();
+                    }
                     return 0;
                 } else {
                     return next;
@@ -73,7 +80,27 @@ export function PlayPlayerInfoResolver({
             <DialogTitle id="dialog-title">
                 このゲームは名前を使用します
             </DialogTitle>
-            {user ? (
+            {requireSignIn && user?.authType === "oauth" ? (
+                <DialogContent>
+                    <DialogContentText id="dialog-description">
+                        この部屋はサインイン必須のため、ユーザー名「{user.name}
+                        」で参加します。 (残り
+                        {remainingSeconds}秒)
+                        ※未選択の場合もユーザー名で参加します。
+                    </DialogContentText>
+                    <DialogActions>
+                        <Button
+                            variant="contained"
+                            onClick={handleAccept}
+                            sx={{
+                                textTransform: "none",
+                            }}
+                        >
+                            ユーザー名 ({user.name}) で参加
+                        </Button>
+                    </DialogActions>
+                </DialogContent>
+            ) : user ? (
                 <DialogContent>
                     <DialogContentText id="dialog-description">
                         {user.authType === "guest"

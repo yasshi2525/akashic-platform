@@ -49,6 +49,7 @@ export interface RunnerParameterObject {
     isLimited: boolean;
     joinWord?: string;
     inviteHash?: string;
+    requireSignIn: boolean;
     onDestroy: (playId: number) => void;
 }
 
@@ -253,6 +254,7 @@ export class Runner {
                     isLimited: this._param.isLimited,
                     joinWord: this._param.joinWord,
                     inviteHash: this._param.inviteHash,
+                    requireSignIn: this._param.requireSignIn,
                 },
             })
         ).id;

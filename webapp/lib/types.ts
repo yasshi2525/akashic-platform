@@ -50,6 +50,7 @@ export interface PlayInfo {
     id: number;
     playName: string;
     isLimited: boolean;
+    requireSignIn: boolean;
     game: { title: string; iconURL: string };
     gameMaster: {
         userId?: string;
@@ -275,6 +276,7 @@ const playErrReasons = [
     "NotFound",
     "JoinWordRequired",
     "InvalidJoinWord",
+    "SignInRequired",
     "InternalError",
 ] as const;
 export type PlayErrorType = (typeof playErrReasons)[number];
@@ -286,6 +288,7 @@ type PlayViewInfo =
 interface BasePlayViewInfo {
     playName: string;
     isLimited: boolean;
+    requireSignIn: boolean;
     game: GameInfo;
     gameMaster: {
         id: string;
@@ -331,7 +334,7 @@ export type LiveInfo = {
 } & (
     | {
           requiresJoinWord: true;
-          reason: "JoinWordRequired" | "InvalidJoinWord";
+          reason: "JoinWordRequired" | "InvalidJoinWord" | "SignInRequired";
       }
     | {
           requiresJoinWord: false;

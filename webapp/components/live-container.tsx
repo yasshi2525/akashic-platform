@@ -22,6 +22,7 @@ import { useLive } from "@/lib/client/useLive";
 import { CopyLinkBox, CopyStatusSnackbar } from "./copy-link-box";
 import { PlayForm } from "./play-form";
 import { PlayView } from "./play-view";
+import { SignInAlert } from "./sign-in-alert";
 import { UserInline } from "./user-inline";
 
 function LiveHeader({
@@ -242,6 +243,21 @@ export function LiveContainer({ handle }: { handle: string }) {
             </Container>
         );
     }
+    if (data?.requiresJoinWord && data.reason === "SignInRequired") {
+        return (
+            <>
+                <LiveHeader
+                    userId={data.owner.userId}
+                    name={data.owner.name}
+                    iconURL={data.owner.iconURL}
+                    isOwner={false}
+                    isPlaying={true}
+                    width="narrow"
+                />
+                <SignInAlert message="ただいまサインイン必須設定でプレイしています。" />
+            </>
+        );
+    }
     if (data?.requiresJoinWord) {
         return (
             <>
@@ -390,6 +406,7 @@ export function LiveContainer({ handle }: { handle: string }) {
                 playToken={liveInfo.playToken}
                 playName={liveInfo.playName}
                 isLimited={liveInfo.isLimited}
+                requireSignIn={liveInfo.requireSignIn}
                 joinWord={liveInfo.joinWord}
                 inviteHash={liveInfo.inviteHash}
                 game={liveInfo.game}

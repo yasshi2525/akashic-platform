@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.8.0
+
+- Feature
+  - `Play` に `requireSignIn` を追加
+
 ## 1.7.0
 
 - Feature

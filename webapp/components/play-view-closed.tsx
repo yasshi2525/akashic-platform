@@ -19,6 +19,7 @@ import {
     ArrowBack,
     Home,
     Lock,
+    NoAccounts,
     Videocam,
     VideocamOff,
 } from "@mui/icons-material";
@@ -41,6 +42,7 @@ function formatDate(date?: Date): string {
 export function ClosedPlayView({
     playName,
     isLimited,
+    requireSignIn,
     createdAt,
     endedAt,
     gameMaster,
@@ -49,6 +51,7 @@ export function ClosedPlayView({
 }: {
     playName: string;
     isLimited: boolean;
+    requireSignIn: boolean;
     createdAt: Date;
     endedAt?: Date;
     gameMaster: {
@@ -86,43 +89,74 @@ export function ClosedPlayView({
                 <Card>
                     <CardContent>
                         <Stack spacing={1}>
-                            <Stack
-                                direction="row"
-                                spacing={1}
-                                sx={{
-                                    alignItems: "center",
-                                }}
-                            >
-                                <Typography variant="h6">{playName}</Typography>
-                                {isLimited && (
-                                    <Tooltip
-                                        arrow
-                                        title="この部屋は入室の言葉を知っている人だけが入室できました。"
-                                    >
-                                        <Stack
-                                            direction="row"
-                                            spacing={0.5}
-                                            sx={{
-                                                alignItems: "center",
-                                            }}
+                            <Typography variant="h6">{playName}</Typography>
+                            {(isLimited || requireSignIn) && (
+                                <Stack
+                                    direction="row"
+                                    spacing={2}
+                                    sx={{
+                                        alignItems: "center",
+                                        flexWrap: "wrap",
+                                    }}
+                                >
+                                    {isLimited && (
+                                        <Tooltip
+                                            arrow
+                                            title="この部屋は入室の言葉を知っている人だけが入室できました。"
                                         >
-                                            <Lock
-                                                fontSize="small"
+                                            <Stack
+                                                direction="row"
+                                                spacing={0.5}
                                                 sx={{
-                                                    color: theme.palette.text
-                                                        .secondary,
+                                                    alignItems: "center",
                                                 }}
-                                            />
-                                            <Typography
-                                                variant="body2"
-                                                color="textSecondary"
                                             >
-                                                限定
-                                            </Typography>
-                                        </Stack>
-                                    </Tooltip>
-                                )}
-                            </Stack>
+                                                <Lock
+                                                    fontSize="small"
+                                                    sx={{
+                                                        color: theme.palette
+                                                            .text.secondary,
+                                                    }}
+                                                />
+                                                <Typography
+                                                    variant="body2"
+                                                    color="textSecondary"
+                                                >
+                                                    限定
+                                                </Typography>
+                                            </Stack>
+                                        </Tooltip>
+                                    )}
+                                    {requireSignIn && (
+                                        <Tooltip
+                                            arrow
+                                            title="この部屋はサインインしたユーザーのみ参加できました。"
+                                        >
+                                            <Stack
+                                                direction="row"
+                                                spacing={0.5}
+                                                sx={{
+                                                    alignItems: "center",
+                                                }}
+                                            >
+                                                <NoAccounts
+                                                    fontSize="small"
+                                                    sx={{
+                                                        color: theme.palette
+                                                            .text.secondary,
+                                                    }}
+                                                />
+                                                <Typography
+                                                    variant="body2"
+                                                    color="textSecondary"
+                                                >
+                                                    ゲスト禁止
+                                                </Typography>
+                                            </Stack>
+                                        </Tooltip>
+                                    )}
+                                </Stack>
+                            )}
                             <Stack
                                 direction={{ xs: "column", sm: "row" }}
                                 spacing={2}

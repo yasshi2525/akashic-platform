@@ -18,6 +18,7 @@ interface PlayForm {
     playName: string;
     isLimited: boolean;
     joinWord?: string;
+    requireSignIn: boolean;
 }
 
 const errReasons = [
@@ -40,6 +41,7 @@ export async function registerPlay({
     playName,
     isLimited,
     joinWord,
+    requireSignIn,
 }: PlayForm): Promise<RegisterPlayResponse> {
     if (isWriteBlocked()) {
         return {
@@ -54,6 +56,12 @@ export async function registerPlay({
         };
     }
     if (isLimited && !joinWord) {
+        return {
+            ok: false,
+            reason: "InvalidParams",
+        };
+    }
+    if (requireSignIn && !gmUserId) {
         return {
             ok: false,
             reason: "InvalidParams",
@@ -108,6 +116,7 @@ export async function registerPlay({
                 isLimited,
                 joinWord: isLimited ? joinWord : undefined,
                 inviteHash,
+                requireSignIn,
             }),
         });
         if (res.status !== 200) {
