@@ -63,6 +63,7 @@ export class HttpServer {
                 playerName,
                 joinWord,
                 inviteHash,
+                requireSignIn,
             } = req.body;
             if (
                 !playName?.toString() ||
@@ -91,6 +92,7 @@ export class HttpServer {
                     ),
                     joinWord: joinWord?.toString(),
                     inviteHash: inviteHash?.toString(),
+                    requireSignIn: !!requireSignIn,
                     onDestroy: (playId) => this._manager.unregister(playId),
                 });
                 res.json({ playId });

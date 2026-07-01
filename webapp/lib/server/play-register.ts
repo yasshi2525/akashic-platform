@@ -9,15 +9,15 @@ import {
     internalContentBaseUrl,
     withAkashicServerAuth,
 } from "./akashic";
+import { getAuth } from "./auth";
 import { isWriteBlocked } from "./drain-state";
 
 interface PlayForm {
-    gameMasterId: string;
-    gmUserId: string | undefined;
     contentId: number;
     playName: string;
     isLimited: boolean;
     joinWord?: string;
+    requireSignIn: boolean;
 }
 
 const errReasons = [
@@ -34,12 +34,11 @@ type RegisterPlayResponse =
 const GUEST_ROOM_LIMIT = parseInt(process.env.GUEST_ROOM_LIMIT ?? "5");
 
 export async function registerPlay({
-    gameMasterId,
-    gmUserId,
     contentId,
     playName,
     isLimited,
     joinWord,
+    requireSignIn,
 }: PlayForm): Promise<RegisterPlayResponse> {
     if (isWriteBlocked()) {
         return {
@@ -47,13 +46,22 @@ export async function registerPlay({
             reason: "Drain",
         };
     }
-    if (!gameMasterId || contentId == null) {
+    const auth = await getAuth();
+    if (!auth || contentId == null) {
         return {
             ok: false,
             reason: "InvalidParams",
         };
     }
+    const gameMasterId = auth.id;
+    const gmUserId = auth.authType === "oauth" ? auth.id : undefined;
     if (isLimited && !joinWord) {
+        return {
+            ok: false,
+            reason: "InvalidParams",
+        };
+    }
+    if (requireSignIn && !gmUserId) {
         return {
             ok: false,
             reason: "InvalidParams",
@@ -108,6 +116,7 @@ export async function registerPlay({
                 isLimited,
                 joinWord: isLimited ? joinWord : undefined,
                 inviteHash,
+                requireSignIn,
             }),
         });
         if (res.status !== 200) {

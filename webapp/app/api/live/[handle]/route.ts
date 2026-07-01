@@ -56,6 +56,7 @@ export async function GET(
                 gameMasterId: true,
                 name: true,
                 isLimited: true,
+                requireSignIn: true,
                 joinWord: true,
                 inviteHash: true,
                 createdAt: true,
@@ -100,7 +101,7 @@ export async function GET(
             });
         }
         const user = await getAuth();
-        const denied = await checkLimitedPlayAccess(play, user?.id, {
+        const denied = await checkLimitedPlayAccess(play, user, {
             joinWord,
         });
         if (denied) {
@@ -136,6 +137,7 @@ export async function GET(
                     playToken: await fetchPlayToken(play.id, play.contentId),
                     playName: play.name,
                     isLimited: play.isLimited,
+                    requireSignIn: play.requireSignIn,
                     joinWord: play.joinWord ?? undefined,
                     inviteHash: play.inviteHash ?? undefined,
                     gameMaster: {

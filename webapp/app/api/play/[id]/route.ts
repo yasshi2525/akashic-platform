@@ -20,6 +20,7 @@ const playViewSelect = {
     gameMasterId: true,
     name: true,
     isLimited: true,
+    requireSignIn: true,
     isActive: true,
     joinWord: true,
     inviteHash: true,
@@ -72,6 +73,7 @@ async function closedPlayResponse(
             isActive: false,
             playName: play.name,
             isLimited: play.isLimited,
+            requireSignIn: play.requireSignIn,
             createdAt: play.createdAt,
             endedAt: play.endedAt ?? undefined,
             gameMaster: {
@@ -133,7 +135,7 @@ export async function GET(
         if (!play.isActive) {
             return closedPlayResponse(play, user);
         }
-        const denied = await checkLimitedPlayAccess(play, user?.id, {
+        const denied = await checkLimitedPlayAccess(play, user, {
             joinWord,
             inviteHash,
         });
@@ -153,6 +155,7 @@ export async function GET(
                 playToken: await fetchPlayToken(play.id, play.contentId),
                 playName: play.name,
                 isLimited: play.isLimited,
+                requireSignIn: play.requireSignIn,
                 joinWord: play.joinWord ?? undefined,
                 inviteHash: play.inviteHash ?? undefined,
                 gameMaster: {

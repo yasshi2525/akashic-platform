@@ -13,7 +13,6 @@ import {
     Card,
     CardActions,
     CardContent,
-    Chip,
     Container,
     Divider,
     Grid,
@@ -37,6 +36,7 @@ import {
     SportsEsports,
     Link as LinkIcon,
     Lock,
+    NoAccounts,
 } from "@mui/icons-material";
 import { PlayInfo } from "@/lib/types";
 import { usePlayList } from "@/lib/client/usePlayList";
@@ -98,33 +98,72 @@ function PlayGrid({ list }: { list: PlayInfo[] }) {
                             <Typography variant="h6" component="h2">
                                 {info.playName}
                             </Typography>
-                            {info.isLimited && (
-                                <Tooltip
-                                    arrow
-                                    title="この部屋に入室するには「入室の言葉」が必要です。"
+                            {(info.isLimited || info.requireSignIn) && (
+                                <Stack
+                                    spacing={2}
+                                    direction="row"
+                                    sx={{
+                                        alignItems: "center",
+                                        flexWrap: "wrap",
+                                    }}
                                 >
-                                    <Stack
-                                        spacing={1}
-                                        direction="row"
-                                        sx={{
-                                            alignItems: "center",
-                                        }}
-                                    >
-                                        <Lock
-                                            fontSize="small"
-                                            sx={{
-                                                color: theme.palette.text
-                                                    .secondary,
-                                            }}
-                                        />
-                                        <Typography
-                                            variant="body2"
-                                            color="textSecondary"
+                                    {info.isLimited && (
+                                        <Tooltip
+                                            arrow
+                                            title="この部屋に入室するには「入室の言葉」が必要です。"
                                         >
-                                            限定
-                                        </Typography>
-                                    </Stack>
-                                </Tooltip>
+                                            <Stack
+                                                spacing={1}
+                                                direction="row"
+                                                sx={{
+                                                    alignItems: "center",
+                                                }}
+                                            >
+                                                <Lock
+                                                    fontSize="small"
+                                                    sx={{
+                                                        color: theme.palette
+                                                            .text.secondary,
+                                                    }}
+                                                />
+                                                <Typography
+                                                    variant="body2"
+                                                    color="textSecondary"
+                                                >
+                                                    限定
+                                                </Typography>
+                                            </Stack>
+                                        </Tooltip>
+                                    )}
+                                    {info.requireSignIn && (
+                                        <Tooltip
+                                            arrow
+                                            title="この部屋はサインインしたユーザーのみ参加できます。"
+                                        >
+                                            <Stack
+                                                spacing={1}
+                                                direction="row"
+                                                sx={{
+                                                    alignItems: "center",
+                                                }}
+                                            >
+                                                <NoAccounts
+                                                    fontSize="small"
+                                                    sx={{
+                                                        color: theme.palette
+                                                            .text.secondary,
+                                                    }}
+                                                />
+                                                <Typography
+                                                    variant="body2"
+                                                    color="textSecondary"
+                                                >
+                                                    ゲスト禁止
+                                                </Typography>
+                                            </Stack>
+                                        </Tooltip>
+                                    )}
+                                </Stack>
                             )}
                             <Typography
                                 variant="body2"

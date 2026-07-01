@@ -17,6 +17,7 @@ import { usePlay } from "@/lib/client/usePlay";
 import { useAuth } from "@/lib/client/useAuth";
 import { PlayView } from "@/components/play-view";
 import { ClosedPlayView } from "@/components/play-view-closed";
+import { SignInAlert } from "@/components/sign-in-alert";
 
 export function PlayContainer() {
     const { id } = useParams<{ id: string }>();
@@ -24,11 +25,8 @@ export function PlayContainer() {
     const inviteHash = searchParams.get("inviteHash") ?? undefined;
     const [joinWord, setJoinWord] = useState("");
     const [submittedJoinWord, setSubmittedJoinWord] = useState<string>();
-    const { isLoading, data, error, requiresJoinWord } = usePlay(
-        id,
-        inviteHash,
-        submittedJoinWord,
-    );
+    const { isLoading, data, error, requiresJoinWord, requiresSignIn } =
+        usePlay(id, inviteHash, submittedJoinWord);
     const [user] = useAuth();
     const container = useRef<HTMLDivElement>(null);
 
@@ -42,6 +40,11 @@ export function PlayContainer() {
             <Container>
                 <Skeleton variant="rectangular" />
             </Container>
+        );
+    }
+    if (requiresSignIn) {
+        return (
+            <SignInAlert message="この部屋はサインインしたユーザーのみ参加できます。" />
         );
     }
     if (requiresJoinWord) {
@@ -98,6 +101,7 @@ export function PlayContainer() {
             <ClosedPlayView
                 playName={data.playName}
                 isLimited={data.isLimited}
+                requireSignIn={data.requireSignIn}
                 createdAt={data.createdAt}
                 endedAt={data.endedAt}
                 gameMaster={data.gameMaster}
@@ -112,6 +116,7 @@ export function PlayContainer() {
             playToken={data.playToken}
             playName={data.playName}
             isLimited={data.isLimited}
+            requireSignIn={data.requireSignIn}
             joinWord={data.joinWord}
             inviteHash={data.inviteHash}
             isGameMaster={data.isGameMaster}

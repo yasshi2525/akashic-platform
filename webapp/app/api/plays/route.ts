@@ -51,6 +51,7 @@ export async function GET(req: NextRequest) {
             id: true,
             name: true,
             isLimited: true,
+            requireSignIn: true,
             content: {
                 select: {
                     id: true,
@@ -93,10 +94,19 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
         ok: true,
         data: result.map(
-            ({ id, name, isLimited, content, gmUser, createdAt }) => ({
+            ({
+                id,
+                name,
+                isLimited,
+                requireSignIn,
+                content,
+                gmUser,
+                createdAt,
+            }) => ({
                 id,
                 playName: name,
                 isLimited,
+                requireSignIn,
                 game: {
                     title: content.game.title,
                     iconURL: `${publicContentBaseUrl}/${content.id}/${content.icon}`,

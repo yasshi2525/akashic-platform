@@ -1,6 +1,7 @@
 "use server";
 
 import type { GameConfiguration } from "@akashic/game-configuration";
+import { User } from "../types";
 import {
     akashicServerUrl,
     internalContentBaseUrl,
@@ -29,23 +30,30 @@ export async function fetchPlayToken(playId: number, contentId: number) {
 export async function checkLimitedPlayAccess(
     play: {
         isLimited: boolean;
+        requireSignIn: boolean;
         gameMasterId: string;
         joinWord?: string | null;
         inviteHash?: string | null;
     },
-    userId: string | undefined,
+    user: User | null,
     input: {
         joinWord?: string;
         inviteHash?: string;
     },
 ): Promise<{
     ok: false;
-    reason: "JoinWordRequired" | "InvalidJoinWord";
+    reason: "JoinWordRequired" | "InvalidJoinWord" | "SignInRequired";
 } | null> {
-    if (!play.isLimited) {
+    if (user?.id === play.gameMasterId) {
         return null;
     }
-    if (userId === play.gameMasterId) {
+    if (play.requireSignIn && (!user || user.authType === "guest")) {
+        return {
+            ok: false,
+            reason: "SignInRequired",
+        };
+    }
+    if (!play.isLimited) {
         return null;
     }
     if (

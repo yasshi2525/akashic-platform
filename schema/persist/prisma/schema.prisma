@@ -118,6 +118,7 @@ model Play {
   isLimited     Boolean   @default(false)
   joinWord      String?
   inviteHash    String?
+  requireSignIn Boolean   @default(false)
   isActive      Boolean   @default(true)
   endedAt       DateTime?
   logUploadedAt DateTime?

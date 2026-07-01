@@ -22,6 +22,13 @@ const fetcher = async (url: string) => {
                 err.name = res.reason;
                 throw err;
             }
+            case "SignInRequired": {
+                const err = new Error(
+                    "この部屋に参加するにはサインインが必要です。",
+                );
+                err.name = res.reason;
+                throw err;
+            }
             case "InternalError":
             default:
                 throw new Error(
@@ -34,6 +41,8 @@ const fetcher = async (url: string) => {
 
 const requiresJoinWord = (err?: Error) =>
     err?.name === "InvalidJoinWord" || err?.name === "JoinWordRequired";
+
+const requiresSignIn = (err?: Error) => err?.name === "SignInRequired";
 
 export function usePlay(
     playId: string,
@@ -61,6 +70,7 @@ export function usePlay(
               }
             : undefined,
         requiresJoinWord: requiresJoinWord(error),
+        requiresSignIn: requiresSignIn(error),
         error: error ? error.message : undefined,
     };
 }

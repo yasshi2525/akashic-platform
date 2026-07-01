@@ -15,6 +15,7 @@ import {
     Radio,
     RadioGroup,
     Stack,
+    Switch,
     TextField,
     Typography,
 } from "@mui/material";
@@ -45,6 +46,11 @@ export function PlayForm({
         STORAGE_KEYS.ROOM_JOIN_WORD,
         "",
     );
+    const [requireSignIn, setRequireSignIn] = useLocalStorage(
+        STORAGE_KEYS.ROOM_REQUIRE_SIGN_IN,
+        false,
+    );
+    const canRequireSignIn = !!user && user.authType !== "guest";
     const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string>();
 
@@ -74,11 +80,10 @@ export function PlayForm({
             startTransition(async () => {
                 const res = await registerPlay({
                     contentId: selectedContent,
-                    gameMasterId: user.id,
-                    gmUserId: user.authType !== "guest" ? user.id : undefined,
                     playName,
                     isLimited,
                     joinWord,
+                    requireSignIn: canRequireSignIn && requireSignIn,
                 });
                 if (res.ok) {
                     switch (afterCreate.action) {
@@ -255,6 +260,28 @@ export function PlayForm({
                         />
                     </Box>
                 )}
+                <Box>
+                    <Typography variant="h6" gutterBottom>
+                        参加者設定
+                    </Typography>
+                    <FormControlLabel
+                        control={
+                            <Switch
+                                checked={canRequireSignIn && requireSignIn}
+                                onChange={(event) =>
+                                    setRequireSignIn(event.target.checked)
+                                }
+                                disabled={!canRequireSignIn}
+                            />
+                        }
+                        label="ゲスト参加を禁止"
+                    />
+                    <Typography variant="body2" color="textSecondary">
+                        {canRequireSignIn
+                            ? "有効にすると、サインインしたユーザーのみ参加でき、ユーザー名が固定で表示されます。"
+                            : "この設定を利用するにはサインインが必要です。"}
+                    </Typography>
+                </Box>
                 <Box>
                     <Typography variant="h6" gutterBottom>
                         ゲーム選択{" "}

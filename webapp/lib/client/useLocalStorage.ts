@@ -4,6 +4,7 @@ export const STORAGE_KEYS = {
     ROOM_NAME: "akashic-platform:room:name",
     ROOM_IS_LIMITED: "akashic-platform:room:isLimited",
     ROOM_JOIN_WORD: "akashic-platform:room:joinWord",
+    ROOM_REQUIRE_SIGN_IN: "akashic-platform:room:requireSignIn",
     PLAYER_INFO_NAME: "akashic-platform:player-info:name",
     PLAYER_VOLUME: "akashic-platform:player:volume",
     PLAYER_MUTED: "akashic-platform:player:muted",

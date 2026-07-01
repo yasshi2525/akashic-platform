@@ -278,6 +278,7 @@ export const openapi = {
                     playerName: { type: "string" },
                     joinWord: { type: "string" },
                     inviteHash: { type: "string" },
+                    requireSignIn: { type: "boolean" },
                 },
             },
             StartResponse: {

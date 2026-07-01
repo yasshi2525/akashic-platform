@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 1.7.0
+
+- Feature
+  - ゲスト参加禁止部屋を作成できるように (#90)
+    - `./schema/persist`
+      - サインイン要求フラグを追加
+    - `./akashic-server`
+      - ゲスト参加禁止部屋を作成できるように
+    - `./webapp`
+      - UIを更新
+
 ## 1.6.9
 
 - Misc
