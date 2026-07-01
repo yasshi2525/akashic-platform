@@ -76,8 +76,6 @@ export function PlayCreateDialog({
         setSending(true);
         const res = await registerPlay({
             contentId: game.contentId,
-            gameMasterId: user.id,
-            gmUserId: user.authType !== "guest" ? user.id : undefined,
             playName,
             isLimited,
             joinWord,

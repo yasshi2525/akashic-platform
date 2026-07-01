@@ -80,8 +80,6 @@ export function PlayForm({
             startTransition(async () => {
                 const res = await registerPlay({
                     contentId: selectedContent,
-                    gameMasterId: user.id,
-                    gmUserId: user.authType !== "guest" ? user.id : undefined,
                     playName,
                     isLimited,
                     joinWord,
