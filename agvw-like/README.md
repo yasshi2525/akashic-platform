@@ -2,6 +2,8 @@
 
 minifyスクリプトファイルのみ提供の [`@akashic/agvw`](https://github.com/akashic-games/agvw) (`v1.0.7`) をリバースエンジニアリングし、 TypeScript として再構成したものです。
 
+忠実に移植していますが、一部セキュリティの観点でコードを修正しています。機能性に違いはありません。
+
 ※ `@akashic/agvw` は、非公開プロジェクト `@akashic/akashic-gameview-web` のディストリビューションファイルが格納されたパブリックプロジェクトです。
 
 ## LICENSE
@@ -23,6 +25,7 @@ The following modifications and additions were made by **yasshi2525 (2025)**:
 - TypeScript へ再構成（リバースエンジニアリング）
 - minify されたコードの復元
 - 型定義の補完
+- セキュリティ観点でのコード改善
 
 The reconstructed portions are provided under the MIT License,
 but only modifications and newly written code are copyrighted by yasshi2525.

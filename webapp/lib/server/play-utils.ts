@@ -90,8 +90,12 @@ export async function fetchPlayRemaining(playId: number) {
 }
 
 export async function fetchGameJson(contentId: number) {
+    const id = Number(contentId);
+    if (!Number.isInteger(id) || id < 0) {
+        throw new Error("invalid contentId");
+    }
     return (await (
-        await fetch(`${internalContentBaseUrl}/${contentId}/game.json`)
+        await fetch(`${internalContentBaseUrl}/${id}/game.json`)
     ).json()) as GameConfiguration;
 }
 

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
     engineUrls,
-    internalContentBaseUrl,
     publicContentBaseUrl,
     publicBaseUrl,
 } from "@/lib/server/akashic";
@@ -18,8 +17,6 @@ export async function GET(
         asset_base_url: `${publicContentBaseUrl}/${contentId}`,
         untrusted: false,
         content_id: contentId,
-        external: await fetchContentExternal(
-            `${internalContentBaseUrl}/${contentId}/game.json`,
-        ),
+        external: await fetchContentExternal(contentId),
     });
 }

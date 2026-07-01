@@ -1,6 +1,7 @@
 "use server";
 
 import type { GameConfiguration } from "@akashic/game-configuration";
+import { internalContentBaseUrl } from "./akashic";
 
 const implicitExternalMapper: { external: string; keywords: string[] }[] = [
     {
@@ -50,11 +51,23 @@ export async function getContentExternal(gameJson: GameConfiguration) {
     return [...new Set([...implicitExternal, ...explicitExternal])];
 }
 
-export async function fetchContentExternal(url: string) {
+export async function fetchContentExternal(contentId: number | string) {
+    const id = Number(contentId);
+    if (!Number.isInteger(id) || id < 0) {
+        console.warn(
+            "invalid contentId for external fetch (contentId = %s)",
+            contentId,
+        );
+        return [];
+    }
     try {
-        return await getContentExternal(await (await fetch(url)).json());
+        const res = await fetch(`${internalContentBaseUrl}/${id}/game.json`);
+        return await getContentExternal(await res.json());
     } catch (err) {
-        console.warn(`failed to fetch external in game.json. (url = ${url})`);
+        console.warn(
+            "failed to fetch external in game.json. (contentId = %s)",
+            id,
+        );
         return [];
     }
 }

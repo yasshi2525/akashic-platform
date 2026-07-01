@@ -112,7 +112,9 @@ export async function registerPlay({
         });
         if (res.status !== 200) {
             console.warn(
-                `failed to start play. (contentId = "${contentId}", cause = ${await res.text()})`,
+                'failed to start play. (contentId = "%s", cause = %s)',
+                contentId,
+                await res.text(),
             );
             return {
                 ok: false,
@@ -128,7 +130,11 @@ export async function registerPlay({
             };
         }
     } catch (err) {
-        console.warn(`failed to start play. (contentId = "${contentId}"`, err);
+        console.warn(
+            'failed to start play. (contentId = "%s")',
+            contentId,
+            err,
+        );
         return {
             ok: false,
             reason: "InternalError",

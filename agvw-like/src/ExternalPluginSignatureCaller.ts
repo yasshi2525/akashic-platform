@@ -21,8 +21,7 @@ interface FunctionTableFunctionMetadata {
 }
 
 export type FunctionTableMetadata =
-    | FunctionTableObjectMetadata
-    | FunctionTableFunctionMetadata;
+    FunctionTableObjectMetadata | FunctionTableFunctionMetadata;
 
 // NOTE: 本当は再帰構造だが、再帰型定義がうまくできないのと呼び出し上できないのでこれで妥協
 type ThisArgType = Record<string, Function | Record<string, Function>>;
@@ -58,7 +57,7 @@ export class ExternalPluginSignatureCaller {
             const targetFunction = thisArg[propName] as Function;
             if (metadata.callbackProp) {
                 const args = metadata.callbackProp.match(
-                    /arguments\[(\d+)\]\.(.+)$/,
+                    /^arguments\[(\d+)\]\.(.+)$/,
                 );
                 if (null == args) {
                     throw new Error("invalid callbackProp geven");

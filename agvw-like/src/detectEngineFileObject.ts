@@ -5,13 +5,13 @@ import type * as PlaylogClient from "@yasshi2525/playlog-client-like";
 import { ErrorFactory } from "./Error";
 
 export const isPlaylogClientUrl = (url: string) =>
-    /.*\/playlogClientV.*\.js$/.test(url);
+    /\/playlogClientV[^/]*\.js$/.test(url);
 
 export const findPlaylogClientUrl = (urls: string[]) =>
     urls.find((url) => isPlaylogClientUrl(url));
 
 export const detectPlaylogClientObject = (win: Window, url: string) => {
-    const m = url.match(/.*\/(playlogClientV.*)\.js$/);
+    const m = url.match(/\/(playlogClientV[^/]*)\.js$/);
     if (m) {
         return win[m[1] as keyof Window] as typeof PlaylogClient;
     } else {
@@ -20,10 +20,10 @@ export const detectPlaylogClientObject = (win: Window, url: string) => {
 };
 
 export const isEngineFilesUrl = (url: string) =>
-    /.*\/engineFilesV.*\.js$/.test(url);
+    /\/engineFilesV[^/]*\.js$/.test(url);
 
 export const detectEngineFilesObject = (win: Window, url: string) => {
-    const m = url.match(/.*\/(engineFilesV.*)\.js$/);
+    const m = url.match(/\/(engineFilesV[^/]*)\.js$/);
     if (m && win[m[1] as keyof Window]) {
         const engineFile = win[m[1] as keyof Window];
         return {
