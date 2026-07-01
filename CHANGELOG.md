@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.6.9
+
+- Misc
+  - `./agvw-like`
+  - `./playlogClient-like`
+  - `./webapp`
+    - コードの安全性を向上
+
 ## 1.6.8
 
 - Feature
