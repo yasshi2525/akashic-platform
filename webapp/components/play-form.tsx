@@ -9,6 +9,7 @@ import {
     Button,
     Card,
     CardContent,
+    Chip,
     Container,
     FormControlLabel,
     InputAdornment,
@@ -18,8 +19,15 @@ import {
     Switch,
     TextField,
     Typography,
+    useTheme,
 } from "@mui/material";
-import { ArrowBack, Search, SportsEsports } from "@mui/icons-material";
+import {
+    ArrowBack,
+    Lock,
+    NoAccounts,
+    Search,
+    SportsEsports,
+} from "@mui/icons-material";
 import { messageKey, messages } from "@/lib/types";
 import { registerPlay } from "@/lib/server/play-register";
 import { useAuth } from "@/lib/client/useAuth";
@@ -33,6 +41,7 @@ export function PlayForm({
     afterCreate: { action: "redirect" } | { action: "stay"; cb: () => void };
     embedded?: boolean;
 }) {
+    const theme = useTheme();
     const [user] = useAuth();
     const [selectedContent, setSelectedContent] = useState<number>();
     const [selectedGameTitle, setSelectedGameTitle] = useState<string>();
@@ -129,6 +138,59 @@ export function PlayForm({
         }
     }
 
+    const effectiveRequireSignIn = canRequireSignIn && requireSignIn;
+
+    const roomBadges =
+        isLimited || effectiveRequireSignIn ? (
+            <Stack
+                direction="row"
+                spacing={0.5}
+                sx={{
+                    flexWrap: "wrap",
+                    gap: 0.5,
+                    mt: 0.5,
+                    color: theme.palette.text.secondary,
+                }}
+            >
+                {isLimited && (
+                    <Chip
+                        icon={
+                            <Lock
+                                color="inherit"
+                                sx={{
+                                    color: theme.palette.text.secondary,
+                                }}
+                            />
+                        }
+                        label="限定"
+                        size="small"
+                        variant="outlined"
+                        sx={{
+                            color: theme.palette.text.secondary,
+                        }}
+                    />
+                )}
+                {effectiveRequireSignIn && (
+                    <Chip
+                        icon={
+                            <NoAccounts
+                                color="inherit"
+                                sx={{
+                                    color: theme.palette.text.secondary,
+                                }}
+                            />
+                        }
+                        label="ゲスト参加禁止"
+                        size="small"
+                        variant="outlined"
+                        sx={{
+                            color: theme.palette.text.secondary,
+                        }}
+                    />
+                )}
+            </Stack>
+        ) : null;
+
     const bottomBar = selectedContent ? (
         <Box
             sx={{
@@ -182,6 +244,7 @@ export function PlayForm({
                             >
                                 {selectedGameTitle}
                             </Typography>
+                            {roomBadges}
                         </Stack>
                         <Button
                             type="submit"
