@@ -212,8 +212,7 @@ export class AMFlowClient implements AMFlow {
     getTickList(
         optsOrBegin: number | GetTickListOptions,
         endOrCallbeck:
-            | number
-            | ((err: Error | null, tickList?: TickList) => void),
+            number | ((err: Error | null, tickList?: TickList) => void),
         callback?: (err: Error | null, tickList?: TickList) => void,
     ) {
         if (

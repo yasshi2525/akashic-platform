@@ -13,8 +13,7 @@ const favoriteToggleErrReasons = [
 type FavoriteToggleErrorType = (typeof favoriteToggleErrReasons)[number];
 
 type FavoriteToggleResponse =
-    | { ok: true }
-    | { ok: false; reason: FavoriteToggleErrorType };
+    { ok: true } | { ok: false; reason: FavoriteToggleErrorType };
 
 export async function isFavorited(
     user: User | null,

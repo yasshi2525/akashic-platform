@@ -21,8 +21,7 @@ interface FunctionTableFunctionMetadata {
 }
 
 export type FunctionTableMetadata =
-    | FunctionTableObjectMetadata
-    | FunctionTableFunctionMetadata;
+    FunctionTableObjectMetadata | FunctionTableFunctionMetadata;
 
 // NOTE: 本当は再帰構造だが、再帰型定義がうまくできないのと呼び出し上できないのでこれで妥協
 type ThisArgType = Record<string, Function | Record<string, Function>>;

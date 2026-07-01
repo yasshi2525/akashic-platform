@@ -7,8 +7,7 @@ export type DrainStatus = {
 };
 
 type DrainResponse =
-    | ({ ok: true } & DrainStatus)
-    | { ok: false; reason: string };
+    ({ ok: true } & DrainStatus) | { ok: false; reason: string };
 
 const fetcher = async (url: string) => {
     const res = (await (await fetch(url)).json()) as DrainResponse;
