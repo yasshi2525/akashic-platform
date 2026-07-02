@@ -68,6 +68,7 @@ interface ValkeyAMFlowStoreParameterObject {
     valkey: GlideClusterClient;
     playId: string;
     chunkSize: number;
+    memoryRetentionMs: number;
 }
 
 interface StartPointIndexEntry {
@@ -76,10 +77,17 @@ interface StartPointIndexEntry {
     timestamp: number;
 }
 
+interface RetainedChunk {
+    ticks: Tick[];
+    sealedAt: number;
+    persisted: boolean;
+}
+
 /**
  * playlog（Tick）の保存方式:
  *
  * `chunkSize` フレーム分の Tick をまとめて 1 キー(チャンク)に直列化する。 1チャンク分たまったら永続化。
+ * 直近の getTickList 要求（最近数秒）を確実にメモリから返せるよう、 `memoryRetentionMs` の間はメモリに保持する。
  * StartPoint は数が少ないため `(id, frame, timestamp)` の索引をメモリに常駐。本体のみ永続化。
  */
 export class ValkeyAMFlowStore extends AMFlowStoreBase {
@@ -91,9 +99,10 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
     /** destroy 時に unlink するキー一覧 */
     _keyList: string[];
     _chunkSize: number;
+    _memoryRetentionMs: number;
     _currentChunkIndex: number;
     _currentChunkTicks: Tick[];
-    _pendingChunks: Map<number, Tick[]>;
+    _retainedChunks: Map<number, RetainedChunk>;
     _startPointIndex: StartPointIndexEntry[];
     _pendingStartPoints: Map<number, StartPoint>;
     _inflightWrites: Set<Promise<void>>;
@@ -107,9 +116,10 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         this._hashPlayId = `{${this.playId}}`;
         this._keyList = [];
         this._chunkSize = param.chunkSize;
+        this._memoryRetentionMs = param.memoryRetentionMs;
         this._currentChunkIndex = -1;
         this._currentChunkTicks = [];
-        this._pendingChunks = new Map();
+        this._retainedChunks = new Map();
         this._startPointIndex = [];
         this._pendingStartPoints = new Map();
         this._inflightWrites = new Set();
@@ -201,11 +211,16 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         if (this._currentChunkTicks.length === 0) {
             return;
         }
+        this._evictExpiredChunks();
         const chunkIndex = this._currentChunkIndex;
         const ticks = this._currentChunkTicks;
         const key = genKey(ValkeyKey.TickChunk, this._hashPlayId, chunkIndex);
-        // SET 完了までメモリに保持
-        this._pendingChunks.set(chunkIndex, ticks);
+        const retained: RetainedChunk = {
+            ticks,
+            sealedAt: Date.now(),
+            persisted: false,
+        };
+        this._retainedChunks.set(chunkIndex, retained);
         this._keyList.push(key);
         const write = withValkeySpan(
             "valkey.sealChunk",
@@ -218,7 +233,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
             () => this._valkey.set(key, JSON.stringify(ticks)),
         )
             .then(() => {
-                this._pendingChunks.delete(chunkIndex);
+                retained.persisted = true;
             })
             .catch((err) => {
                 console.error(
@@ -230,6 +245,19 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
                 this._inflightWrites.delete(write);
             });
         this._inflightWrites.add(write);
+    }
+
+    private _evictExpiredChunks() {
+        const now = Date.now();
+        for (const [chunkIndex, chunk] of this._retainedChunks) {
+            // 永続化未完了のチャンクは valkey にまだ無い可能性があるため保持し続ける
+            if (
+                chunk.persisted &&
+                now - chunk.sealedAt >= this._memoryRetentionMs
+            ) {
+                this._retainedChunks.delete(chunkIndex);
+            }
+        }
     }
 
     async getTickList(opts: GetTickListOptions): Promise<TickList | null> {
@@ -295,7 +323,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         if (chunkIndex === this._currentChunkIndex) {
             return this._currentChunkTicks;
         }
-        return this._pendingChunks.get(chunkIndex);
+        return this._retainedChunks.get(chunkIndex)?.ticks;
     }
 
     private _filterEvents(tick: Tick, filterIgnorable: boolean) {

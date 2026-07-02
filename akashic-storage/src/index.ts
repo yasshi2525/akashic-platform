@@ -16,6 +16,9 @@ import { AMFlowServerManager } from "./AMFlowServerManager";
     const amfManager = new AMFlowServerManager({
         valkey,
         chunkSize: parseInt(process.env.CHUNK_SIZE ?? "1800"),
+        memoryRetentionMs: parseInt(
+            process.env.CHUNK_MEMORY_RETENTION_MS ?? "15000",
+        ),
     });
     const playManager = new PlayManager({ amfManager });
 

@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.2.2
+
+- Improve
+  - playlog をメモリ上に保管する最低限の期間を設定できるように (環境変数 `CHUNK_MEMORY_RETENTION_MS`)
+
 ## 1.2.1
 
 - Improve
