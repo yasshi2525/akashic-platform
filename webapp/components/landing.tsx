@@ -496,9 +496,9 @@ function LatestGamesSection({ games }: { games: GameInfo[] }) {
                                         {game.title}
                                     </Typography>
                                     <Box sx={{ mt: 0.5 }}>
+                                        {/* カード全体がリンクのため、UserInline 内でのリンクはなし */}
                                         <UserInline
                                             user={{
-                                                id: game.publisher.id,
                                                 name: game.publisher.name,
                                                 image: game.publisher.image,
                                             }}
