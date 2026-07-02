@@ -4,12 +4,18 @@ import {
     internalPlaylogServerUrl,
     publicContentBaseUrl,
 } from "@/lib/server/akashic";
-import { GUEST_NAME, PlayInfo, PLAYLIST_LIMITS } from "@/lib/types";
+import {
+    AnonymousPlayInfo,
+    GUEST_NAME,
+    PlayInfo,
+    PLAYLIST_LIMITS,
+} from "@/lib/types";
 
 export async function GET(req: NextRequest) {
     const keyword = req.nextUrl.searchParams.get("keyword") ?? undefined;
     const gameMasterId =
         req.nextUrl.searchParams.get("gameMasterId") ?? undefined;
+    const anonymous = req.nextUrl.searchParams.get("anonymous") === "true";
     const limits = parseInt(
         req.nextUrl.searchParams.get("limits") ?? PLAYLIST_LIMITS.toString(),
     );
@@ -91,6 +97,26 @@ export async function GET(req: NextRequest) {
             }
         }),
     );
+    if (anonymous) {
+        return NextResponse.json({
+            ok: true,
+            data: result.map(
+                ({ id, isLimited, requireSignIn, content, createdAt }) => ({
+                    id,
+                    isLimited,
+                    requireSignIn,
+                    game: {
+                        title: content.game.title,
+                        iconURL: `${publicContentBaseUrl}/${content.id}/${content.icon}`,
+                    },
+                    participants:
+                        participants.find((p) => p.id === id)?.participants ??
+                        0,
+                    createdAt,
+                }),
+            ) satisfies AnonymousPlayInfo[],
+        });
+    }
     return NextResponse.json({
         ok: true,
         data: result.map(

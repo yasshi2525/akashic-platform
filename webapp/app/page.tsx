@@ -2,11 +2,14 @@
 
 import { useAuth } from "@/lib/client/useAuth";
 import { PlayList } from "@/components/play-list";
+import { GuestLanding } from "@/components/landing";
 
 export default function Home() {
     const [user] = useAuth();
 
-    return (
-        <PlayList guestId={user?.authType === "guest" ? user.id : undefined} />
-    );
+    if (user == null || user.authType === "guest") {
+        return <GuestLanding />;
+    }
+
+    return <PlayList />;
 }

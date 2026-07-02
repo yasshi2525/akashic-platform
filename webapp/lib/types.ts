@@ -61,6 +61,8 @@ export interface PlayInfo {
     createdAt: Date;
 }
 
+export type AnonymousPlayInfo = Omit<PlayInfo, "playName" | "gameMaster">;
+
 export const FEEDBACK_LIMITS = 10;
 
 interface FeedbackAuthor {
