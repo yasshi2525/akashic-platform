@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.7.2
+
+- Improve
+  - `./akashic-storage`
+    - playlog をメモリ上に保管する最低限の期間を設定できるように
+
 ## 1.7.1
 
 - Improve
