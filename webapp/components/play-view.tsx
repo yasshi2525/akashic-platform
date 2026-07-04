@@ -117,6 +117,7 @@ export function PlayView({
     user,
     onPlayEnd,
     afterPlayClose,
+    afterRecreate,
     pageType,
     ref,
 }: {
@@ -144,6 +145,7 @@ export function PlayView({
     user: User;
     onPlayEnd?: (reason: PlayEndReason) => void;
     afterPlayClose: { action: "redirect" } | { action: "stay"; cb: () => void };
+    afterRecreate: { action: "navigate" } | { action: "stay"; cb: () => void };
     pageType: "play" | "live";
     ref: RefObject<HTMLDivElement | null>;
 }) {
@@ -1490,6 +1492,17 @@ export function PlayView({
                                         <PlayCloseDialog
                                             playId={playId}
                                             afterClose={afterPlayClose}
+                                            recreate={{
+                                                game,
+                                                user,
+                                                initialValues: {
+                                                    playName,
+                                                    isLimited,
+                                                    joinWord,
+                                                    requireSignIn,
+                                                },
+                                                afterCreate: afterRecreate,
+                                            }}
                                         />
                                     </Stack>
                                 )}

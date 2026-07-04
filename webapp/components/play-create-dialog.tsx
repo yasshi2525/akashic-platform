@@ -26,13 +26,25 @@ export function PlayCreateDialog({
     onClose,
     game,
     user,
+    initialValues,
     afterCreate,
 }: {
     open: boolean;
     onClose: () => void;
     game?: GameInfo;
     user: User | null;
-    afterCreate: { action: "navigate" } | { action: "stay"; cb: () => void };
+    initialValues?: {
+        playName: string | null;
+        isLimited: boolean;
+        joinWord?: string;
+        requireSignIn: boolean;
+    };
+    afterCreate:
+        | { action: "navigate" }
+        | {
+              action: "stay";
+              cb: (created: { playId: number; inviteHash?: string }) => void;
+          };
 }) {
     const router = useRouter();
     const [playName, setPlayName] = useLocalStorage(STORAGE_KEYS.ROOM_NAME, "");
@@ -54,10 +66,16 @@ export function PlayCreateDialog({
 
     useEffect(() => {
         if (open) {
-            // playName / isLimited / joinWord は前回入力値を引き継ぐため意図的にリセットしない
+            if (initialValues) {
+                setPlayName(initialValues.playName ?? "");
+                setIsLimited(initialValues.isLimited);
+                setJoinWord(initialValues.joinWord ?? "");
+                setRequireSignIn(initialValues.requireSignIn);
+            }
             setError(undefined);
             setSending(false);
         }
+        // initialValues は毎レンダーで新しい参照になるため依存に含めない
     }, [open, game?.contentId]);
 
     async function handleSubmit() {
@@ -89,7 +107,10 @@ export function PlayCreateDialog({
                     );
                     break;
                 case "stay":
-                    afterCreate.cb();
+                    afterCreate.cb({
+                        playId: res.playId,
+                        inviteHash: res.inviteHash,
+                    });
                     break;
                 default:
                     console.error(

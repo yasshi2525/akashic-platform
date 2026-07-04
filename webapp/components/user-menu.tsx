@@ -1,10 +1,9 @@
 "use client";
 
-import { MouseEvent, useState } from "react";
+import { MouseEvent, useEffect, useState } from "react";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
 import {
-    Button,
     IconButton,
     Menu,
     MenuItem,
@@ -34,11 +33,33 @@ interface MenuProps {
     handleClose: () => void;
 }
 
-function AnonymousMenu({ anchorEl, handleClose }: MenuProps) {
+function AnonymousMenu({
+    anchorEl,
+    handleClose,
+    onSignIn,
+}: MenuProps & { onSignIn: () => void }) {
+    const theme = useTheme();
     return (
-        <Menu anchorEl={anchorEl} open={!!anchorEl} onClose={handleClose}>
-            <MenuItem>
-                <SignInDialog />
+        <Menu
+            anchorEl={anchorEl}
+            open={!!anchorEl}
+            onClose={handleClose}
+            onClick={handleClose}
+        >
+            <MenuItem onClick={onSignIn}>
+                <Typography
+                    variant="body1"
+                    sx={{
+                        color: theme.palette.primary.light,
+                        borderStyle: "solid",
+                        borderWidth: 1,
+                        borderRadius: 2,
+                        borderColor: theme.palette.primary.light,
+                        p: 1,
+                    }}
+                >
+                    サインイン
+                </Typography>
             </MenuItem>
         </Menu>
     );
@@ -69,85 +90,60 @@ function AuthorizedMenu({ user, anchorEl, handleClose }: AuthorizedMenuProps) {
             onClose={handleClose}
             onClick={handleClose}
         >
-            <MenuItem>
-                <Button
-                    href={`/user/${user.id}`}
-                    style={{
-                        color: "inherit",
-                    }}
-                >
-                    <AccountCircle />
-                    <Typography variant="body1" sx={{ ml: 1 }}>
-                        マイページ
-                    </Typography>
-                </Button>
+            <MenuItem
+                component={Link}
+                href={`/user/${user.id}`}
+                sx={{ py: 1.25 }}
+            >
+                <AccountCircle />
+                <Typography variant="body1" sx={{ ml: 1 }}>
+                    マイページ
+                </Typography>
             </MenuItem>
             {handle && (
-                <MenuItem>
-                    <Button
-                        href={`/live/${handle}`}
-                        style={{
-                            color: "inherit",
-                        }}
-                    >
-                        <MeetingRoom />
-                        <Typography variant="body1" sx={{ ml: 1 }}>
-                            あなたの部屋
-                        </Typography>
-                    </Button>
+                <MenuItem
+                    component={Link}
+                    href={`/live/${handle}`}
+                    sx={{ py: 1.25 }}
+                >
+                    <MeetingRoom />
+                    <Typography variant="body1" sx={{ ml: 1 }}>
+                        あなたの部屋
+                    </Typography>
                 </MenuItem>
             )}
-            <MenuItem>
-                <Button
-                    href="/my-play"
-                    style={{
-                        color: "inherit",
-                    }}
-                >
-                    <FormatListBulleted />
-                    <Typography variant="body1" sx={{ ml: 1 }}>
-                        自分が作った部屋
-                    </Typography>
-                </Button>
+            <MenuItem component={Link} href="/my-play" sx={{ py: 1.25 }}>
+                <FormatListBulleted />
+                <Typography variant="body1" sx={{ ml: 1 }}>
+                    自分が作った部屋
+                </Typography>
             </MenuItem>
-            <MenuItem>
-                <Button
-                    href="/new-game"
-                    style={{
-                        color: "inherit",
-                    }}
-                >
-                    <AddCircle />
-                    <Typography variant="body1" sx={{ ml: 1 }}>
-                        ゲームを投稿
-                    </Typography>
-                </Button>
+            <MenuItem component={Link} href="/new-game" sx={{ py: 1.25 }}>
+                <AddCircle />
+                <Typography variant="body1" sx={{ ml: 1 }}>
+                    ゲームを投稿
+                </Typography>
             </MenuItem>
-            <MenuItem divider={true} sx={{ pb: 1 }}>
-                <Button
-                    href="/edit-game"
-                    style={{
-                        color: "inherit",
-                    }}
-                >
-                    <ListAlt />
-                    <Typography variant="body1" sx={{ ml: 1 }}>
-                        投稿ゲーム一覧
-                    </Typography>
-                </Button>
+            <MenuItem
+                component={Link}
+                href="/edit-game"
+                divider={true}
+                sx={{ py: 1.5 }}
+            >
+                <ListAlt />
+                <Typography variant="body1" sx={{ ml: 1 }}>
+                    投稿ゲーム一覧
+                </Typography>
             </MenuItem>
-            <MenuItem>
-                <Button
-                    onClick={handleSignOut}
-                    style={{
-                        color: theme.palette.text.secondary,
-                    }}
-                >
-                    <Logout />
-                    <Typography variant="body1" sx={{ ml: 1 }}>
-                        サインアウト
-                    </Typography>
-                </Button>
+            <MenuItem
+                onClick={handleSignOut}
+                disabled={signouting}
+                sx={{ py: 1.5, color: theme.palette.text.secondary }}
+            >
+                <Logout />
+                <Typography variant="body1" sx={{ ml: 1 }}>
+                    サインアウト
+                </Typography>
             </MenuItem>
         </Menu>
     );
@@ -156,6 +152,21 @@ function AuthorizedMenu({ user, anchorEl, handleClose }: AuthorizedMenuProps) {
 export function UserMenu() {
     const [user] = useAuth();
     const [anchorEl, setAnchorEl] = useState<HTMLElement>();
+    const [signInOpen, setSignInOpen] = useState(false);
+
+    // usePlayLeaveGuard が割り込んでもメニューを閉じる動作を完了させる
+    useEffect(() => {
+        if (!anchorEl) {
+            return;
+        }
+        const onDocClickCapture = () => {
+            setTimeout(() => setAnchorEl(undefined), 0);
+        };
+        document.addEventListener("click", onDocClickCapture, true);
+        return () => {
+            document.removeEventListener("click", onDocClickCapture, true);
+        };
+    }, [anchorEl]);
 
     function handleClick(ev: MouseEvent<HTMLElement>) {
         setAnchorEl(ev.currentTarget);
@@ -182,7 +193,20 @@ export function UserMenu() {
                 <Settings fontSize="large" />
             </IconButton>
             {user?.authType !== "oauth" ? (
-                <AnonymousMenu handleClose={handleClose} anchorEl={anchorEl} />
+                <>
+                    <AnonymousMenu
+                        handleClose={handleClose}
+                        anchorEl={anchorEl}
+                        onSignIn={() => setSignInOpen(true)}
+                    />
+                    <SignInDialog
+                        trigger={{
+                            action: "controlled",
+                            open: signInOpen,
+                            onClose: () => setSignInOpen(false),
+                        }}
+                    />
+                </>
             ) : (
                 <AuthorizedMenu
                     user={user}

@@ -1,8 +1,7 @@
 "use client";
 
-import { MouseEvent, useMemo, useState, useTransition } from "react";
+import { MouseEvent, useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { formatDistance } from "date-fns";
 import { ja } from "date-fns/locale";
 import {
@@ -34,12 +33,28 @@ export function NotificationBell() {
     const { isLoading, list, error, mutate } = useNotifications(!!enabled);
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const [isPending, startTransition] = useTransition();
-    const router = useRouter();
 
     const unreadCount = useMemo(() => {
         if (!list) return 0;
         return list.filter((item) => item.unread).length;
     }, [list]);
+
+    // リンク付き通知でも離脱ガードが割り込めるようにし、かつその後 Menu を閉じられるように
+    useEffect(() => {
+        if (!anchorEl) {
+            return;
+        }
+        const onDocClickCapture = (ev: Event) => {
+            const target = ev.target as HTMLElement | null;
+            if (target?.closest("a")) {
+                setTimeout(() => setAnchorEl(null), 0);
+            }
+        };
+        document.addEventListener("click", onDocClickCapture, true);
+        return () => {
+            document.removeEventListener("click", onDocClickCapture, true);
+        };
+    }, [anchorEl]);
 
     if (!enabled) {
         return null;
@@ -60,15 +75,11 @@ export function NotificationBell() {
         });
     }
 
-    function handleItemClick(id: number, link?: string) {
+    function handleMarkRead(id: number) {
         startTransition(async () => {
             await markNotificationReadAction(id);
             await mutate();
-            if (link) {
-                router.push(link);
-            }
         });
-        handleClose();
     }
 
     return (
@@ -103,6 +114,9 @@ export function NotificationBell() {
                             size="small"
                             onClick={handleMarkAll}
                             disabled={isPending || !unreadCount}
+                            sx={{
+                                color: theme.palette.primary.light,
+                            }}
                         >
                             すべて既読
                         </Button>
@@ -120,61 +134,77 @@ export function NotificationBell() {
                         </Alert>
                     </Box>
                 ) : list && list.length ? (
-                    list.map((notice) => (
-                        <MenuItem
-                            key={notice.id}
-                            onClick={() =>
-                                handleItemClick(
-                                    notice.id,
-                                    notice.link ?? undefined,
-                                )
-                            }
-                            sx={{
-                                alignItems: "flex-start",
-                                gap: 2,
-                                opacity: notice.unread ? 1 : 0.6,
-                            }}
-                        >
-                            <Avatar
-                                src={notice.iconURL}
-                                sx={{ width: 36, height: 36 }}
-                            />
-                            <Stack spacing={0.5}>
-                                <Typography
-                                    variant="body2"
-                                    sx={{
-                                        fontWeight: notice.unread ? 600 : 400,
-                                        whiteSpace: "pre-wrap",
-                                    }}
-                                >
-                                    {notice.body}
-                                </Typography>
-                                <Typography
-                                    variant="caption"
-                                    color="textSecondary"
-                                >
-                                    {formatDistance(
-                                        new Date(notice.createdAt),
-                                        new Date(),
-                                        { addSuffix: true, locale: ja },
-                                    )}
-                                </Typography>
-                                {notice.link && (
+                    list.map((notice) => {
+                        const content = (
+                            <>
+                                <Avatar
+                                    src={notice.iconURL}
+                                    sx={{ width: 36, height: 36 }}
+                                />
+                                <Stack spacing={0.5}>
+                                    <Typography
+                                        variant="body2"
+                                        sx={{
+                                            fontWeight: notice.unread
+                                                ? 600
+                                                : 400,
+                                            whiteSpace: "pre-wrap",
+                                        }}
+                                    >
+                                        {notice.body}
+                                    </Typography>
                                     <Typography
                                         variant="caption"
-                                        color="primary"
-                                        component={Link}
-                                        href={notice.link}
-                                        onClick={(event) =>
-                                            event.stopPropagation()
-                                        }
+                                        color="textSecondary"
                                     >
-                                        詳細を見る
+                                        {formatDistance(
+                                            new Date(notice.createdAt),
+                                            new Date(),
+                                            { addSuffix: true, locale: ja },
+                                        )}
                                     </Typography>
-                                )}
-                            </Stack>
-                        </MenuItem>
-                    ))
+                                    {notice.link && (
+                                        <Typography
+                                            variant="caption"
+                                            sx={{
+                                                color: theme.palette.primary
+                                                    .light,
+                                            }}
+                                        >
+                                            詳細を見る
+                                        </Typography>
+                                    )}
+                                </Stack>
+                            </>
+                        );
+                        const itemSx = {
+                            alignItems: "flex-start",
+                            gap: 2,
+                            opacity: notice.unread ? 1 : 0.6,
+                        };
+                        return notice.link ? (
+                            <MenuItem
+                                key={notice.id}
+                                component={Link}
+                                href={notice.link}
+                                onPointerDown={() => handleMarkRead(notice.id)}
+                                sx={itemSx}
+                            >
+                                {content}
+                            </MenuItem>
+                        ) : (
+                            <MenuItem
+                                key={notice.id}
+                                onClick={() => {
+                                    handleMarkRead(notice.id);
+                                    handleClose();
+                                }}
+                                sx={itemSx}
+                            >
+                                {content}
+                            </MenuItem>
+                        );
+                    })
                 ) : (
                     <Box sx={{ px: 2, py: 2 }}>
                         <Typography variant="body2">

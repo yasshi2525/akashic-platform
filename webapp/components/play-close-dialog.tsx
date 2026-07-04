@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition, useState } from "react";
-import { redirect } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import {
     Alert,
     Button,
@@ -11,39 +11,65 @@ import {
     DialogContentText,
     DialogTitle,
 } from "@mui/material";
-import { messageKey, messages } from "@/lib/types";
+import { GameInfo, messageKey, messages, User } from "@/lib/types";
 import { endPlay } from "@/lib/server/play-end";
+import { PlayCreateDialog } from "./play-create-dialog";
 
 export function PlayCloseDialog({
     playId,
     afterClose,
+    recreate,
 }: {
     playId: string;
     afterClose: { action: "redirect" } | { action: "stay"; cb: () => void };
+    recreate: {
+        game: GameInfo;
+        user: User | null;
+        initialValues: {
+            playName: string | null;
+            isLimited: boolean;
+            joinWord?: string;
+            requireSignIn: boolean;
+        };
+        afterCreate:
+            { action: "navigate" } | { action: "stay"; cb: () => void };
+    };
 }) {
+    const router = useRouter();
     const [open, setOpen] = useState(false);
+    const [recreateOpen, setRecreateOpen] = useState(false);
     const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string>();
 
-    function handleSubmit() {
+    function doAfterClose() {
+        switch (afterClose.action) {
+            case "redirect":
+                redirect(`/?${messageKey}=${messages.play.endSuccessful}`);
+            case "stay":
+                afterClose.cb();
+                break;
+            default:
+                console.error("invalide afterClose action type.", afterClose);
+                break;
+        }
+    }
+
+    // NOTE: 作ってから閉じる。先に閉じると、live ではポーリング再描画でこのダイアログごとアンマウントされてしまうから。
+    function handleRecreate() {
+        setError(undefined);
+        // aria-hidden 警告防止のため
+        if (typeof document !== "undefined") {
+            (document.activeElement as HTMLElement | null)?.blur?.();
+        }
+        setOpen(false);
+        setRecreateOpen(true);
+    }
+
+    function handleEnd() {
         startTransition(async () => {
             const res = await endPlay({ playId, reason: "GAMEMASTER" });
             if (res.ok) {
-                switch (afterClose.action) {
-                    case "redirect":
-                        redirect(
-                            `/?${messageKey}=${messages.play.endSuccessful}`,
-                        );
-                    case "stay":
-                        afterClose.cb();
-                        break;
-                    default:
-                        console.error(
-                            "invalide afterClose action type.",
-                            afterClose,
-                        );
-                        break;
-                }
+                doAfterClose();
             } else {
                 switch (res.reason) {
                     case "InvalidParams":
@@ -89,7 +115,7 @@ export function PlayCloseDialog({
                 <DialogTitle id="dialog-title">部屋を閉じますか？</DialogTitle>
                 <DialogContent>
                     <DialogContentText id="dialog-description">
-                        現在遊んでいるゲームを終了します。この部屋に参加しているプレイヤーはこれ以上遊べなくなります。
+                        現在遊んでいるゲームを終了します。この部屋に参加しているプレイヤーはこれ以上遊べなくなります。続けて遊ぶ場合は「作り直す」を選ぶと、同じ設定で新しい部屋を作成できます。
                     </DialogContentText>
                     {error && (
                         <Alert
@@ -103,11 +129,20 @@ export function PlayCloseDialog({
                     <DialogActions>
                         <Button
                             variant="contained"
+                            color="error"
                             loading={isPending}
                             disabled={isPending}
-                            onClick={handleSubmit}
+                            onClick={handleEnd}
                         >
                             終了する
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            color="error"
+                            disabled={isPending}
+                            onClick={handleRecreate}
+                        >
+                            作り直す
                         </Button>
                         <Button
                             variant="outlined"
@@ -121,6 +156,29 @@ export function PlayCloseDialog({
                     </DialogActions>
                 </DialogContent>
             </Dialog>
+            <PlayCreateDialog
+                open={recreateOpen}
+                onClose={() => {
+                    setRecreateOpen(false);
+                }}
+                game={recreate.game}
+                user={recreate.user}
+                initialValues={recreate.initialValues}
+                afterCreate={{
+                    action: "stay",
+                    cb: async ({ playId: newPlayId }) => {
+                        await endPlay({ playId, reason: "GAMEMASTER" });
+                        if (recreate.afterCreate.action === "stay") {
+                            setRecreateOpen(false);
+                            recreate.afterCreate.cb();
+                        } else {
+                            router.push(
+                                `/play/${newPlayId}?${messageKey}=${messages.play.registerSuccessful}`,
+                            );
+                        }
+                    },
+                }}
+            />
         </>
     );
 }

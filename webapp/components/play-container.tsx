@@ -130,6 +130,7 @@ export function PlayContainer() {
             game={data.game}
             user={user}
             afterPlayClose={{ action: "redirect" }}
+            afterRecreate={{ action: "navigate" }}
             pageType="play"
             ref={container}
         />

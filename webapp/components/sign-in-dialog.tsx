@@ -11,20 +11,35 @@ import {
 import { Close } from "@mui/icons-material";
 import { SignIn } from "./sign-in";
 
-export function SignInDialog() {
-    const [open, setOpen] = useState(false);
+export function SignInDialog({
+    trigger = { action: "self" },
+}: {
+    // action:"self"       … 自前のサインインボタンを表示し内部で開閉する
+    // action:"controlled" … 開閉を外部に委ねる（トリガーを Menu の外へ出す用途）
+    trigger?:
+        | { action: "self" }
+        | { action: "controlled"; open: boolean; onClose: () => void };
+} = {}) {
+    const [internalOpen, setInternalOpen] = useState(false);
+    const open = trigger.action === "controlled" ? trigger.open : internalOpen;
 
     function handleClick() {
-        setOpen(true);
+        setInternalOpen(true);
     }
     function handleClose() {
-        setOpen(false);
+        if (trigger.action === "controlled") {
+            trigger.onClose();
+        } else {
+            setInternalOpen(false);
+        }
     }
     return (
         <>
-            <Button variant="contained" onClick={handleClick}>
-                サインイン
-            </Button>
+            {trigger.action === "self" && (
+                <Button variant="contained" onClick={handleClick}>
+                    サインイン
+                </Button>
+            )}
             <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
                 <DialogTitle
                     sx={{

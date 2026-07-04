@@ -421,6 +421,7 @@ export function LiveContainer({ handle }: { handle: string }) {
                 user={user}
                 onPlayEnd={handleAfterPlayClose}
                 afterPlayClose={{ action: "stay", cb: handleAfterPlayClose }}
+                afterRecreate={{ action: "stay", cb: handleAfterCreate }}
                 pageType="live"
                 ref={container}
             />
