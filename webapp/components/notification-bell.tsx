@@ -1,7 +1,6 @@
 "use client";
 
 import { MouseEvent, useMemo, useState, useTransition } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatDistance } from "date-fns";
 import { ja } from "date-fns/locale";
@@ -162,12 +161,13 @@ export function NotificationBell() {
                                 {notice.link && (
                                     <Typography
                                         variant="caption"
-                                        color="primary"
-                                        component={Link}
-                                        href={notice.link}
-                                        onClick={(event) =>
-                                            event.stopPropagation()
-                                        }
+                                        sx={{
+                                            color: theme.palette.primary.light,
+                                            borderWidth: 1,
+                                            borderRadius: 1,
+                                            borderColor:
+                                                theme.palette.primary.light,
+                                        }}
                                     >
                                         詳細を見る
                                     </Typography>
