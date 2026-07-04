@@ -740,6 +740,7 @@ export function PlayView({
             >
                 <Container
                     component="div"
+                    disableGutters
                     sx={{ ...gameViewSizingSx, position: "relative" }}
                 >
                     <Box
