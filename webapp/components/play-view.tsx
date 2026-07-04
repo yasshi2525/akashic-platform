@@ -1,14 +1,6 @@
 "use client";
 
-import {
-    MouseEvent,
-    RefObject,
-    TouchEvent,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from "react";
+import { RefObject, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import {
@@ -231,22 +223,6 @@ export function PlayView({
             return format(new Date(createdAt), "yyyy/MM/dd HH:mm");
         } catch {
             return "--";
-        }
-    }
-
-    function handleMouseEvent(ev: MouseEvent<HTMLDivElement>) {
-        if (skipping) {
-            ev.preventDefault();
-            if (ev.type !== "mousemove") {
-                setWarning("EVENT_ON_SKIPPING");
-            }
-        }
-    }
-
-    function handleTouchEvent(ev: TouchEvent<HTMLDivElement>) {
-        if (skipping) {
-            ev.preventDefault();
-            setWarning("EVENT_ON_SKIPPING");
         }
     }
 
@@ -723,6 +699,21 @@ export function PlayView({
         }
     }
 
+    const gameViewSizingSx = fullscreenOn
+        ? {
+              width: "100%",
+              height: "100%",
+              maxWidth: "none",
+              px: 0,
+          }
+        : {
+              aspectRatio: contentWidth / contentHeight,
+              contain: "size",
+              "@media (orientation: landscape) and (max-height: 600px)": {
+                  width: `min(100%, calc(100svh * ${contentWidth / contentHeight}))`,
+              },
+          };
+
     return (
         <>
             {error && (
@@ -735,6 +726,7 @@ export function PlayView({
             <Box
                 ref={fullscreenRef}
                 sx={{
+                    position: "relative",
                     ...(fullscreenOn && {
                         position: "fixed",
                         inset: 0,
@@ -748,41 +740,35 @@ export function PlayView({
             >
                 <Container
                     component="div"
-                    ref={ref}
-                    sx={
-                        fullscreenOn
-                            ? {
-                                  width: "100%",
-                                  height: "100%",
-                                  maxWidth: "none",
-                                  px: 0,
-                                  isolation: "isolate",
-                                  userSelect: "none",
-                                  WebkitUserSelect: "none",
-                                  WebkitTapHighlightColor: "transparent",
-                                  touchAction: "none",
-                              }
-                            : {
-                                  aspectRatio: contentWidth / contentHeight,
-                                  contain: "size",
-                                  "@media (orientation: landscape) and (max-height: 600px)":
-                                      {
-                                          width: `min(100%, calc(100svh * ${contentWidth / contentHeight}))`,
-                                      },
-                                  userSelect: "none",
-                                  WebkitUserSelect: "none",
-                                  WebkitTapHighlightColor: "transparent",
-                                  touchAction: "none",
-                              }
-                    }
-                    onMouseDown={handleMouseEvent}
-                    onMouseMove={handleMouseEvent}
-                    onMouseUp={handleMouseEvent}
-                    onTouchStart={handleTouchEvent}
-                    onTouchMove={handleTouchEvent}
-                    onTouchEnd={handleTouchEvent}
-                    onClick={handleMouseEvent}
-                />
+                    sx={{ ...gameViewSizingSx, position: "relative" }}
+                >
+                    <Box
+                        ref={ref}
+                        sx={{
+                            width: "100%",
+                            height: "100%",
+                            isolation: "isolate",
+                            userSelect: "none",
+                            WebkitUserSelect: "none",
+                            WebkitTapHighlightColor: "transparent",
+                            touchAction: "none",
+                        }}
+                    />
+                    {skipping && (
+                        <Box
+                            aria-hidden
+                            onPointerDown={() =>
+                                setWarning("EVENT_ON_SKIPPING")
+                            }
+                            sx={{
+                                position: "absolute",
+                                inset: 0,
+                                cursor: "wait",
+                                touchAction: "none",
+                            }}
+                        />
+                    )}
+                </Container>
                 {fullscreenOn && (
                     <>
                         {!exitButtonLayout.inBar && (
