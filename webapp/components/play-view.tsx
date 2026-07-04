@@ -1490,6 +1490,16 @@ export function PlayView({
                                         <PlayCloseDialog
                                             playId={playId}
                                             afterClose={afterPlayClose}
+                                            recreate={{
+                                                game,
+                                                user,
+                                                initialValues: {
+                                                    playName,
+                                                    isLimited,
+                                                    joinWord,
+                                                    requireSignIn,
+                                                },
+                                            }}
                                         />
                                     </Stack>
                                 )}
