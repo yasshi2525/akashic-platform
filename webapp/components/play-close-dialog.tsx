@@ -31,7 +31,8 @@ export function PlayCloseDialog({
             joinWord?: string;
             requireSignIn: boolean;
         };
-        navigate: { type: "play" } | { type: "live"; handle: string };
+        afterCreate:
+            { action: "navigate" } | { action: "stay"; cb: () => void };
     };
 }) {
     const router = useRouter();
@@ -167,11 +168,14 @@ export function PlayCloseDialog({
                     action: "stay",
                     cb: async ({ playId: newPlayId }) => {
                         await endPlay({ playId, reason: "GAMEMASTER" });
-                        const href =
-                            recreate.navigate.type === "live"
-                                ? `/live/${recreate.navigate.handle}?${messageKey}=${messages.play.registerSuccessful}`
-                                : `/play/${newPlayId}?${messageKey}=${messages.play.registerSuccessful}`;
-                        router.push(href);
+                        if (recreate.afterCreate.action === "stay") {
+                            setRecreateOpen(false);
+                            recreate.afterCreate.cb();
+                        } else {
+                            router.push(
+                                `/play/${newPlayId}?${messageKey}=${messages.play.registerSuccessful}`,
+                            );
+                        }
                     },
                 }}
             />
