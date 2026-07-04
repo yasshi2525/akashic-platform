@@ -31,6 +31,7 @@ export function PlayCloseDialog({
             joinWord?: string;
             requireSignIn: boolean;
         };
+        navigate: { type: "play" } | { type: "live"; handle: string };
     };
 }) {
     const router = useRouter();
@@ -166,9 +167,11 @@ export function PlayCloseDialog({
                     action: "stay",
                     cb: async ({ playId: newPlayId }) => {
                         await endPlay({ playId, reason: "GAMEMASTER" });
-                        router.push(
-                            `/play/${newPlayId}?${messageKey}=${messages.play.registerSuccessful}`,
-                        );
+                        const href =
+                            recreate.navigate.type === "live"
+                                ? `/live/${recreate.navigate.handle}?${messageKey}=${messages.play.registerSuccessful}`
+                                : `/play/${newPlayId}?${messageKey}=${messages.play.registerSuccessful}`;
+                        router.push(href);
                     },
                 }}
             />

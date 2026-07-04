@@ -1499,6 +1499,14 @@ export function PlayView({
                                                     joinWord,
                                                     requireSignIn,
                                                 },
+                                                navigate:
+                                                    pageType === "live" &&
+                                                    handle
+                                                        ? {
+                                                              type: "live",
+                                                              handle,
+                                                          }
+                                                        : { type: "play" },
                                             }}
                                         />
                                     </Stack>
