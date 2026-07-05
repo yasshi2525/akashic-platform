@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import type { PassThrough } from "node:stream";
 import util from "node:util";
+import { maskSecrets } from "./secretMasker";
 
 export interface PlayContext {
     playId: number;
@@ -35,6 +36,7 @@ export function installConsoleOverride(): void {
                 message += "\n" + trimmed;
             }
         }
+        message = maskSecrets(message);
         const line = JSON.stringify({
             timestamp: new Date().toISOString(),
             level,
