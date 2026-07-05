@@ -190,6 +190,27 @@ export type ClientLogsGetResponse =
     | { ok: true; data: ClientLogSubmission[] }
     | { ok: false; reason: ClientLogsGetErrorType };
 
+export const BOARD_MESSAGE_BODY_MAX = 200;
+export const BOARD_MESSAGE_NAME_MAX = 20;
+
+export interface BoardMessageInfo {
+    id: number;
+    author: {
+        id?: string;
+        name: string;
+        iconURL?: string;
+    };
+    body: string;
+    createdAt: Date;
+}
+
+const boardMessagesGetErrReasons = ["InternalError"] as const;
+export type BoardMessagesGetErrorType =
+    (typeof boardMessagesGetErrReasons)[number];
+export type BoardMessagesGetResponse =
+    | { ok: true; data: BoardMessageInfo[] }
+    | { ok: false; reason: BoardMessagesGetErrorType };
+
 export const NOTIFICATION_LIMITS = 10;
 
 export interface NotificationInfo {

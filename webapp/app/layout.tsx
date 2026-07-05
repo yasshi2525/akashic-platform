@@ -79,7 +79,6 @@ export default async function RootLayout({
                                             display: "flex",
                                             flexDirection: "column",
                                             minHeight: "100vh",
-                                            overflowY: "auto",
                                         }}
                                     >
                                         <SiteHeader />
@@ -89,9 +88,14 @@ export default async function RootLayout({
                                                 drainRefreshInterval
                                             }
                                         />
+                                        {/* ページ側が flexGrow で余白まで使えるよう flex に */}
                                         <Box
                                             component="main"
-                                            sx={{ flexGrow: 1 }}
+                                            sx={{
+                                                flexGrow: 1,
+                                                display: "flex",
+                                                flexDirection: "column",
+                                            }}
                                         >
                                             {children}
                                         </Box>
