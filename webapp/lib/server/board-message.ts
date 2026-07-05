@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { prisma } from "@yasshi2525/persist-schema";
-import { getBucket, getS3Client, s3KeyPrefix } from "./content-utils";
+import { getS3Client } from "./content-utils";
 
 const TTL_MINUTES = parseInt(process.env.BOARD_MESSAGE_TTL_MINUTES ?? "30");
 const SHORT_WINDOW_SECONDS = parseInt(
@@ -111,14 +111,23 @@ export interface BoardMessageArchiveRecord {
     postedAt: Date;
 }
 
+function getAuditBucket() {
+    if (!process.env.S3_AUDIT_BUCKET) {
+        throw new Error("S3_AUDIT_BUCKET is required.");
+    }
+    return process.env.S3_AUDIT_BUCKET;
+}
+
+const auditKeyPrefix = process.env.S3_AUDIT_KEY_PREFIX ?? "";
+
 export async function archiveBoardMessage(record: BoardMessageArchiveRecord) {
     const iso = record.postedAt.toISOString();
     const [datePart] = iso.split("T");
     const [yyyy, mm, dd] = datePart.split("-");
-    const key = `${s3KeyPrefix}board-messages/${yyyy}/${mm}/${dd}/${iso.replace(/[:.]/g, "-")}-${randomUUID()}.json`;
+    const key = `${auditKeyPrefix}board-messages/${yyyy}/${mm}/${dd}/${iso.replace(/[:.]/g, "-")}-${randomUUID()}.json`;
     await getS3Client().send(
         new PutObjectCommand({
-            Bucket: getBucket(),
+            Bucket: getAuditBucket(),
             Key: key,
             Body: JSON.stringify(record),
             ContentType: "application/json",
