@@ -239,7 +239,10 @@ services:
       STORAGE_PUBLIC_URL: http://akashic-storage:3031/playlog
       STORAGE_ADMIN_URL: http://akashic-storage:3033/playlog
       STORAGE_ADMIN_TOKEN: ${STORAGE_ADMIN_TOKEN:-local-storage-admin-token}
-      SERVER_API_TOKEN: ${SERVER_API_TOKEN:-local-server-api-token}
+      SERVER_WEBAPP_API_TOKEN: ${SERVER_WEBAPP_API_TOKEN:-local-server-webapp-api-token}
+      RUNNER_URL: http://akashic-runner:3034
+      RUNNER_SERVER_API_TOKEN: ${RUNNER_SERVER_API_TOKEN:-local-runner-server-api-token}
+      SERVER_RUNNER_API_TOKEN: ${SERVER_RUNNER_API_TOKEN:-local-server-runner-api-token}
       DATABASE_URL: postgres://ap-user:${POSTGRES_PASSWORD:-postgres}@postgres:5432/akashic
       S3_ENDPOINT: http://minio:9000
       S3_BUCKET: akashic-content
@@ -253,6 +256,21 @@ services:
     depends_on:
       db-migrate:
         condition: service_completed_successfully
+    networks:
+      - apnet
+
+  akashic-runner:
+    build:
+      context: .
+      dockerfile: akashic-runner/Dockerfile
+    user: 1000:1000
+    environment:
+      PORT: 3034
+      SERVER_URL: http://akashic-server:3032
+      RUNNER_SERVER_API_TOKEN: ${RUNNER_SERVER_API_TOKEN:-local-runner-server-api-token}
+      SERVER_RUNNER_API_TOKEN: ${SERVER_RUNNER_API_TOKEN:-local-server-runner-api-token}
+      OTEL_SERVICE_NAME: akashic-runner
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
     networks:
       - apnet
 
@@ -272,7 +290,7 @@ services:
       PUBLIC_STORAGE_URL: http://localhost:3031/playlog
       INTERNAL_STORAGE_URL: http://akashic-storage:3031/playlog
       SERVER_URL: http://akashic-server:3032
-      SERVER_API_TOKEN: ${SERVER_API_TOKEN:-local-server-api-token}
+      SERVER_WEBAPP_API_TOKEN: ${SERVER_WEBAPP_API_TOKEN:-local-server-webapp-api-token}
       DATABASE_URL: postgres://ap-user:${POSTGRES_PASSWORD:-postgres}@postgres:5432/akashic
       NEXTAUTH_URL: http://localhost:3000
       AUTH_TRUST_HOST: true

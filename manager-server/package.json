@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1037.0",
-    "@yasshi2525/persist-schema": "^1.6.1",
+    "@yasshi2525/persist-schema": "^1.9.0",
     "express": "^5.2.1"
   }
 }

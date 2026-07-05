@@ -1,6 +1,6 @@
 {
   "name": "@yasshi2525/webapp",
-  "version": "1.8.0",
+  "version": "2.0.0",
   "private": true,
   "description": "",
   "main": "index.js",
@@ -32,7 +32,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@yasshi2525/amflow-client-event-schema": "^1.1.0",
-    "@yasshi2525/playlog-client-like": "^1.2.0",
+    "@yasshi2525/playlog-client-like": "^1.2.1",
     "engine-files-v3": "npm:@akashic/engine-files@^3.13.4",
     "prettier": "^3.8.3",
     "tailwindcss": "^4.2.4",

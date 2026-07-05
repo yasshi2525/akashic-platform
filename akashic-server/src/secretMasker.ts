@@ -2,7 +2,9 @@ import process from "node:process";
 
 const SENSITIVE_ENV_NAMES = [
     "STORAGE_ADMIN_TOKEN",
-    "SERVER_API_TOKEN",
+    "SERVER_WEBAPP_API_TOKEN",
+    "SERVER_RUNNER_API_TOKEN",
+    "RUNNER_SERVER_API_TOKEN",
     "DATABASE_URL",
     "S3_ACCESS_KEY",
     "S3_SECRET_KEY",

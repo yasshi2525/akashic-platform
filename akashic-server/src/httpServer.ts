@@ -1,26 +1,37 @@
 import { Server } from "node:http";
 import express from "express";
-import { Express } from "express";
+import { Express, Router } from "express";
 import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
+import type {
+    AssetRequest,
+    PlayEndedRequest,
+} from "@yasshi2525/runner-ipc-schema";
 import { RunnerManager } from "./runnerManager";
+import { createMaskTransform } from "./maskStream";
 
 interface HttpServerParameterObject {
     manager: RunnerManager;
-    apiToken: string;
+    webappApiToken: string;
+    serverRunnerApiToken: string;
 }
 
 export class HttpServer {
     _manager: RunnerManager;
     _app: Express;
     _server?: Server;
-    _apiToken: string;
+    _webappApiToken: string;
+    _serverRunnerApiToken: string;
 
     constructor(param: HttpServerParameterObject) {
         this._manager = param.manager;
-        if (!param.apiToken) {
-            throw new Error("SERVER_API_TOKEN is required");
+        if (!param.webappApiToken) {
+            throw new Error("SERVER_WEBAPP_API_TOKEN is required");
         }
-        this._apiToken = param.apiToken;
+        if (!param.serverRunnerApiToken) {
+            throw new Error("SERVER_RUNNER_API_TOKEN is required");
+        }
+        this._webappApiToken = param.webappApiToken;
+        this._serverRunnerApiToken = param.serverRunnerApiToken;
         this._app = this._createHttp();
     }
 
@@ -40,17 +51,132 @@ export class HttpServer {
         }
     }
 
-    _createHttp() {
-        const app = express();
-        app.use(express.json());
-        app.use((req, res, next) => {
-            if (req.header("x-akashic-internal-token") !== this._apiToken) {
+    _authWith(token: string) {
+        return (
+            req: express.Request,
+            res: express.Response,
+            next: express.NextFunction,
+        ) => {
+            if (req.header("x-akashic-internal-token") !== token) {
                 res.status(401).json({ ok: false, reason: "Unauthorized" });
                 return;
             }
             next();
+        };
+    }
+
+    _createHttp() {
+        const app = express();
+
+        app.post(
+            "/internal/logs",
+            this._authWith(this._serverRunnerApiToken),
+            (req, res) => {
+                const playId = parseInt(String(req.query.playId));
+                if (Number.isNaN(playId)) {
+                    res.status(400).json({ ok: false, reason: "BadRequest" });
+                    return;
+                }
+                const runner = this._manager.get(playId);
+                const logStream = runner?.getLogStream();
+                if (!runner || !logStream) {
+                    res.status(404).json({ ok: false, reason: "NotFound" });
+                    return;
+                }
+                const mask = createMaskTransform();
+                let finished = false;
+                // ログ本文を読み切ってから応答。途中応答で keep-alive 接続が
+                // 早期クローズされるのを防ぐため。
+                const finish = () => {
+                    if (finished) {
+                        return;
+                    }
+                    finished = true;
+                    runner.markLogDrained();
+                    if (!res.headersSent) {
+                        res.json({ ok: true });
+                    }
+                };
+                req.on("end", finish);
+                req.on("close", finish);
+                req.on("error", finish);
+                // logStream の end は finalize 側に任せるため end:false。
+                mask.pipe(logStream, { end: false });
+                req.pipe(mask);
+            },
+        );
+
+        app.use(express.json());
+
+        app.use("/internal", this._authWith(this._serverRunnerApiToken));
+        app.use("/internal", this._createInternalRouter());
+
+        app.use(this._authWith(this._webappApiToken));
+        this._registerControlRoutes(app);
+
+        return app;
+    }
+
+    _createInternalRouter(): Router {
+        const router = Router();
+
+        router.post("/asset", async (req, res) => {
+            const { playId, url } = req.body as Partial<AssetRequest>;
+            if (playId == null || !url) {
+                res.status(400).json({ ok: false, reason: "BadRequest" });
+                return;
+            }
+            const runner = this._manager.get(playId);
+            if (!runner || !runner.isAllowedAsset(url)) {
+                res.status(403).json({ ok: false, reason: "Forbidden" });
+                return;
+            }
+            try {
+                const upstream = await fetch(url);
+                if (!upstream.ok) {
+                    res.status(502).json({ ok: false, reason: "BadGateway" });
+                    return;
+                }
+                const body = Buffer.from(await upstream.arrayBuffer());
+                res.setHeader(
+                    "content-type",
+                    upstream.headers.get("content-type") ??
+                        "application/octet-stream",
+                );
+                res.send(body);
+            } catch (err) {
+                res.status(502).json({
+                    ok: false,
+                    reason: "BadGateway",
+                    message: (err as Error).message,
+                });
+            }
         });
 
+        router.post("/play-ended", async (req, res) => {
+            const { playId, reason, origin } =
+                req.body as Partial<PlayEndedRequest>;
+            if (playId == null || !reason || !origin) {
+                res.status(400).json({ ok: false, reason: "BadRequest" });
+                return;
+            }
+            // storage 発の終了は storage 側で処理済みなので再通知しない。
+            const notifyStorage = origin !== "storage";
+            res.json({ ok: true });
+            this._manager
+                .end(playId, reason as PlayEndReason, notifyStorage)
+                .catch((err) => {
+                    console.warn(
+                        `failed to handle play-ended (playId = "${playId}")`,
+                        err,
+                    );
+                });
+        });
+
+        return router;
+    }
+
+    _registerControlRoutes(app: Express) {
         app.post("/start", async (req, res) => {
             const {
                 playName,
@@ -174,7 +300,5 @@ export class HttpServer {
                 });
             }
         });
-
-        return app;
     }
 }

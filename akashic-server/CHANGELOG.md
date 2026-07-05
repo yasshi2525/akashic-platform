@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2.0.0
+
+- Change
+  - 環境変数名変更
+    - `SERVER_API_TOKEN` -> `SERVER_WEBAPP_API_TOKEN`
+
+- Refactor
+  - アクティブインスタンス機能を `akashic-runner` に委譲
+
 ## 1.5.0
 
 - Feature

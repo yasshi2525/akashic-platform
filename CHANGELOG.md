@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## 2.0.0
+
+- Change
+  - 環境変数名変更
+    - `./webapp`
+    - `./akashic-server`
+      - `SERVER_API_TOKEN` -> `SERVER_WEBAPP_API_TOKEN`
+
+- Refactor
+  - アクティブインスタンスを安全な環境で実行するようモジュールを再構成
+    - `./akashic-runner`
+      - ゲーム本処理を担当
+    - `./akashic-server`
+      - プレイ制御を担当
+    - `./schema/runner-ipc`
+      - 両者間のスキーマ定義
+
 ## 1.8.0
 
 - Feature
