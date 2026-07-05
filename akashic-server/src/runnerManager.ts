@@ -52,8 +52,14 @@ export class RunnerManager {
             runnerClient: this._runnerClient,
             ...param,
         });
-        const playId = await runner.start();
+        const playId = await runner.createPlay();
         this._runners.set(playId, runner);
+        try {
+            await runner.run();
+        } catch (err) {
+            this._runners.delete(playId);
+            throw err;
+        }
         return playId;
     }
 

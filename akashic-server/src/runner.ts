@@ -61,7 +61,7 @@ export class Runner {
         }
     }
 
-    async start() {
+    async createPlay() {
         if (this._playId != null) {
             throw new Error(`runner (playId = "${this._playId}") has started.`);
         }
@@ -77,8 +77,15 @@ export class Runner {
         this._logDrainedPromise = new Promise<void>((resolve) => {
             this._resolveLogDrained = resolve;
         });
+        return playId;
+    }
 
-        return await playStorage.run(
+    async run() {
+        const playId = this._playId;
+        if (playId == null) {
+            throw new Error("createPlay() must be called before run()");
+        }
+        await playStorage.run(
             { playId, contentId: this._param.contentId },
             () =>
                 withPlayBaggage(playId, this._param.contentId, async () => {
@@ -98,12 +105,11 @@ export class Runner {
                         });
                         this._setTimer(Date.now() + PLAY_DURATION_MS);
                         this._startIdleWatch(playId);
-                        return playId;
                     } catch (err) {
                         this._clearTimer();
                         this._clearIdleWatch();
-                        logStream.destroy();
-                        upload.abort().catch((err) => {
+                        this._logStream?.destroy();
+                        this._upload?.abort().catch((err) => {
                             console.warn(
                                 `upload was aborted in initialization`,
                                 err,
