@@ -9,6 +9,7 @@ export const STORAGE_KEYS = {
     PLAYER_VOLUME: "akashic-platform:player:volume",
     PLAYER_MUTED: "akashic-platform:player:muted",
     PLAYER_PREV_VOLUME: "akashic-platform:player:prevVolume",
+    BOARD_AUTHOR_NAME: "akashic-platform:board:authorName",
 } as const;
 
 export function useLocalStorage<T>(key: string, defaultValue: T) {

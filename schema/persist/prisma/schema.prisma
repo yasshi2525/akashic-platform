@@ -23,6 +23,7 @@ model User {
   fbReplies     FeedbackReply[]
   clientLogs    ClientLogRecord[]
   favorites     Favorite[]
+  boardMessages BoardMessage[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -159,6 +160,20 @@ model FeedbackReply {
 
   post   FeedbackPost @relation(fields: [postId], references: [id], onDelete: Cascade)
   author User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+model BoardMessage {
+  id         Int      @id @default(autoincrement())
+  authorId   String?
+  authorName String
+  guestId    String?
+  body       String
+  createdAt  DateTime @default(now())
+
+  author User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([guestId, createdAt])
 }
 
 model Notification {

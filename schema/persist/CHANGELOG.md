@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.9.0
+
+- Feature
+  - 伝言板機能として `BoardMessage` テーブルを追加
+
 ## 1.8.0
 
 - Feature

@@ -217,7 +217,7 @@ export function LiveContainer({ handle }: { handle: string }) {
         mutate();
     }
 
-    function handleSubmitJoinWord(e: React.FormEvent<HTMLFormElement>) {
+    function handleSubmitJoinWord(e: React.SubmitEvent<HTMLFormElement>) {
         e.preventDefault();
         setSubmittedJoinWord(joinWord);
     }
