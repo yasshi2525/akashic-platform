@@ -15,6 +15,10 @@ on:
         type: boolean
         default: true
         description: Build akashic-server image
+      build_akashic_runner:
+        type: boolean
+        default: true
+        description: Build akashic-runner image
       build_webapp:
         type: boolean
         default: true
@@ -45,6 +49,9 @@ jobs:
           fi
           if [ "${{ inputs.build_akashic_server }}" = "true" ]; then
             services+=('{"name":"akashic-server","workspace":"akashic-server","context":".","dockerfile":"akashic-server/Dockerfile"}')
+          fi
+          if [ "${{ inputs.build_akashic_runner }}" = "true" ]; then
+            services+=('{"name":"akashic-runner","workspace":"akashic-runner","context":".","dockerfile":"akashic-runner/Dockerfile"}')
           fi
           if [ "${{ inputs.build_webapp }}" = "true" ]; then
             services+=('{"name":"webapp","workspace":"webapp","context":".","dockerfile":"webapp/Dockerfile"}')
