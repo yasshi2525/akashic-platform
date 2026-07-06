@@ -49,7 +49,8 @@ export class ControlClient {
             duplex: "half",
         } as RequestInit & { duplex: "half" }).catch((err) => {
             console.warn(
-                `failed to stream logs to control (playId = "${playId}")`,
+                "failed to stream logs to control (playId = %s)",
+                playId,
                 err,
             );
         });
