@@ -2,6 +2,7 @@ import "./tracing";
 import process from "node:process";
 import { installConsoleOverride } from "./logger";
 import { RunnerManager } from "./runnerManager";
+import { RunnerClient } from "./runnerClient";
 import { HttpServer } from "./httpServer";
 
 installConsoleOverride();
@@ -16,16 +17,25 @@ const storageAdminToken = process.env.STORAGE_ADMIN_TOKEN ?? "";
 const maxPreservingTickSize = parseInt(
     process.env.MAX_PRESERVING_TICK_SIZE ?? "0",
 );
-const apiToken = process.env.SERVER_API_TOKEN ?? "";
+const webappApiToken = process.env.SERVER_WEBAPP_API_TOKEN ?? "";
+const runnerUrl = process.env.RUNNER_URL ?? "http://localhost:3034";
+const runnerServerApiToken = process.env.RUNNER_SERVER_API_TOKEN ?? "";
+const serverRunnerApiToken = process.env.SERVER_RUNNER_API_TOKEN ?? "";
 
+const runnerClient = new RunnerClient(runnerUrl, runnerServerApiToken);
 const manager = new RunnerManager({
     publicWebappUrl,
     storagePublicUrl,
     storageAdminUrl,
     storageAdminToken,
     maxPreservingTickSize,
+    runnerClient,
 });
-const http = new HttpServer({ manager, apiToken });
+const http = new HttpServer({
+    manager,
+    webappApiToken,
+    serverRunnerApiToken,
+});
 
 const exit = async () => {
     console.log("destroy server forcibly");

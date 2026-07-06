@@ -1,27 +1,11 @@
 import type { PassThrough } from "node:stream";
 import type { Upload } from "@aws-sdk/lib-storage";
-import type { AMFlow } from "@akashic/amflow";
-import { EventCode, JoinEvent, MessageEvent } from "@akashic/playlog";
-import { RunnerV3 } from "@akashic/headless-driver";
 import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
 import { prisma } from "@yasshi2525/persist-schema";
-import {
-    AMFlowClient,
-    Session,
-    SessionLike,
-} from "@yasshi2525/playlog-client-like";
+import type { RunnerClient } from "./runnerClient";
 import { playStorage } from "./logger";
 import { withPlayBaggage } from "./playBaggage";
 import { createContentLogUpload } from "./s3Logger";
-
-/**
- * `akashic-gameview` の ProtocolType と同じ。
- * NOTE: `akashic-gameview` 自体を元プロジェクトと同様に独立させてもよいが、
- * これしか使用してないためコピペですませた。
- */
-const ProtocolType = {
-    WebSocket: 0,
-} as const;
 
 const PLAY_DURATION_MS = 30 * 60 * 1000;
 const EXTEND_WINDOW_MS = 10 * 60 * 1000;
@@ -38,6 +22,7 @@ export interface RunnerParameterObject {
     storageAdminUrl: string;
     storageAdminToken: string;
     maxPreservingTickSize: number;
+    runnerClient: RunnerClient;
     playName: string;
     contentId: number;
     contentUrl: string;
@@ -55,29 +40,30 @@ export interface RunnerParameterObject {
 
 export class Runner {
     _param: RunnerParameterObject;
-    _runner?: RunnerV3;
-    _session?: SessionLike;
-    _onPlayEndBound: (reason: PlayEndReason) => void;
     _playId?: number;
     _expiresAt?: number;
     _timeoutId?: NodeJS.Timeout;
     _idleIntervalId?: NodeJS.Timeout;
     _emptySince?: number;
-    _crashing = false;
-    _errorLogged = false;
+    _ending = false;
     _logStream?: PassThrough;
     _upload?: Upload;
+    _logDrainedPromise?: Promise<void>;
+    _resolveLogDrained?: () => void;
 
     constructor(param: RunnerParameterObject) {
         this._param = param;
-        this._onPlayEndBound = this._onPlayEnd.bind(this);
     }
 
-    async start() {
-        if (this._runner || this._session) {
-            throw new Error(
-                `runner (runnerId = "${this._runner?.runnerId}", playId = "${this._runner?.playId}") has already started.`,
-            );
+    markLogDrained() {
+        if (this._resolveLogDrained) {
+            this._resolveLogDrained();
+        }
+    }
+
+    async createPlay() {
+        if (this._playId != null) {
+            throw new Error(`runner (playId = "${this._playId}") has started.`);
         }
         const playId = await this._createPlayId();
         this._playId = playId;
@@ -88,32 +74,54 @@ export class Runner {
         );
         this._logStream = logStream;
         this._upload = upload;
+        this._logDrainedPromise = new Promise<void>((resolve) => {
+            this._resolveLogDrained = resolve;
+        });
+        return playId;
+    }
 
-        return await playStorage.run(
-            { playId, contentId: this._param.contentId, logStream },
-            // play.id / content.id を Baggage として載せる。ここで起動する
-            // ゲームループの tick emit まで伝播し、storage 側スパンに属性が付く。
+    async run() {
+        const playId = this._playId;
+        if (playId == null) {
+            throw new Error("createPlay() must be called before run()");
+        }
+        await playStorage.run(
+            { playId, contentId: this._param.contentId },
             () =>
                 withPlayBaggage(playId, this._param.contentId, async () => {
+                    let storageStarted = false;
                     try {
+                        // この呼び出しで storage 側にプレイができる
                         const playToken = await this._fetchPlayToken(playId);
-                        this._session = this._openSession(playId, playToken);
-                        const amflow = await this._createAMFlow(this._session);
-                        this._subscribePlayEnd(amflow);
-                        this._runner = await this._createRunner(
+                        storageStarted = true;
+                        await this._param.runnerClient.startPlay({
                             playId,
+                            storagePublicUrl: this._param.storagePublicUrl,
                             playToken,
-                            amflow,
-                        );
-                        this._initGame(amflow);
+                            contentUrl: this._param.contentUrl,
+                            assetBaseUrl: this._param.assetBaseUrl,
+                            configurationUrl: this._param.configurationUrl,
+                            playerId: this._param.playerId,
+                            playerName: this._param.playerName,
+                            maxPreservingTickSize:
+                                this._param.maxPreservingTickSize,
+                        });
                         this._setTimer(Date.now() + PLAY_DURATION_MS);
                         this._startIdleWatch(playId);
-                        return playId;
                     } catch (err) {
                         this._clearTimer();
                         this._clearIdleWatch();
-                        logStream.destroy();
-                        upload.abort().catch((err) => {
+                        if (storageStarted) {
+                            await this._endPlay(playId, "INTERNAL_ERROR").catch(
+                                (e) =>
+                                    console.warn(
+                                        `failed to end storage play on start failure (playId = "${playId}")`,
+                                        e,
+                                    ),
+                            );
+                        }
+                        this._logStream?.destroy();
+                        this._upload?.abort().catch((err) => {
                             console.warn(
                                 `upload was aborted in initialization`,
                                 err,
@@ -121,6 +129,7 @@ export class Runner {
                         });
                         this._logStream = undefined;
                         this._upload = undefined;
+                        this._playId = undefined;
                         this._deletePlayId(playId);
                         throw err;
                     }
@@ -128,64 +137,116 @@ export class Runner {
         );
     }
 
+    getLogStream() {
+        return this._logStream;
+    }
+
+    resolveAllowedAsset(url: string) {
+        let target: URL;
+        try {
+            target = new URL(url);
+        } catch {
+            return null;
+        }
+        // configurationUrl は単一ファイル(game.json)。パス完全一致のみ許可。
+        if (this._matchesFile(target, this._param.configurationUrl)) {
+            return target.href;
+        }
+        // assetBaseUrl はディレクトリ。その配下のみ許可。
+        if (this._isUnderDir(target, this._param.assetBaseUrl)) {
+            return target.href;
+        }
+        return null;
+    }
+
+    _matchesFile(target: URL, fileUrl: string) {
+        let base: URL;
+        try {
+            base = new URL(fileUrl);
+        } catch {
+            return false;
+        }
+        return (
+            target.origin === base.origin && target.pathname === base.pathname
+        );
+    }
+
+    _isUnderDir(target: URL, dirUrl: string) {
+        let base: URL;
+        try {
+            base = new URL(dirUrl);
+        } catch {
+            return false;
+        }
+        if (target.origin !== base.origin) {
+            return false;
+        }
+        const basePath = base.pathname.endsWith("/")
+            ? base.pathname
+            : `${base.pathname}/`;
+        return target.pathname.startsWith(basePath);
+    }
+
     async end(
         reason: PlayEndReason,
         notifyPlaylogServer = true,
     ): Promise<void> {
-        if (this._playId != null && playStorage.getStore() == null) {
+        if (this._playId == null || this._ending) {
+            return;
+        }
+        if (playStorage.getStore() == null) {
+            const playId = this._playId;
             return playStorage.run(
-                {
-                    playId: this._playId,
-                    contentId: this._param.contentId,
-                    logStream: this._logStream,
-                },
+                { playId, contentId: this._param.contentId },
                 () =>
-                    withPlayBaggage(this._playId!, this._param.contentId, () =>
+                    withPlayBaggage(playId, this._param.contentId, () =>
                         this.end(reason, notifyPlaylogServer),
                     ),
             );
         }
+        this._ending = true;
+        const playId = this._playId;
         this._clearTimer();
         this._clearIdleWatch();
-        if (this._runner) {
-            const playId = parseInt(this._runner.playId);
-            // playlogServer に終了要求を出すと PlayEnd が飛んでくる。
-            // onPlayEnd が反応して二重削除してしまわないようリスナを解除
-            this._unsubscribePlayEnd(this._runner);
-            this._runner.stop();
-            if (notifyPlaylogServer) {
-                try {
-                    await this._endPlay(playId, reason);
-                } catch (err) {
-                    console.warn(
-                        `failed to end play (playId = "${playId}")`,
-                        err,
-                    );
-                }
-            }
-            await this._endPlayRecord(playId);
-            this._param.onDestroy(playId);
 
-            if (this._logStream && this._upload) {
-                this._runBackgroundUpload(
-                    playId,
-                    this._logStream,
-                    this._upload,
-                    this._crashing,
-                    this._errorLogged,
-                ).catch((err) => {
-                    console.warn(
-                        `background upload failed (playId = "${playId}")`,
-                        err,
-                    );
-                });
+        let crashed = false;
+        let errorLogged = false;
+        try {
+            const res = await this._param.runnerClient.stopPlay(playId);
+            crashed = res.crashed;
+            errorLogged = res.errorLogged;
+        } catch (err) {
+            console.warn(
+                `failed to stop play on runner (playId = "${playId}")`,
+                err,
+            );
+        }
+
+        if (notifyPlaylogServer) {
+            try {
+                await this._endPlay(playId, reason);
+            } catch (err) {
+                console.warn(`failed to end play (playId = "${playId}")`, err);
             }
         }
-        if (this._session) {
-            this._closeSession(this._session);
+        await this._endPlayRecord(playId);
+        this._param.onDestroy(playId);
+
+        if (this._logStream && this._upload) {
+            this._runBackgroundUpload(
+                playId,
+                this._logStream,
+                this._upload,
+                crashed,
+                errorLogged,
+            ).catch((err) => {
+                console.warn(
+                    `background upload failed (playId = "${playId}")`,
+                    err,
+                );
+            });
         }
-        this._runner = undefined;
-        this._session = undefined;
+
         this._playId = undefined;
         this._logStream = undefined;
         this._upload = undefined;
@@ -296,7 +357,16 @@ export class Runner {
         crashed: boolean,
         errorLogged: boolean,
     ): Promise<void> {
-        logStream.end();
+        // ログ受信完了を待ってから S3 確定。届かない場合はタイムアウト
+        if (this._logDrainedPromise) {
+            await Promise.race([
+                this._logDrainedPromise,
+                new Promise<void>((resolve) => setTimeout(resolve, 5000)),
+            ]);
+        }
+        if (!logStream.writableEnded) {
+            logStream.end();
+        }
 
         let uploadSucceeded = false;
         try {
@@ -388,159 +458,6 @@ export class Runner {
         return playToken;
     }
 
-    _openSession(playId: number, playToken: string) {
-        const session = (this._session = Session(
-            `${this._param.storagePublicUrl}/socket.io`,
-            {
-                socketType: ProtocolType.WebSocket,
-                validationData: {
-                    playId: playId.toString(),
-                    token: playToken,
-                },
-            },
-        ));
-        session.on("error", (err) => {
-            console.error("error on session", err);
-        });
-        return session;
-    }
-
-    async _closeSession(session: SessionLike) {
-        await new Promise<void>((resolve) => {
-            session.close((msg) => {
-                if (msg) {
-                    console.log(
-                        `session of runnerId = "${this._runner?.runnerId}" (playId = "${this._runner?.playId}") was ended.`,
-                        msg,
-                    );
-                }
-                resolve();
-            });
-        });
-    }
-
-    async _createAMFlow(session: SessionLike) {
-        return await new Promise<AMFlowClient>((resolve, reject) => {
-            session.open((err) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    session.createClient(
-                        {
-                            usePrimaryChannel: true,
-                            maxPreservingTickSize:
-                                this._param.maxPreservingTickSize,
-                        },
-                        (err, client) => {
-                            if (err) {
-                                reject(err);
-                            } else {
-                                resolve(client!);
-                            }
-                        },
-                    );
-                }
-            });
-        });
-    }
-
-    _subscribePlayEnd(amflow: AMFlowClient) {
-        amflow.onPlayEnd(this._onPlayEndBound);
-    }
-
-    _unsubscribePlayEnd(runner: RunnerV3) {
-        (runner.amflow as AMFlowClient).offPlayEnd(this._onPlayEndBound);
-    }
-
-    _onPlayEnd(reason: PlayEndReason) {
-        // playlogServer から終了要求がくるのは playlogServer のシャットダウン時
-        // playlogServer 側で終了処理は実行済みなため、通知はしない
-        this.end(reason, false);
-    }
-
-    async _createRunner(playId: number, playToken: string, amflow: AMFlow) {
-        const runner = (this._runner = new RunnerV3({
-            contentUrl: this._param.contentUrl,
-            assetBaseUrl: this._param.assetBaseUrl,
-            configurationUrl: this._param.configurationUrl,
-            playId: playId.toString(),
-            playToken: playToken,
-            runnerId: playId.toString(),
-            amflow,
-            executionMode: "active",
-            trusted: true,
-            external: {},
-            externalValue: {},
-            loadFileHandler: (url, encoding, cb) => {
-                if (
-                    !url.startsWith(this._param.assetBaseUrl) &&
-                    !url.startsWith(this._param.configurationUrl)
-                ) {
-                    cb(new Error(`unallowed url ${url}`));
-                    return;
-                }
-                fetch(url)
-                    .then((res) =>
-                        res
-                            .text()
-                            .then((data) => {
-                                cb(null, data);
-                            })
-                            .catch((err) => {
-                                cb(err);
-                            }),
-                    )
-                    .catch((err) => {
-                        cb(err);
-                    });
-            },
-        }));
-        runner.errorTrigger.add(async (err) => {
-            this._crashing = true;
-            console.error(
-                `error on runner "${runner.runnerId}", playId = "${playId}")`,
-                err,
-                (err as any).cause,
-            );
-            await this.end("INTERNAL_ERROR");
-        });
-        const ctx = playStorage.getStore();
-        if (ctx) {
-            ctx.onError = () => {
-                if (this._crashing || this._errorLogged) return;
-                this._errorLogged = true;
-            };
-        }
-        const game = await runner.start({ paused: false });
-        if (!game) {
-            throw new Error(
-                `failed to start runner (runnerId = "${runner.runnerId}", playId = "${playId}")`,
-            );
-        }
-        return runner;
-    }
-
-    _initGame(amflow: AMFlow) {
-        amflow.sendEvent([
-            EventCode.Join,
-            0,
-            this._param.playerId,
-            this._param.playerName,
-        ] as JoinEvent);
-        amflow.sendEvent([
-            EventCode.Message,
-            0,
-            ":akashic",
-            {
-                type: "start",
-                parameters: {
-                    mode: "multi",
-                    service: "nicolive",
-                },
-            },
-        ] as MessageEvent);
-    }
-
     async _endPlay(playId: number, reason: PlayEndReason) {
         const res = await fetch(
             `${this._param.storageAdminUrl}/end?playId=${playId}&reason=${reason}`,
@@ -575,8 +492,7 @@ export class Runner {
     }
 
     // 参加者(ブラウザ接続)が 0 人のまま IDLE_GRACE_MS を超えて続いたら部屋を自動終了する。
-    // 終了は正規パスである this.end() に合流させ、DB 更新・storage destroy・ログ upload を行う。
-    // 参加者(ブラウザ接続)が 0 人のまま IDLE_GRACE_MS を超えて続いたら部屋を自動終了する。
+    // 終了は正規パスである this.end() に合流させ、DB 更新・akashic-runner停止・ログ upload を行う。
     // 作成直後に部屋主のブラウザが接続するまでの数秒の 0 人は、5 分の猶予が十分に吸収する。
     _startIdleWatch(playId: number) {
         this._clearIdleWatch();

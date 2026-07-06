@@ -1,9 +1,11 @@
 import { AsyncLocalStorage } from "node:async_hooks";
+import type { PassThrough } from "node:stream";
 import util from "node:util";
 
 export interface PlayContext {
     playId: number;
-    contentId: number;
+    onError?: () => void;
+    logStream?: PassThrough;
 }
 
 export const playStorage = new AsyncLocalStorage<PlayContext>();
@@ -23,14 +25,23 @@ export function installConsoleOverride() {
             output(util.format(...args));
             return;
         }
-        const message = util.format(...args);
+        let message = util.format(...args);
+        if (level === "error" && !args.some((a) => a instanceof Error)) {
+            const callStack = new Error().stack;
+            if (callStack) {
+                const trimmed = callStack.split("\n").slice(2).join("\n");
+                message += "\n" + trimmed;
+            }
+        }
         const line = JSON.stringify({
             timestamp: new Date().toISOString(),
             level,
             playId: ctx.playId,
-            contentId: ctx.contentId,
             message,
         });
+        if (ctx.logStream && !ctx.logStream.writableEnded) {
+            ctx.logStream.write(line + "\n");
+        }
         output(line);
     };
 
@@ -38,6 +49,8 @@ export function installConsoleOverride() {
     console.info = (...args: unknown[]) => patchedLog("info", args, _origLog);
     console.debug = (...args: unknown[]) => patchedLog("info", args, _origLog);
     console.warn = (...args: unknown[]) => patchedLog("warn", args, _origWarn);
-    console.error = (...args: unknown[]) =>
+    console.error = (...args: unknown[]) => {
         patchedLog("error", args, _origError);
+        playStorage.getStore()?.onError?.();
+    };
 }

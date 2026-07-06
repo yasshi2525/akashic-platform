@@ -1,5 +1,6 @@
 import type { PlayEndReason } from "@yasshi2525/amflow-client-event-schema";
 import { Runner, RunnerParameterObject } from "./runner";
+import type { RunnerClient } from "./runnerClient";
 
 interface RunnerManagerParameterObject {
     publicWebappUrl: string;
@@ -7,6 +8,7 @@ interface RunnerManagerParameterObject {
     storageAdminUrl: string;
     storageAdminToken: string;
     maxPreservingTickSize: number;
+    runnerClient: RunnerClient;
 }
 
 export type RunnerStartParameterObject = Omit<
@@ -18,6 +20,7 @@ export type RunnerStartParameterObject = Omit<
     | "storageAdminUrl"
     | "storageAdminToken"
     | "maxPreservingTickSize"
+    | "runnerClient"
 >;
 
 export class RunnerManager {
@@ -26,6 +29,7 @@ export class RunnerManager {
     _storageAdminUrl: string;
     _storageAdminToken: string;
     _maxPreservingTickSize: number;
+    _runnerClient: RunnerClient;
     _runners: Map<number, Runner>;
 
     constructor(param: RunnerManagerParameterObject) {
@@ -34,6 +38,7 @@ export class RunnerManager {
         this._storageAdminUrl = param.storageAdminUrl;
         this._storageAdminToken = param.storageAdminToken;
         this._maxPreservingTickSize = param.maxPreservingTickSize;
+        this._runnerClient = param.runnerClient;
         this._runners = new Map();
     }
 
@@ -44,17 +49,32 @@ export class RunnerManager {
             storageAdminUrl: this._storageAdminUrl,
             storageAdminToken: this._storageAdminToken,
             maxPreservingTickSize: this._maxPreservingTickSize,
+            runnerClient: this._runnerClient,
             ...param,
         });
-        const playId = await runner.start();
+        const playId = await runner.createPlay();
         this._runners.set(playId, runner);
+        try {
+            await runner.run();
+        } catch (err) {
+            this._runners.delete(playId);
+            throw err;
+        }
         return playId;
     }
 
-    async end(playId: number, reason: PlayEndReason) {
+    get(playId: number) {
+        return this._runners.get(playId);
+    }
+
+    async end(
+        playId: number,
+        reason: PlayEndReason,
+        notifyPlaylogServer = true,
+    ) {
         const runner = this._runners.get(playId);
         if (runner) {
-            await runner.end(reason);
+            await runner.end(reason, notifyPlaylogServer);
         }
     }
 

@@ -1,0 +1,25 @@
+{
+  "name": "@yasshi2525/runner-ipc-schema",
+  "version": "1.0.0",
+  "description": "akashic-server と akashic-runner の間の IPC 契約",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "CHANGELOG.md",
+    "dist"
+  ],
+  "keywords": [],
+  "author": "yasshi2525",
+  "license": "MIT",
+  "scripts": {
+    "build:all": "npm run build:all -w @yasshi2525/amflow-client-event-schema && npm run build",
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "prettier": "^3.8.3",
+    "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "@yasshi2525/amflow-client-event-schema": "^1.1.0"
+  }
+}

@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.0.0
+
+- Change
+  - 環境変数名変更
+    - `SERVER_API_TOKEN` -> `SERVER_WEBAPP_API_TOKEN`
+
 ## 1.8.0
 
 - Feature

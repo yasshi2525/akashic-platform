@@ -30,10 +30,12 @@
 
 ## 構成図
 
-本プラットフォームは以下の3つのプロセスから構成されます。
+本プラットフォームは以下の4つのプロセスから構成されます。
 
 - akashic-server
-  実行中の各プレイの実処理を進める。
+  各プレイのライフサイクルを制御する。
+- akashic-runner
+  各プレイの実処理を進める。
 - akashic-storage
   実行中の全プレイ情報を保管する。
 - webapp
@@ -67,8 +69,13 @@ Web API 仕様: https://yasshi2525.github.io/akashic-platform/
 
 ### akashic-server
 
+アクティブインスタンスの起動制御を行うサーバー。 `akashic-runner` を制御します。
+
+### akashic-runner
+
 プレイごとにアクティブインスタンスを起動するサーバー。
 `akashic serve` がクライアントと密結合なため独自に実装します。
+安全な環境で実行するため、隔離した環境でも動作できるように実装されています。
 
 ### akashic-storage
 
@@ -133,7 +140,7 @@ npm install
 
 #### セットアップ
 
-##### schema/persist, akashic-storage, akashic-server, manager-server
+##### schema/persist, akashic-storage, akashic-server, akashic-runner, manager-server
 
 `.env.example` の記述を参考に `.env` を配置してください。
 
@@ -152,6 +159,7 @@ npx -w ./webapp auth secret
 ```sh
 npm run run -w ./akashic-storage &
 npm run run -w ./akashic-server &
+npm run run -w ./akashic-runner &
 npm run dev -w ./webapp &
 ```
 
@@ -161,7 +169,7 @@ npm run dev -w ./webapp &
 npm run run -w ./manager-server
 ```
 
-設定変更は `./schema/persist`, `./akashic-storage`, `./akashic-server`, `./webapp`, `./manager-server` 配下に `.env` を置くことでできます。 `.env.example` を参考にしてください。
+設定変更は `./schema/persist`, `./akashic-storage`, `./akashic-server`, `./akashic-runner`, `./webapp`, `./manager-server` 配下に `.env` を置くことでできます。 `.env.example` を参考にしてください。
 
 `http://localhost:3000` にアクセスするとゲームで遊ぶことができます。
 
@@ -173,7 +181,8 @@ npm run run -w ./manager-server
   - `webapp` の `PORT` (`3000`)
 - セキュリティのため、下記の事項を考慮してください。
   - クライアントが上記以外のポートに到達できないよう、ファイアウォールなどで適切にアクセス制限してください。
-  - 意図しないリクエストを許可しないため、 `SERVER_API_TOKEN`, `STORAGE_ADMIN_TOKEN` に推測不可能な文字列を設定してください。
+  - 意図しないリクエストを許可しないため各種認証用のトークンには推測不可能な文字列を設定してください。
+  - `akashic-runner` プロセス上ではユーザースクリプトが実行されるため、アウトバウンド通信を制限するなど、環境を隔離するよう考慮してください。
 
 ## LICENSE
 

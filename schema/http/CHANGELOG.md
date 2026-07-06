@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.1.0
+
+- Feature
+  - `akashic-runner` 追加
+
 ## 1.0.1
 
 - Misc
