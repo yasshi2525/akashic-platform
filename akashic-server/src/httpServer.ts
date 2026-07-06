@@ -117,7 +117,7 @@ export class HttpServer {
         return app;
     }
 
-    _createInternalRouter(): Router {
+    _createInternalRouter() {
         const router = Router();
 
         router.post("/asset", async (req, res) => {
@@ -127,13 +127,13 @@ export class HttpServer {
                 return;
             }
             const runner = this._manager.get(playId);
-            if (!runner || !runner.isAllowedAsset(url)) {
+            const safeUrl = runner?.resolveAllowedAsset(url);
+            if (!runner || !safeUrl) {
                 res.status(403).json({ ok: false, reason: "Forbidden" });
                 return;
             }
             try {
-                // url は isAllowedAsset で assetBaseUrl/configurationUrl 配下のみ
-                const upstream = await fetch(url, { redirect: "error" });
+                const upstream = await fetch(safeUrl, { redirect: "error" });
                 if (!upstream.ok) {
                     res.status(502).json({ ok: false, reason: "BadGateway" });
                     return;

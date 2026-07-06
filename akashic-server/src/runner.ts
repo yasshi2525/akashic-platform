@@ -141,11 +141,50 @@ export class Runner {
         return this._logStream;
     }
 
-    isAllowedAsset(url: string) {
+    resolveAllowedAsset(url: string) {
+        let target: URL;
+        try {
+            target = new URL(url);
+        } catch {
+            return null;
+        }
+        // configurationUrl は単一ファイル(game.json)。パス完全一致のみ許可。
+        if (this._matchesFile(target, this._param.configurationUrl)) {
+            return target.href;
+        }
+        // assetBaseUrl はディレクトリ。その配下のみ許可。
+        if (this._isUnderDir(target, this._param.assetBaseUrl)) {
+            return target.href;
+        }
+        return null;
+    }
+
+    _matchesFile(target: URL, fileUrl: string) {
+        let base: URL;
+        try {
+            base = new URL(fileUrl);
+        } catch {
+            return false;
+        }
         return (
-            url.startsWith(this._param.assetBaseUrl) ||
-            url.startsWith(this._param.configurationUrl)
+            target.origin === base.origin && target.pathname === base.pathname
         );
+    }
+
+    _isUnderDir(target: URL, dirUrl: string) {
+        let base: URL;
+        try {
+            base = new URL(dirUrl);
+        } catch {
+            return false;
+        }
+        if (target.origin !== base.origin) {
+            return false;
+        }
+        const basePath = base.pathname.endsWith("/")
+            ? base.pathname
+            : `${base.pathname}/`;
+        return target.pathname.startsWith(basePath);
     }
 
     async end(
