@@ -269,8 +269,6 @@ services:
       SERVER_URL: http://akashic-server:3032
       RUNNER_SERVER_API_TOKEN: ${RUNNER_SERVER_API_TOKEN:-local-runner-server-api-token}
       SERVER_RUNNER_API_TOKEN: ${SERVER_RUNNER_API_TOKEN:-local-server-runner-api-token}
-      OTEL_SERVICE_NAME: akashic-runner
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
     networks:
       - apnet
 

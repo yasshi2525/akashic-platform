@@ -182,7 +182,8 @@ export class ExecRunner {
         runner.errorTrigger.add((err) => {
             this._crashing = true;
             console.error(
-                `error on runner "${runner.runnerId}", playId = "${playId}")`,
+                "error on runner",
+                { runnerId: runner.runnerId, playId },
                 err,
                 (err as { cause?: unknown }).cause,
             );
@@ -227,7 +228,8 @@ export class ExecRunner {
             .reportPlayEnded({ playId: this._param.playId, reason, origin })
             .catch((err) => {
                 console.warn(
-                    `failed to notify control of play end (playId = "${this._param.playId}")`,
+                    "failed to notify control of play end",
+                    { playId: this._param.playId },
                     err,
                 );
             });

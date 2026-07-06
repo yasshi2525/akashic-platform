@@ -132,7 +132,8 @@ export class HttpServer {
                 return;
             }
             try {
-                const upstream = await fetch(url);
+                // url は isAllowedAsset で assetBaseUrl/configurationUrl 配下のみ
+                const upstream = await fetch(url, { redirect: "error" });
                 if (!upstream.ok) {
                     res.status(502).json({ ok: false, reason: "BadGateway" });
                     return;
@@ -167,7 +168,8 @@ export class HttpServer {
                 .end(playId, reason as PlayEndReason, notifyStorage)
                 .catch((err) => {
                     console.warn(
-                        `failed to handle play-ended (playId = "${playId}")`,
+                        "failed to handle play-ended",
+                        { playId },
                         err,
                     );
                 });

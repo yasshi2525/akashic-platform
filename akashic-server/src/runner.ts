@@ -89,8 +89,11 @@ export class Runner {
             { playId, contentId: this._param.contentId },
             () =>
                 withPlayBaggage(playId, this._param.contentId, async () => {
+                    let storageStarted = false;
                     try {
+                        // この呼び出しで storage 側にプレイができる
                         const playToken = await this._fetchPlayToken(playId);
+                        storageStarted = true;
                         await this._param.runnerClient.startPlay({
                             playId,
                             storagePublicUrl: this._param.storagePublicUrl,
@@ -108,6 +111,15 @@ export class Runner {
                     } catch (err) {
                         this._clearTimer();
                         this._clearIdleWatch();
+                        if (storageStarted) {
+                            await this._endPlay(playId, "INTERNAL_ERROR").catch(
+                                (e) =>
+                                    console.warn(
+                                        `failed to end storage play on start failure (playId = "${playId}")`,
+                                        e,
+                                    ),
+                            );
+                        }
                         this._logStream?.destroy();
                         this._upload?.abort().catch((err) => {
                             console.warn(
@@ -158,8 +170,18 @@ export class Runner {
         this._clearTimer();
         this._clearIdleWatch();
 
-        const { crashed, errorLogged } =
-            await this._param.runnerClient.stopPlay(playId);
+        let crashed = false;
+        let errorLogged = false;
+        try {
+            const res = await this._param.runnerClient.stopPlay(playId);
+            crashed = res.crashed;
+            errorLogged = res.errorLogged;
+        } catch (err) {
+            console.warn(
+                `failed to stop play on runner (playId = "${playId}")`,
+                err,
+            );
+        }
 
         if (notifyPlaylogServer) {
             try {

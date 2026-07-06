@@ -66,9 +66,10 @@ export class ControlClient {
             body: JSON.stringify(payload),
         });
         if (res.status !== 200) {
-            console.warn(
-                `failed to report play-ended (playId = "${payload.playId}", status = ${res.status})`,
-            );
+            console.warn("failed to report play-ended", {
+                playId: payload.playId,
+                status: res.status,
+            });
         }
     }
 }
