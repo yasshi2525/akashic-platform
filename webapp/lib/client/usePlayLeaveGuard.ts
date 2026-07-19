@@ -52,6 +52,14 @@ export function usePlayLeaveGuard({
         return count != null && count <= 1;
     }, []);
 
+    // ガード中に部屋が終了した場合など、無効化されたら開いているダイアログも引っ込める。
+    useEffect(() => {
+        if (!enabled) {
+            setPendingHref(undefined);
+            setCloseError(undefined);
+        }
+    }, [enabled]);
+
     useEffect(() => {
         if (!enabled || typeof window === "undefined") {
             return;

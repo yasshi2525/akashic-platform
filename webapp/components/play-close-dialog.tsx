@@ -126,7 +126,7 @@ export function PlayCloseDialog({
                             {error}
                         </Alert>
                     )}
-                    <DialogActions>
+                    <DialogActions sx={{ flexWrap: "wrap", gap: 1 }}>
                         <Button
                             variant="contained"
                             color="error"

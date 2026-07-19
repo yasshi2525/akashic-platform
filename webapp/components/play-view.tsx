@@ -144,7 +144,6 @@ export function PlayView({
     const theme = useTheme();
     const { playlogServerUrl } = useAkashic();
     const { niconicommonsWorkUrl, clientLogCacheMaxEntries } = useCustomData();
-    const leaveGuard = usePlayLeaveGuard({ playId, enabled: isGameMaster });
     useEffect(() => {
         container.setClientLogMaxEntries(clientLogCacheMaxEntries);
     }, [clientLogCacheMaxEntries]);
@@ -152,6 +151,10 @@ export function PlayView({
     const [warning, setWarning] = useState<WarningType>();
     const [error, setError] = useState<string>();
     const [playEndReason, setPlayEndReason] = useState<PlayEndReason>();
+    const leaveGuard = usePlayLeaveGuard({
+        playId,
+        enabled: isGameMaster && playEndReason == null,
+    });
     const [requestPlayerInfo, setRequestPlayerInfo] =
         useState<ResolvingPlayerInfoRequest>();
     const [expiresAt, setExpiresAt] = useState<number | undefined>(
