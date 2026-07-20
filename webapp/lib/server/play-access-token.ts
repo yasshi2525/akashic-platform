@@ -89,11 +89,17 @@ export function setPlayAccessCookie(
     );
 }
 
-export async function hasPlayAccess(playId: number, viewerId: string) {
+const RENEW_THRESHOLD_MS = TTL_MS / 2;
+
+export async function checkPlayAccess(playId: number, viewerId: string) {
     const store = await cookies();
-    return verifyPlayAccessToken(
-        store.get(playAccessCookieName(playId))?.value,
-        playId,
-        viewerId,
-    );
+    const token = store.get(playAccessCookieName(playId))?.value;
+    if (!verifyPlayAccessToken(token, playId, viewerId)) {
+        return { ok: false as const };
+    }
+    const expiresAt = Number(token!.slice(0, token!.indexOf(".")));
+    return {
+        ok: true as const,
+        needsRenew: expiresAt - Date.now() < RENEW_THRESHOLD_MS,
+    };
 }

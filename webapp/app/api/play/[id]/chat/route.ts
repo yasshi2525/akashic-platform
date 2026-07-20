@@ -5,6 +5,7 @@ import {
     authorizePlayChat,
     PLAY_CHAT_FETCH_LIMIT,
 } from "@/lib/server/play-chat";
+import { setPlayAccessCookie } from "@/lib/server/play-access-token";
 
 type PlayChatRecord = {
     id: number;
@@ -66,10 +67,19 @@ export async function GET(
                 },
             },
         });
-        return NextResponse.json({
+        const res = NextResponse.json<PlayChatGetResponse>({
             ok: true,
             data: messages.reverse().map(toInfo),
         });
+        if (auth.needsRenew) {
+            setPlayAccessCookie(
+                res,
+                playId,
+                auth.user.id,
+                req.cookies.getAll(),
+            );
+        }
+        return res;
     } catch (err) {
         console.warn(`failed to fetch play chat (playId = "${playId}")`, err);
         return NextResponse.json({ ok: false, reason: "InternalError" });

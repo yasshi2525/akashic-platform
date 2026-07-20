@@ -3,7 +3,7 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { prisma } from "@yasshi2525/persist-schema";
 import { getS3Client } from "./content-utils";
 import { getAuth } from "./auth";
-import { hasPlayAccess } from "./play-access-token";
+import { checkPlayAccess } from "./play-access-token";
 
 const SHORT_WINDOW_SECONDS = parseInt(
     process.env.PLAY_CHAT_RATE_SHORT_WINDOW_SECONDS ?? "10",
@@ -27,10 +27,12 @@ export type PlayChatDenial = "NotFound" | "Disabled" | "Forbidden";
  * 部屋チャットの閲覧・投稿可否を判定する。入室審査を通ったことの証明は
  * 入室時に発行したアクセス Cookie で確認し、合言葉自体は受け取らない。
  */
-export async function authorizePlayChat(
-    playId: number,
-): Promise<
-    | { ok: true; user: NonNullable<Awaited<ReturnType<typeof getAuth>>> }
+export async function authorizePlayChat(playId: number): Promise<
+    | {
+          ok: true;
+          user: NonNullable<Awaited<ReturnType<typeof getAuth>>>;
+          needsRenew: boolean;
+      }
     | { ok: false; reason: PlayChatDenial }
 > {
     const play = await prisma.play.findUnique({
@@ -47,10 +49,14 @@ export async function authorizePlayChat(
         return { ok: false, reason: "NotFound" };
     }
     const user = await getAuth();
-    if (!user || !(await hasPlayAccess(playId, user.id))) {
+    if (!user) {
         return { ok: false, reason: "Forbidden" };
     }
-    return { ok: true, user };
+    const access = await checkPlayAccess(playId, user.id);
+    if (!access.ok) {
+        return { ok: false, reason: "Forbidden" };
+    }
+    return { ok: true, user, needsRenew: access.needsRenew };
 }
 
 type PlayChatWhere = {
