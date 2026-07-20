@@ -29,6 +29,7 @@ import {
     NoAccounts,
     OpenInNew,
     PhotoCamera,
+    SpeakerNotesOff,
     Videocam,
     VideocamOff,
     VolumeOff,
@@ -58,6 +59,9 @@ import { FavoriteButton } from "./favorite-button";
 import { renderTextWithLinks } from "./text-with-links";
 import { HandleSetDialog } from "./handle-set-dialog";
 import { CopyLinkBox, CopyStatusSnackbar } from "./copy-link-box";
+import { PlayChatProvider } from "./play-chat/play-chat-provider";
+import { PlayChatTicker } from "./play-chat/play-chat-ticker";
+import { PlayChatInput } from "./play-chat/play-chat-input";
 
 const warnings = ["EVENT_ON_SKIPPING"] as const;
 type WarningType = (typeof warnings)[number];
@@ -95,6 +99,7 @@ export function PlayView({
     playName,
     isLimited,
     requireSignIn,
+    chatEnabled,
     joinWord,
     inviteHash,
     game,
@@ -118,6 +123,7 @@ export function PlayView({
     playName: string | null;
     isLimited: boolean;
     requireSignIn: boolean;
+    chatEnabled: boolean;
     joinWord?: string;
     inviteHash?: string;
     game: GameInfo;
@@ -157,6 +163,10 @@ export function PlayView({
     });
     const [requestPlayerInfo, setRequestPlayerInfo] =
         useState<ResolvingPlayerInfoRequest>();
+    const [playerName, setPlayerName] = useLocalStorage(
+        STORAGE_KEYS.PLAYER_INFO_NAME,
+        "",
+    );
     const [expiresAt, setExpiresAt] = useState<number | undefined>(
         initialExpiresAt,
     );
@@ -202,6 +212,7 @@ export function PlayView({
     const [troubleshootOpen, setTroubleshootOpen] = useState(false);
     const [lastSubmittedComment, setLastSubmittedComment] = useState("");
     const fullscreenRef = useRef<HTMLDivElement>(null);
+    const gameAreaRef = useRef<HTMLDivElement>(null);
     const [fullscreenOn, setFullscreenOn] = useState(false);
     // ネイティブ全画面を要求したか（ESC や端末操作での解除をオーバーレイに反映するため）
     const nativeFullscreenRequestedRef = useRef(false);
@@ -336,7 +347,8 @@ export function PlayView({
             return;
         }
         function measure() {
-            const el = fullscreenRef.current;
+            // チャット帯を除いた、実際にゲームが描画される領域を測る
+            const el = gameAreaRef.current;
             if (el) {
                 const rect = el.getBoundingClientRect();
                 setFullscreenViewport({
@@ -350,8 +362,14 @@ export function PlayView({
         const timer = setTimeout(() => setFullscreenGuideOpen(false), 5000);
         window.addEventListener("resize", measure);
         window.addEventListener("orientationchange", measure);
+        // 過去ログの開閉でもゲーム領域の高さが変わるため、要素自体を監視する
+        const observer = new ResizeObserver(measure);
+        if (gameAreaRef.current) {
+            observer.observe(gameAreaRef.current);
+        }
         return () => {
             clearTimeout(timer);
+            observer.disconnect();
             window.removeEventListener("resize", measure);
             window.removeEventListener("orientationchange", measure);
         };
@@ -418,6 +436,24 @@ export function PlayView({
             return;
         }
 
+        function handleRequestPlayerInfo(
+            request: ResolvingPlayerInfoRequest | undefined,
+        ) {
+            if (!request) {
+                setRequestPlayerInfo(undefined);
+                return;
+            }
+            setRequestPlayerInfo({
+                ...request,
+                onResolve: (accepted, name) => {
+                    request.onResolve(accepted, name);
+                    if (accepted && name) {
+                        setPlayerName(name);
+                    }
+                },
+            });
+        }
+
         container.create({
             parent: ref.current,
             user,
@@ -447,7 +483,7 @@ export function PlayView({
                 setExpiresAt(payload.expiresAt);
                 setRemainingMs(payload.remainingMs);
             },
-            onRequestPlayerInfo: setRequestPlayerInfo,
+            onRequestPlayerInfo: handleRequestPlayerInfo,
         });
         return () => {
             // Promiseだが、遅延終了しても影響なし
@@ -726,128 +762,162 @@ export function PlayView({
                     </Alert>
                 </Container>
             )}
-            <Box
-                ref={fullscreenRef}
-                sx={{
-                    position: "relative",
-                    ...(fullscreenOn && {
-                        position: "fixed",
-                        inset: 0,
-                        zIndex: theme.zIndex.appBar + 1,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        backgroundColor: "#000",
-                    }),
-                }}
+            <PlayChatProvider
+                playId={playId}
+                enabled={chatEnabled}
+                fullscreen={fullscreenOn}
+                playerName={playerName}
+                setPlayerName={setPlayerName}
             >
-                <Container
-                    component="div"
-                    disableGutters
-                    sx={{ ...gameViewSizingSx, position: "relative" }}
+                <Box
+                    ref={fullscreenRef}
+                    sx={{
+                        position: "relative",
+                        display: "flex",
+                        flexDirection: "column",
+                        ...(fullscreenOn && {
+                            position: "fixed",
+                            inset: 0,
+                            zIndex: theme.zIndex.appBar + 1,
+                            backgroundColor: "#000",
+                        }),
+                    }}
                 >
+                    {chatEnabled && <PlayChatTicker />}
                     <Box
-                        ref={ref}
+                        ref={gameAreaRef}
                         sx={{
-                            width: "100%",
-                            height: "100%",
-                            isolation: "isolate",
-                            userSelect: "none",
-                            WebkitUserSelect: "none",
-                            WebkitTapHighlightColor: "transparent",
-                            touchAction: "none",
+                            position: "relative",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            // 全画面では帯の分だけゲームを縮める
+                            ...(fullscreenOn && {
+                                flex: "1 1 auto",
+                                minHeight: 0,
+                            }),
                         }}
-                    />
-                    {skipping && (
-                        <Box
-                            aria-hidden
-                            onPointerDown={() =>
-                                setWarning("EVENT_ON_SKIPPING")
-                            }
-                            sx={{
-                                position: "absolute",
-                                inset: 0,
-                                cursor: "wait",
-                                touchAction: "none",
-                            }}
-                        />
-                    )}
-                </Container>
-                {fullscreenOn && (
-                    <>
-                        {!exitButtonLayout.inBar && (
+                    >
+                        <Container
+                            component="div"
+                            disableGutters
+                            sx={{ ...gameViewSizingSx, position: "relative" }}
+                        >
                             <Box
-                                aria-hidden
+                                ref={ref}
                                 sx={{
-                                    position: "absolute",
-                                    top: 0,
-                                    right: 0,
-                                    width: 50,
-                                    height: 50,
-                                    zIndex: 1,
-                                    pointerEvents: "none",
-                                    background:
-                                        "radial-gradient(circle at top right, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0) 72%)",
+                                    width: "100%",
+                                    height: "100%",
+                                    isolation: "isolate",
+                                    userSelect: "none",
+                                    WebkitUserSelect: "none",
+                                    WebkitTapHighlightColor: "transparent",
+                                    touchAction: "none",
                                 }}
                             />
+                            {skipping && (
+                                <Box
+                                    aria-hidden
+                                    onPointerDown={() =>
+                                        setWarning("EVENT_ON_SKIPPING")
+                                    }
+                                    sx={{
+                                        position: "absolute",
+                                        inset: 0,
+                                        cursor: "wait",
+                                        touchAction: "none",
+                                    }}
+                                />
+                            )}
+                        </Container>
+                        {fullscreenOn && (
+                            <>
+                                {!exitButtonLayout.inBar && (
+                                    <Box
+                                        aria-hidden
+                                        sx={{
+                                            position: "absolute",
+                                            top: 0,
+                                            right: 0,
+                                            width: 50,
+                                            height: 50,
+                                            zIndex: 1,
+                                            pointerEvents: "none",
+                                            background:
+                                                "radial-gradient(circle at top right, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0) 72%)",
+                                        }}
+                                    />
+                                )}
+                                <Tooltip
+                                    arrow
+                                    open={fullscreenGuideOpen}
+                                    onOpen={() => setFullscreenGuideOpen(true)}
+                                    onClose={() =>
+                                        setFullscreenGuideOpen(false)
+                                    }
+                                    placement={
+                                        exitButtonLayout.tooltipPlacement
+                                    }
+                                    title="ここをタップすると全画面を終了します"
+                                    // ネイティブ全画面では全画面要素の外(body)に描画すると見えないため、
+                                    // ポータルを無効化して全画面要素内に描画する
+                                    slotProps={{
+                                        popper: {
+                                            disablePortal: true,
+                                        },
+                                    }}
+                                >
+                                    <IconButton
+                                        aria-label="全画面を終了"
+                                        onClick={handleToggleFullscreen}
+                                        sx={{
+                                            position: "absolute",
+                                            ...exitButtonLayout.position,
+                                            zIndex: 2,
+                                            color: "#fff",
+                                            transition:
+                                                "opacity 0.2s, background-color 0.2s",
+                                            ...(exitButtonLayout.inBar
+                                                ? {
+                                                      opacity: 0.6,
+                                                      backgroundColor: alpha(
+                                                          "#000",
+                                                          0.35,
+                                                      ),
+                                                  }
+                                                : {
+                                                      opacity: 0.92,
+                                                      backgroundColor: alpha(
+                                                          "#000",
+                                                          0.6,
+                                                      ),
+                                                      boxShadow:
+                                                          "0 0 8px rgba(0,0,0,0.7)",
+                                                  }),
+                                            "&:hover": {
+                                                opacity: 1,
+                                                backgroundColor: alpha(
+                                                    "#000",
+                                                    0.7,
+                                                ),
+                                            },
+                                            "&:active": {
+                                                backgroundColor: alpha(
+                                                    "#fff",
+                                                    0.3,
+                                                ),
+                                            },
+                                        }}
+                                    >
+                                        <FullscreenExit fontSize="large" />
+                                    </IconButton>
+                                </Tooltip>
+                            </>
                         )}
-                        <Tooltip
-                            arrow
-                            open={fullscreenGuideOpen}
-                            onOpen={() => setFullscreenGuideOpen(true)}
-                            onClose={() => setFullscreenGuideOpen(false)}
-                            placement={exitButtonLayout.tooltipPlacement}
-                            title="ここをタップすると全画面を終了します"
-                            // ネイティブ全画面では全画面要素の外(body)に描画すると見えないため、
-                            // ポータルを無効化して全画面要素内に描画する
-                            slotProps={{
-                                popper: {
-                                    disablePortal: true,
-                                },
-                            }}
-                        >
-                            <IconButton
-                                aria-label="全画面を終了"
-                                onClick={handleToggleFullscreen}
-                                sx={{
-                                    position: "absolute",
-                                    ...exitButtonLayout.position,
-                                    zIndex: 2,
-                                    color: "#fff",
-                                    transition:
-                                        "opacity 0.2s, background-color 0.2s",
-                                    ...(exitButtonLayout.inBar
-                                        ? {
-                                              opacity: 0.6,
-                                              backgroundColor: alpha(
-                                                  "#000",
-                                                  0.35,
-                                              ),
-                                          }
-                                        : {
-                                              opacity: 0.92,
-                                              backgroundColor: alpha(
-                                                  "#000",
-                                                  0.6,
-                                              ),
-                                              boxShadow:
-                                                  "0 0 8px rgba(0,0,0,0.7)",
-                                          }),
-                                    "&:hover": {
-                                        opacity: 1,
-                                        backgroundColor: alpha("#000", 0.7),
-                                    },
-                                    "&:active": {
-                                        backgroundColor: alpha("#fff", 0.3),
-                                    },
-                                }}
-                            >
-                                <FullscreenExit fontSize="large" />
-                            </IconButton>
-                        </Tooltip>
-                    </>
-                )}
-            </Box>
+                    </Box>
+                    {chatEnabled && <PlayChatInput />}
+                </Box>
+            </PlayChatProvider>
             <ClientLogDialog
                 open={troubleshootOpen}
                 contentId={game.contentId}
@@ -1039,13 +1109,18 @@ export function PlayView({
                                         <Typography variant="h6">
                                             {playName}
                                         </Typography>
-                                        {(isLimited || requireSignIn) && (
+                                        {(isLimited ||
+                                            requireSignIn ||
+                                            !chatEnabled) && (
                                             <Stack
                                                 direction="row"
-                                                spacing={2}
                                                 sx={{
                                                     alignItems: "center",
                                                     flexWrap: "wrap",
+                                                    // spacing は margin-left で実装されるため、
+                                                    // 折り返した 2 行目の先頭がインデントされてしまう
+                                                    columnGap: 2,
+                                                    rowGap: 0.5,
                                                 }}
                                             >
                                                 {isLimited && (
@@ -1106,6 +1181,37 @@ export function PlayView({
                                                                 color="textSecondary"
                                                             >
                                                                 ゲスト禁止
+                                                            </Typography>
+                                                        </Stack>
+                                                    </Tooltip>
+                                                )}
+                                                {!chatEnabled && (
+                                                    <Tooltip
+                                                        arrow
+                                                        title="この部屋では部屋チャットが無効です。"
+                                                    >
+                                                        <Stack
+                                                            direction="row"
+                                                            spacing={1}
+                                                            sx={{
+                                                                alignItems:
+                                                                    "center",
+                                                            }}
+                                                        >
+                                                            <SpeakerNotesOff
+                                                                fontSize="small"
+                                                                sx={{
+                                                                    color: theme
+                                                                        .palette
+                                                                        .text
+                                                                        .secondary,
+                                                                }}
+                                                            />
+                                                            <Typography
+                                                                variant="body2"
+                                                                color="textSecondary"
+                                                            >
+                                                                チャットOFF
                                                             </Typography>
                                                         </Stack>
                                                     </Tooltip>
@@ -1490,6 +1596,7 @@ export function PlayView({
                                                     isLimited,
                                                     joinWord,
                                                     requireSignIn,
+                                                    chatEnabled,
                                                 },
                                                 afterCreate: afterRecreate,
                                             }}

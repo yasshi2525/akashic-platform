@@ -13,6 +13,7 @@ import {
     getContentViewSize,
 } from "@/lib/server/play-utils";
 import { isFavorited } from "@/lib/server/favorite";
+import { setPlayAccessCookie } from "@/lib/server/play-access-token";
 
 const playViewSelect = {
     id: true,
@@ -21,6 +22,7 @@ const playViewSelect = {
     name: true,
     isLimited: true,
     requireSignIn: true,
+    chatEnabled: true,
     isActive: true,
     joinWord: true,
     inviteHash: true,
@@ -74,6 +76,7 @@ async function closedPlayResponse(
             playName: play.name,
             isLimited: play.isLimited,
             requireSignIn: play.requireSignIn,
+            chatEnabled: play.chatEnabled,
             createdAt: play.createdAt,
             endedAt: play.endedAt ?? undefined,
             gameMaster: {
@@ -148,7 +151,7 @@ export async function GET(
             return closedPlayResponse(play, user);
         }
         const gameJson = await fetchGameJson(play.contentId);
-        return NextResponse.json({
+        const res = NextResponse.json<PlayResponse>({
             ok: true,
             data: {
                 isActive: play.isActive,
@@ -156,6 +159,7 @@ export async function GET(
                 playName: play.name,
                 isLimited: play.isLimited,
                 requireSignIn: play.requireSignIn,
+                chatEnabled: play.chatEnabled,
                 joinWord: play.joinWord ?? undefined,
                 inviteHash: play.inviteHash ?? undefined,
                 gameMaster: {
@@ -191,6 +195,10 @@ export async function GET(
                 ...(await getContentViewSize(gameJson)),
             },
         });
+        if (user) {
+            setPlayAccessCookie(res, play.id, user.id, req.cookies.getAll());
+        }
+        return res;
     } catch (err) {
         console.warn(`failed to join (playId = "${playId}")`, err);
         return NextResponse.json({

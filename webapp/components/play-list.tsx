@@ -37,6 +37,7 @@ import {
     Link as LinkIcon,
     Lock,
     NoAccounts,
+    SpeakerNotesOff,
 } from "@mui/icons-material";
 import { PlayInfo } from "@/lib/types";
 import { usePlayList } from "@/lib/client/usePlayList";
@@ -98,13 +99,18 @@ function PlayGrid({ list }: { list: PlayInfo[] }) {
                             <Typography variant="h6" component="h2">
                                 {info.playName}
                             </Typography>
-                            {(info.isLimited || info.requireSignIn) && (
+                            {(info.isLimited ||
+                                info.requireSignIn ||
+                                !info.chatEnabled) && (
                                 <Stack
-                                    spacing={2}
                                     direction="row"
                                     sx={{
                                         alignItems: "center",
                                         flexWrap: "wrap",
+                                        // spacing は margin-left で実装されるため、
+                                        // 折り返した 2 行目の先頭がインデントされてしまう
+                                        columnGap: 2,
+                                        rowGap: 0.5,
                                     }}
                                 >
                                     {info.isLimited && (
@@ -159,6 +165,34 @@ function PlayGrid({ list }: { list: PlayInfo[] }) {
                                                     color="textSecondary"
                                                 >
                                                     ゲスト禁止
+                                                </Typography>
+                                            </Stack>
+                                        </Tooltip>
+                                    )}
+                                    {!info.chatEnabled && (
+                                        <Tooltip
+                                            arrow
+                                            title="この部屋では部屋チャットが無効です。"
+                                        >
+                                            <Stack
+                                                spacing={1}
+                                                direction="row"
+                                                sx={{
+                                                    alignItems: "center",
+                                                }}
+                                            >
+                                                <SpeakerNotesOff
+                                                    fontSize="small"
+                                                    sx={{
+                                                        color: theme.palette
+                                                            .text.secondary,
+                                                    }}
+                                                />
+                                                <Typography
+                                                    variant="body2"
+                                                    color="textSecondary"
+                                                >
+                                                    チャットOFF
                                                 </Typography>
                                             </Stack>
                                         </Tooltip>

@@ -18,6 +18,7 @@ interface PlayForm {
     isLimited: boolean;
     joinWord?: string;
     requireSignIn: boolean;
+    chatEnabled: boolean;
 }
 
 const errReasons = [
@@ -39,6 +40,7 @@ export async function registerPlay({
     isLimited,
     joinWord,
     requireSignIn,
+    chatEnabled,
 }: PlayForm): Promise<RegisterPlayResponse> {
     if (isWriteBlocked()) {
         return {
@@ -117,6 +119,7 @@ export async function registerPlay({
                 joinWord: isLimited ? joinWord : undefined,
                 inviteHash,
                 requireSignIn,
+                chatEnabled,
             }),
         });
         if (res.status !== 200) {

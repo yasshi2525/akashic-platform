@@ -28,8 +28,10 @@ export function useLive(
     if (joinWord) {
         query.set("joinWord", joinWord);
     }
+    // ゲスト cookie の発行前に問い合わせると、入室者を特定できずアクセス権
+    // (部屋チャット用の Cookie) が発行されないため、認証確定まで待つ
     const { isLoading, data, error, mutate } = useSWR(
-        `/api/live/${handle}?${query.toString()}`,
+        user ? `/api/live/${handle}/?${query.toString()}` : null,
         fetcher,
         {
             refreshInterval: polling ? 4000 : 0,
@@ -37,7 +39,7 @@ export function useLive(
     );
 
     return {
-        isLoading,
+        isLoading: isLoading || !user,
         data: data
             ? {
                   ...data,

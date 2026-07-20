@@ -30,6 +30,7 @@ export function PlayCloseDialog({
             isLimited: boolean;
             joinWord?: string;
             requireSignIn: boolean;
+            chatEnabled: boolean;
         };
         afterCreate:
             { action: "navigate" } | { action: "stay"; cb: () => void };

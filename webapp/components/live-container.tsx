@@ -407,6 +407,7 @@ export function LiveContainer({ handle }: { handle: string }) {
                 playName={liveInfo.playName}
                 isLimited={liveInfo.isLimited}
                 requireSignIn={liveInfo.requireSignIn}
+                chatEnabled={liveInfo.chatEnabled}
                 joinWord={liveInfo.joinWord}
                 inviteHash={liveInfo.inviteHash}
                 game={liveInfo.game}

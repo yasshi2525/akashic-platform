@@ -468,6 +468,7 @@ export const openapi = {
                     joinWord: { type: "string" },
                     inviteHash: { type: "string" },
                     requireSignIn: { type: "boolean" },
+                    chatEnabled: { type: "boolean" },
                 },
             },
             StartResponse: {

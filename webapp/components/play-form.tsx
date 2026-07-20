@@ -26,6 +26,7 @@ import {
     Lock,
     NoAccounts,
     Search,
+    SpeakerNotesOff,
     SportsEsports,
 } from "@mui/icons-material";
 import { messageKey, messages } from "@/lib/types";
@@ -58,6 +59,10 @@ export function PlayForm({
     const [requireSignIn, setRequireSignIn] = useLocalStorage(
         STORAGE_KEYS.ROOM_REQUIRE_SIGN_IN,
         false,
+    );
+    const [chatEnabled, setChatEnabled] = useLocalStorage(
+        STORAGE_KEYS.ROOM_CHAT_ENABLED,
+        true,
     );
     const canRequireSignIn = !!user && user.authType !== "guest";
     const [isPending, startTransition] = useTransition();
@@ -93,6 +98,7 @@ export function PlayForm({
                     isLimited,
                     joinWord,
                     requireSignIn: canRequireSignIn && requireSignIn,
+                    chatEnabled,
                 });
                 if (res.ok) {
                     switch (afterCreate.action) {
@@ -141,12 +147,13 @@ export function PlayForm({
     const effectiveRequireSignIn = canRequireSignIn && requireSignIn;
 
     const roomBadges =
-        isLimited || effectiveRequireSignIn ? (
+        isLimited || effectiveRequireSignIn || !chatEnabled ? (
             <Stack
                 direction="row"
-                spacing={0.5}
                 sx={{
                     flexWrap: "wrap",
+                    // spacing は margin-left で実装されるため、
+                    // 折り返した 2 行目の先頭がインデントされてしまう
                     gap: 0.5,
                     mt: 0.5,
                     color: theme.palette.text.secondary,
@@ -181,6 +188,24 @@ export function PlayForm({
                             />
                         }
                         label="ゲスト参加禁止"
+                        size="small"
+                        variant="outlined"
+                        sx={{
+                            color: theme.palette.text.secondary,
+                        }}
+                    />
+                )}
+                {!chatEnabled && (
+                    <Chip
+                        icon={
+                            <SpeakerNotesOff
+                                color="inherit"
+                                sx={{
+                                    color: theme.palette.text.secondary,
+                                }}
+                            />
+                        }
+                        label="チャットOFF"
                         size="small"
                         variant="outlined"
                         sx={{
@@ -343,6 +368,25 @@ export function PlayForm({
                         {canRequireSignIn
                             ? "有効にすると、サインインしたユーザーのみ参加でき、ユーザー名が固定で表示されます。"
                             : "この設定を利用するにはサインインが必要です。"}
+                    </Typography>
+                </Box>
+                <Box>
+                    <Typography variant="h6" gutterBottom>
+                        チャット設定
+                    </Typography>
+                    <FormControlLabel
+                        control={
+                            <Switch
+                                checked={chatEnabled}
+                                onChange={(event) =>
+                                    setChatEnabled(event.target.checked)
+                                }
+                            />
+                        }
+                        label="部屋チャットを有効にする"
+                    />
+                    <Typography variant="body2" color="textSecondary">
+                        有効にすると、部屋にいる人同士でコメントをやりとりできます。
                     </Typography>
                 </Box>
                 <Box>
