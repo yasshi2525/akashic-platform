@@ -214,6 +214,25 @@ export class HttpServer {
             }
         });
 
+        app.get("/play-chats/delete", async (_req: Request, res: Response) => {
+            try {
+                const { count } = await prisma.playChatMessage.deleteMany({
+                    where: {
+                        play: {
+                            isActive: false,
+                        },
+                    },
+                });
+                res.json({ ok: true, deleted: count });
+            } catch (err) {
+                res.status(500).json({
+                    ok: false,
+                    reason: "InternalError",
+                    message: (err as Error).message,
+                });
+            }
+        });
+
         app.use((req: Request, res: Response) => {
             res.status(404).json({
                 ok: false,

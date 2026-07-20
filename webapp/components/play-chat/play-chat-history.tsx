@@ -1,0 +1,100 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import {
+    alpha,
+    Alert,
+    Box,
+    CircularProgress,
+    Stack,
+    Typography,
+} from "@mui/material";
+import { formatDistance } from "date-fns";
+import { ja } from "date-fns/locale";
+import { PlayChatMessageInfo } from "@/lib/types";
+import { usePlayChatContext } from "@/lib/client/usePlayChatContext";
+import { UserInline } from "../user-inline";
+
+function HistoryItem({ message }: { message: PlayChatMessageInfo }) {
+    return (
+        <Stack spacing={0.25}>
+            <Stack
+                direction="row"
+                sx={{
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    // spacing は margin-left で実装されるため、
+                    // 折り返した 2 行目の先頭がインデントされてしまう
+                    columnGap: 1,
+                    rowGap: 0.25,
+                }}
+            >
+                <UserInline
+                    user={{
+                        id: message.author.id,
+                        name: message.author.name,
+                        image: message.author.iconURL,
+                    }}
+                    avatarSize={20}
+                    textVariant="subtitle2"
+                />
+                <Typography variant="caption" color="textSecondary">
+                    {formatDistance(new Date(message.createdAt), new Date(), {
+                        addSuffix: true,
+                        locale: ja,
+                    })}
+                </Typography>
+            </Stack>
+            <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+                {message.body}
+            </Typography>
+        </Stack>
+    );
+}
+
+export function PlayChatHistory({
+    messages,
+}: {
+    messages: PlayChatMessageInfo[];
+}) {
+    const { isLoading, error } = usePlayChatContext();
+    const listRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (listRef.current) {
+            listRef.current.scrollTop = listRef.current.scrollHeight;
+        }
+    }, [messages.length]);
+
+    return (
+        <Box
+            ref={listRef}
+            sx={{
+                overflowY: "auto",
+                maxHeight: { xs: "30vh", sm: "35vh" },
+                px: { xs: 1.5, sm: 2 },
+                py: 1,
+                backgroundColor: (theme) =>
+                    alpha(theme.palette.background.paper, 0.96),
+            }}
+        >
+            {isLoading ? (
+                <Stack sx={{ alignItems: "center", py: 2 }}>
+                    <CircularProgress size={24} />
+                </Stack>
+            ) : error ? (
+                <Alert severity="error">{error}</Alert>
+            ) : messages.length === 0 ? (
+                <Typography variant="body2" color="textSecondary">
+                    まだコメントはありません。
+                </Typography>
+            ) : (
+                <Stack spacing={1.5}>
+                    {messages.map((message) => (
+                        <HistoryItem key={message.id} message={message} />
+                    ))}
+                </Stack>
+            )}
+        </Box>
+    );
+}

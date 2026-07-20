@@ -192,6 +192,7 @@ export class HttpServer {
                 joinWord,
                 inviteHash,
                 requireSignIn,
+                chatEnabled,
             } = req.body;
             if (
                 !playName?.toString() ||
@@ -221,6 +222,7 @@ export class HttpServer {
                     joinWord: joinWord?.toString(),
                     inviteHash: inviteHash?.toString(),
                     requireSignIn: !!requireSignIn,
+                    chatEnabled: !!chatEnabled,
                     onDestroy: (playId) => this._manager.unregister(playId),
                 });
                 res.json({ playId });

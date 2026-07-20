@@ -13,6 +13,7 @@ import {
     getContentViewSize,
 } from "@/lib/server/play-utils";
 import { isFavorited } from "@/lib/server/favorite";
+import { setPlayAccessCookie } from "@/lib/server/play-access-token";
 
 export async function GET(
     req: NextRequest,
@@ -57,6 +58,7 @@ export async function GET(
                 name: true,
                 isLimited: true,
                 requireSignIn: true,
+                chatEnabled: true,
                 joinWord: true,
                 inviteHash: true,
                 createdAt: true,
@@ -127,7 +129,7 @@ export async function GET(
         }
         const { remainingMs, expiresAt } = remaining;
         const gameJson = await fetchGameJson(play.contentId);
-        return NextResponse.json({
+        const res = NextResponse.json<LiveResponse>({
             ok: true,
             data: {
                 owner,
@@ -138,6 +140,7 @@ export async function GET(
                     playName: play.name,
                     isLimited: play.isLimited,
                     requireSignIn: play.requireSignIn,
+                    chatEnabled: play.chatEnabled,
                     joinWord: play.joinWord ?? undefined,
                     inviteHash: play.inviteHash ?? undefined,
                     gameMaster: {
@@ -178,6 +181,10 @@ export async function GET(
                 },
             },
         });
+        if (user) {
+            setPlayAccessCookie(res, play.id, user.id, req.cookies.getAll());
+        }
+        return res;
     } catch (err) {
         console.warn(`failed to get live play (handle = "${handle}")`, err);
         return NextResponse.json({ ok: false, reason: "InternalError" });

@@ -1,6 +1,6 @@
 {
   "name": "@yasshi2525/webapp",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "private": true,
   "description": "",
   "main": "index.js",
@@ -59,7 +59,7 @@
     "@opentelemetry/sdk-trace-web": "^2.8.0",
     "@opentelemetry/semantic-conventions": "^1.41.1",
     "@yasshi2525/agvw-like": "^1.0.5",
-    "@yasshi2525/persist-schema": "^1.6.1",
+    "@yasshi2525/persist-schema": "^1.10.0",
     "date-fns": "^4.1.0",
     "jszip": "^3.10.1",
     "next": "^16.2.4",

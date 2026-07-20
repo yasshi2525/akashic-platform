@@ -1,6 +1,6 @@
 {
   "name": "@yasshi2525/akashic-server",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -35,7 +35,7 @@
     "@opentelemetry/resources": "^2.8.0",
     "@opentelemetry/sdk-node": "^0.219.0",
     "@opentelemetry/semantic-conventions": "^1.41.1",
-    "@yasshi2525/persist-schema": "^1.9.0",
+    "@yasshi2525/persist-schema": "^1.10.0",
     "@yasshi2525/runner-ipc-schema": "^1.0.0",
     "express": "^5.2.1"
   }

@@ -24,6 +24,7 @@ model User {
   clientLogs    ClientLogRecord[]
   favorites     Favorite[]
   boardMessages BoardMessage[]
+  chatMessages  PlayChatMessage[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -120,6 +121,7 @@ model Play {
   joinWord      String?
   inviteHash    String?
   requireSignIn Boolean   @default(false)
+  chatEnabled   Boolean   @default(false)
   isActive      Boolean   @default(true)
   endedAt       DateTime?
   logUploadedAt DateTime?
@@ -130,8 +132,9 @@ model Play {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
-  gmUser  User?   @relation(fields: [gmUserId], references: [id], onDelete: Cascade)
+  content      Content           @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  gmUser       User?             @relation(fields: [gmUserId], references: [id], onDelete: Cascade)
+  chatMessages PlayChatMessage[]
 }
 
 model FeedbackPost {
@@ -174,6 +177,23 @@ model BoardMessage {
 
   @@index([createdAt])
   @@index([guestId, createdAt])
+}
+
+model PlayChatMessage {
+  id         Int      @id @default(autoincrement())
+  playId     Int
+  authorId   String?
+  authorName String
+  guestId    String?
+  body       String
+  createdAt  DateTime @default(now())
+
+  play   Play  @relation(fields: [playId], references: [id], onDelete: Cascade)
+  author User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([playId, id])
+  @@index([playId, authorId, createdAt])
+  @@index([playId, guestId, createdAt])
 }
 
 model Notification {

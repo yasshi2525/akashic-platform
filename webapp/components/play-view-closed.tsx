@@ -20,6 +20,7 @@ import {
     Home,
     Lock,
     NoAccounts,
+    SpeakerNotesOff,
     Videocam,
     VideocamOff,
 } from "@mui/icons-material";
@@ -43,6 +44,7 @@ export function ClosedPlayView({
     playName,
     isLimited,
     requireSignIn,
+    chatEnabled,
     createdAt,
     endedAt,
     gameMaster,
@@ -52,6 +54,7 @@ export function ClosedPlayView({
     playName: string;
     isLimited: boolean;
     requireSignIn: boolean;
+    chatEnabled: boolean;
     createdAt: Date;
     endedAt?: Date;
     gameMaster: {
@@ -90,13 +93,16 @@ export function ClosedPlayView({
                     <CardContent>
                         <Stack spacing={1}>
                             <Typography variant="h6">{playName}</Typography>
-                            {(isLimited || requireSignIn) && (
+                            {(isLimited || requireSignIn || !chatEnabled) && (
                                 <Stack
                                     direction="row"
-                                    spacing={2}
                                     sx={{
                                         alignItems: "center",
                                         flexWrap: "wrap",
+                                        // spacing は margin-left で実装されるため、
+                                        // 折り返した 2 行目の先頭がインデントされてしまう
+                                        columnGap: 2,
+                                        rowGap: 0.5,
                                     }}
                                 >
                                     {isLimited && (
@@ -151,6 +157,34 @@ export function ClosedPlayView({
                                                     color="textSecondary"
                                                 >
                                                     ゲスト禁止
+                                                </Typography>
+                                            </Stack>
+                                        </Tooltip>
+                                    )}
+                                    {!chatEnabled && (
+                                        <Tooltip
+                                            arrow
+                                            title="この部屋では部屋チャットが無効でした。"
+                                        >
+                                            <Stack
+                                                direction="row"
+                                                spacing={0.5}
+                                                sx={{
+                                                    alignItems: "center",
+                                                }}
+                                            >
+                                                <SpeakerNotesOff
+                                                    fontSize="small"
+                                                    sx={{
+                                                        color: theme.palette
+                                                            .text.secondary,
+                                                    }}
+                                                />
+                                                <Typography
+                                                    variant="body2"
+                                                    color="textSecondary"
+                                                >
+                                                    チャットOFF
                                                 </Typography>
                                             </Stack>
                                         </Tooltip>

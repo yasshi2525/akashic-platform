@@ -370,8 +370,15 @@ function LiveRoomsSection({
         <Box sx={{ mb: 5 }}>
             <Stack
                 direction="row"
-                spacing={1.5}
-                sx={{ alignItems: "center", mb: 0.5, flexWrap: "wrap" }}
+                sx={{
+                    alignItems: "center",
+                    mb: 0.5,
+                    flexWrap: "wrap",
+                    // spacing は margin-left で実装されるため、
+                    // 折り返した 2 行目の先頭がインデントされてしまう
+                    columnGap: 1.5,
+                    rowGap: 0.5,
+                }}
             >
                 <Typography variant="h5" component="h2">
                     今この部屋で遊ばれています

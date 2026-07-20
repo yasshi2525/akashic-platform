@@ -102,6 +102,7 @@ export function PlayContainer() {
                 playName={data.playName}
                 isLimited={data.isLimited}
                 requireSignIn={data.requireSignIn}
+                chatEnabled={data.chatEnabled}
                 createdAt={data.createdAt}
                 endedAt={data.endedAt}
                 gameMaster={data.gameMaster}
@@ -117,6 +118,7 @@ export function PlayContainer() {
             playName={data.playName}
             isLimited={data.isLimited}
             requireSignIn={data.requireSignIn}
+            chatEnabled={data.chatEnabled}
             joinWord={data.joinWord}
             inviteHash={data.inviteHash}
             isGameMaster={data.isGameMaster}

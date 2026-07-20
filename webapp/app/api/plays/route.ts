@@ -58,6 +58,7 @@ export async function GET(req: NextRequest) {
             name: true,
             isLimited: true,
             requireSignIn: true,
+            chatEnabled: true,
             content: {
                 select: {
                     id: true,
@@ -101,10 +102,18 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({
             ok: true,
             data: result.map(
-                ({ id, isLimited, requireSignIn, content, createdAt }) => ({
+                ({
                     id,
                     isLimited,
                     requireSignIn,
+                    chatEnabled,
+                    content,
+                    createdAt,
+                }) => ({
+                    id,
+                    isLimited,
+                    requireSignIn,
+                    chatEnabled,
                     game: {
                         title: content.game.title,
                         iconURL: `${publicContentBaseUrl}/${content.id}/${content.icon}`,
@@ -125,6 +134,7 @@ export async function GET(req: NextRequest) {
                 name,
                 isLimited,
                 requireSignIn,
+                chatEnabled,
                 content,
                 gmUser,
                 createdAt,
@@ -133,6 +143,7 @@ export async function GET(req: NextRequest) {
                 playName: name,
                 isLimited,
                 requireSignIn,
+                chatEnabled,
                 game: {
                     title: content.game.title,
                     iconURL: `${publicContentBaseUrl}/${content.id}/${content.icon}`,

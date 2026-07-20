@@ -38,6 +38,7 @@ export function PlayCreateDialog({
         isLimited: boolean;
         joinWord?: string;
         requireSignIn: boolean;
+        chatEnabled: boolean;
     };
     afterCreate:
         | { action: "navigate" }
@@ -60,6 +61,10 @@ export function PlayCreateDialog({
         STORAGE_KEYS.ROOM_REQUIRE_SIGN_IN,
         false,
     );
+    const [chatEnabled, setChatEnabled] = useLocalStorage(
+        STORAGE_KEYS.ROOM_CHAT_ENABLED,
+        true,
+    );
     const canRequireSignIn = !!user && user.authType !== "guest";
     const [sending, setSending] = useState(false);
     const [error, setError] = useState<string>();
@@ -71,6 +76,7 @@ export function PlayCreateDialog({
                 setIsLimited(initialValues.isLimited);
                 setJoinWord(initialValues.joinWord ?? "");
                 setRequireSignIn(initialValues.requireSignIn);
+                setChatEnabled(initialValues.chatEnabled);
             }
             setError(undefined);
             setSending(false);
@@ -98,6 +104,7 @@ export function PlayCreateDialog({
             isLimited,
             joinWord,
             requireSignIn: canRequireSignIn && requireSignIn,
+            chatEnabled,
         });
         if (res.ok) {
             switch (afterCreate.action) {
@@ -219,6 +226,25 @@ export function PlayCreateDialog({
                             {canRequireSignIn
                                 ? "有効にすると、サインインしたユーザーのみ参加でき、ユーザー名が固定で表示されます。"
                                 : "この設定を利用するにはサインインが必要です。"}
+                        </Typography>
+                    </Stack>
+                    <Stack spacing={0.5}>
+                        <Typography variant="subtitle1">
+                            チャット設定
+                        </Typography>
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={chatEnabled}
+                                    onChange={(event) =>
+                                        setChatEnabled(event.target.checked)
+                                    }
+                                />
+                            }
+                            label="部屋チャットを有効にする"
+                        />
+                        <Typography variant="body2" color="textSecondary">
+                            有効にすると、部屋にいる人同士でコメントをやりとりできます。
                         </Typography>
                     </Stack>
                     {error && (

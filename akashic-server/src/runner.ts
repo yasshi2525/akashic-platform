@@ -35,6 +35,7 @@ export interface RunnerParameterObject {
     joinWord?: string;
     inviteHash?: string;
     requireSignIn: boolean;
+    chatEnabled: boolean;
     onDestroy: (playId: number) => void;
 }
 
@@ -316,6 +317,7 @@ export class Runner {
                     joinWord: this._param.joinWord,
                     inviteHash: this._param.inviteHash,
                     requireSignIn: this._param.requireSignIn,
+                    chatEnabled: this._param.chatEnabled,
                 },
             })
         ).id;
@@ -345,6 +347,14 @@ export class Runner {
         } catch (err) {
             console.warn(
                 `failed to end play record (playId = "${playId}")`,
+                err,
+            );
+        }
+        try {
+            await prisma.playChatMessage.deleteMany({ where: { playId } });
+        } catch (err) {
+            console.warn(
+                `failed to delete play chat messages (playId = "${playId}")`,
                 err,
             );
         }

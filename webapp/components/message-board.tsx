@@ -51,8 +51,14 @@ function MessageItem({ message }: { message: BoardMessageInfo }) {
         <Stack spacing={0.25}>
             <Stack
                 direction="row"
-                spacing={1}
-                sx={{ alignItems: "center", flexWrap: "wrap" }}
+                sx={{
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    // spacing は margin-left で実装されるため、
+                    // 折り返した 2 行目の先頭がインデントされてしまう
+                    columnGap: 1,
+                    rowGap: 0.25,
+                }}
             >
                 <UserInline
                     user={{

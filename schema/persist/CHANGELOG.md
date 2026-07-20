@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.10.0
+
+- Feature
+  - 部屋チャット機能として `PlayChatMessage` テーブルを追加
+  - `Play` に `chatEnabled` を追加
+
 ## 1.9.0
 
 - Feature

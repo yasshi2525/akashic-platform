@@ -51,6 +51,7 @@ export interface PlayInfo {
     playName: string;
     isLimited: boolean;
     requireSignIn: boolean;
+    chatEnabled: boolean;
     game: { title: string; iconURL: string };
     gameMaster: {
         userId?: string;
@@ -211,6 +212,32 @@ export type BoardMessagesGetResponse =
     | { ok: true; data: BoardMessageInfo[] }
     | { ok: false; reason: BoardMessagesGetErrorType };
 
+export const PLAY_CHAT_BODY_MAX = 100;
+export const PLAY_CHAT_NAME_MAX = 16;
+
+export interface PlayChatMessageInfo {
+    id: number;
+    author: {
+        id?: string;
+        name: string;
+        iconURL?: string;
+    };
+    body: string;
+    createdAt: Date;
+}
+
+const playChatGetErrReasons = [
+    "InvalidParams",
+    "NotFound",
+    "Forbidden",
+    "Disabled",
+    "InternalError",
+] as const;
+export type PlayChatGetErrorType = (typeof playChatGetErrReasons)[number];
+export type PlayChatGetResponse =
+    | { ok: true; data: PlayChatMessageInfo[] }
+    | { ok: false; reason: PlayChatGetErrorType };
+
 export const NOTIFICATION_LIMITS = 10;
 
 export interface NotificationInfo {
@@ -312,6 +339,7 @@ interface BasePlayViewInfo {
     playName: string;
     isLimited: boolean;
     requireSignIn: boolean;
+    chatEnabled: boolean;
     game: GameInfo;
     gameMaster: {
         id: string;

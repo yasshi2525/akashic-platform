@@ -57,12 +57,14 @@ export function usePlay(
     if (joinWord) {
         query.set("joinWord", joinWord);
     }
+    // ゲスト cookie の発行前に問い合わせると、入室者を特定できずアクセス権
+    // (部屋チャット用の Cookie) が発行されないため、認証確定まで待つ
     const { isLoading, data, error } = useSWR(
-        `/api/play/${playId}?${query.toString()}`,
+        user ? `/api/play/${playId}/?${query.toString()}` : null,
         fetcher,
     );
     return {
-        isLoading,
+        isLoading: isLoading || !user,
         data: data
             ? {
                   ...data,
