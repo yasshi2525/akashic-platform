@@ -20,6 +20,7 @@ import {
     Logout,
     MeetingRoom,
     Settings,
+    VisibilityOff,
 } from "@mui/icons-material";
 import { User } from "@/lib/types";
 import { useAuth } from "@/lib/client/useAuth";
@@ -59,6 +60,16 @@ function AnonymousMenu({
                     }}
                 >
                     サインイン
+                </Typography>
+            </MenuItem>
+            <MenuItem
+                component={Link}
+                href="/settings/moderation"
+                sx={{ py: 1.5 }}
+            >
+                <VisibilityOff />
+                <Typography variant="body1" sx={{ ml: 1 }}>
+                    ミュートの設定
                 </Typography>
             </MenuItem>
         </Menu>
@@ -133,6 +144,17 @@ function AuthorizedMenu({ user, anchorEl, handleClose }: AuthorizedMenuProps) {
                 <ListAlt />
                 <Typography variant="body1" sx={{ ml: 1 }}>
                     投稿ゲーム一覧
+                </Typography>
+            </MenuItem>
+            <MenuItem
+                component={Link}
+                href="/settings/moderation"
+                divider={true}
+                sx={{ py: 1.5 }}
+            >
+                <VisibilityOff />
+                <Typography variant="body1" sx={{ ml: 1 }}>
+                    ミュートの設定
                 </Typography>
             </MenuItem>
             <MenuItem

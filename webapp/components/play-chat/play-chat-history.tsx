@@ -13,9 +13,12 @@ import { formatDistance } from "date-fns";
 import { ja } from "date-fns/locale";
 import { PlayChatMessageInfo } from "@/lib/types";
 import { usePlayChatContext } from "@/lib/client/usePlayChatContext";
+import { useMute } from "@/lib/client/useMute";
 import { UserInline } from "../user-inline";
+import { MutedMessage } from "../muted-message";
+import { MuteMenu } from "../mute-menu";
 
-function HistoryItem({ message }: { message: PlayChatMessageInfo }) {
+function HistoryBody({ message }: { message: PlayChatMessageInfo }) {
     return (
         <Stack spacing={0.25}>
             <Stack
@@ -52,12 +55,40 @@ function HistoryItem({ message }: { message: PlayChatMessageInfo }) {
     );
 }
 
+function HistoryItem({
+    message,
+    mute,
+}: {
+    message: PlayChatMessageInfo;
+    mute: ReturnType<typeof useMute>;
+}) {
+    if (mute.isMuted(message)) {
+        return (
+            <MutedMessage>
+                <HistoryBody message={message} />
+            </MutedMessage>
+        );
+    }
+    return (
+        <Stack
+            direction="row"
+            sx={{ alignItems: "flex-start", columnGap: 0.5 }}
+        >
+            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                <HistoryBody message={message} />
+            </Box>
+            <MuteMenu message={message} mute={mute} />
+        </Stack>
+    );
+}
+
 export function PlayChatHistory({
     messages,
 }: {
     messages: PlayChatMessageInfo[];
 }) {
-    const { isLoading, error } = usePlayChatContext();
+    const { isLoading, error, refresh } = usePlayChatContext();
+    const mute = useMute("chat", refresh);
     const listRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -91,7 +122,11 @@ export function PlayChatHistory({
             ) : (
                 <Stack spacing={1.5}>
                     {messages.map((message) => (
-                        <HistoryItem key={message.id} message={message} />
+                        <HistoryItem
+                            key={message.id}
+                            message={message}
+                            mute={mute}
+                        />
                     ))}
                 </Stack>
             )}

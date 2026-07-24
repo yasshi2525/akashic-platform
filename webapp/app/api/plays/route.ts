@@ -10,6 +10,9 @@ import {
     PlayInfo,
     PLAYLIST_LIMITS,
 } from "@/lib/types";
+import { getAuth } from "@/lib/server/auth";
+import { anonKey } from "@/lib/server/anon-key";
+import { getMuteSet, isMuted } from "@/lib/server/mute";
 
 export async function GET(req: NextRequest) {
     const keyword = req.nextUrl.searchParams.get("keyword") ?? undefined;
@@ -46,7 +49,9 @@ export async function GET(req: NextRequest) {
         where.gameMasterId = gameMasterId;
     }
 
-    const result = await prisma.play.findMany({
+    const viewer = await getAuth();
+    const muteSet = await getMuteSet(viewer);
+    const rows = await prisma.play.findMany({
         take: limits,
         skip: page * limits,
         where,
@@ -59,6 +64,8 @@ export async function GET(req: NextRequest) {
             isLimited: true,
             requireSignIn: true,
             chatEnabled: true,
+            gameMasterId: true,
+            gmUserId: true,
             content: {
                 select: {
                     id: true,
@@ -80,6 +87,13 @@ export async function GET(req: NextRequest) {
             createdAt: true,
         },
     });
+    const gameMasterOf = (play: (typeof rows)[number]) => ({
+        authorId: play.gmUserId,
+        guestId: play.gmUserId ? null : play.gameMasterId,
+    });
+    // 件数はページングの後で減るが、部屋一覧は無限スクロールで
+    // 追補されるため、ページを詰め直すより素直に落とす
+    const result = rows.filter((play) => !isMuted(muteSet, gameMasterOf(play)));
     const participants = await Promise.all(
         result.map(async ({ id }) => {
             const res = await fetch(
@@ -128,8 +142,8 @@ export async function GET(req: NextRequest) {
     }
     return NextResponse.json({
         ok: true,
-        data: result.map(
-            ({
+        data: result.map((play) => {
+            const {
                 id,
                 name,
                 isLimited,
@@ -138,7 +152,8 @@ export async function GET(req: NextRequest) {
                 content,
                 gmUser,
                 createdAt,
-            }) => ({
+            } = play;
+            return {
                 id,
                 playName: name,
                 isLimited,
@@ -152,11 +167,14 @@ export async function GET(req: NextRequest) {
                     userId: gmUser?.id ?? undefined,
                     name: gmUser?.name ?? GUEST_NAME,
                     iconURL: gmUser?.image ?? undefined,
+                    anonKey: viewer
+                        ? anonKey(gameMasterOf(play), viewer.id)
+                        : undefined,
                 },
                 participants:
                     participants.find((p) => p.id === id)?.participants ?? 0,
                 createdAt,
-            }),
-        ) satisfies PlayInfo[],
+            };
+        }) satisfies PlayInfo[],
     });
 }

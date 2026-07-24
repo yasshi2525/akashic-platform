@@ -57,6 +57,8 @@ export interface PlayInfo {
         userId?: string;
         name: string;
         iconURL?: string;
+        /** 未サインイン利用者が端末内ミュートで部屋を隠すのに使う */
+        anonKey?: string;
     };
     participants: number;
     createdAt: Date;
@@ -194,15 +196,45 @@ export type ClientLogsGetResponse =
 export const BOARD_MESSAGE_BODY_MAX = 200;
 export const BOARD_MESSAGE_NAME_MAX = 20;
 
+export const MUTE_LIMIT_DEFAULT = 200;
+export const MUTE_LABEL_BODY_MAX = 40;
+
+export interface LocalMuteEntry {
+    anonKey: string;
+    label: string;
+    createdAt: number;
+}
+
+export interface MuteInfo {
+    id: number;
+    label: string;
+    createdAt: Date;
+}
+
+const mutesGetErrReasons = ["Unauthorized", "InternalError"] as const;
+export type MutesGetErrorType = (typeof mutesGetErrReasons)[number];
+export type MutesGetResponse =
+    { ok: true; data: MuteInfo[] } | { ok: false; reason: MutesGetErrorType };
+
+export interface MessageAuthorInfo {
+    id?: string;
+    name: string;
+    iconURL?: string;
+    /**
+     * 投稿者を指すための匿名キー。閲覧者ごとに異なる値になるため、
+     * 利用者同士で突き合わせても同一人物を特定できない。
+     * 未サインイン利用者が端末内ミュートの対象を記録するのに使う。
+     */
+    anonKey?: string;
+}
+
 export interface BoardMessageInfo {
     id: number;
-    author: {
-        id?: string;
-        name: string;
-        iconURL?: string;
-    };
+    author: MessageAuthorInfo;
     body: string;
     createdAt: Date;
+    /** サーバー側 (サインイン利用者) のミュート判定結果 */
+    muted?: boolean;
 }
 
 const boardMessagesGetErrReasons = ["InternalError"] as const;
@@ -217,13 +249,11 @@ export const PLAY_CHAT_NAME_MAX = 16;
 
 export interface PlayChatMessageInfo {
     id: number;
-    author: {
-        id?: string;
-        name: string;
-        iconURL?: string;
-    };
+    author: MessageAuthorInfo;
     body: string;
     createdAt: Date;
+    /** サーバー側 (サインイン利用者) のミュート判定結果 */
+    muted?: boolean;
 }
 
 const playChatGetErrReasons = [

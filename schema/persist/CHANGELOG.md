@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.11.0
+
+- Feature
+  - ミュート機能として `Mute` テーブルを追加
+
 ## 1.10.0
 
 - Feature

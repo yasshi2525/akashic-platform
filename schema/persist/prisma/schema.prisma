@@ -25,6 +25,8 @@ model User {
   favorites     Favorite[]
   boardMessages BoardMessage[]
   chatMessages  PlayChatMessage[]
+  mutes         Mute[]            @relation("MuteOwner")
+  mutedBy       Mute[]            @relation("MuteTarget")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -194,6 +196,29 @@ model PlayChatMessage {
   @@index([playId, id])
   @@index([playId, authorId, createdAt])
   @@index([playId, guestId, createdAt])
+}
+
+/// ミュートは閲覧者ごとの見え方の設定であり、相手の権利は変えない。
+/// 未サインイン利用者は端末内 (localStorage) に持つため、ここには現れない。
+model Mute {
+  id            Int     @id @default(autoincrement())
+  ownerId       String
+  /// 相手がサインイン利用者の場合のみ設定される
+  targetUserId  String?
+  /// 相手が未サインイン利用者の場合のみ設定される。相手が Cookie を消すと失効する
+  targetGuestId String?
+  /// 解除 UI で相手を判別するための手がかり。ゲストは表示名が自称のため、
+  /// ミュートした時点の名前と本文の冒頭を控えておかないと一覧が読めない
+  labelSnapshot String
+
+  createdAt DateTime @default(now())
+
+  owner      User  @relation("MuteOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  targetUser User? @relation("MuteTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, targetUserId])
+  @@unique([ownerId, targetGuestId])
+  @@index([ownerId])
 }
 
 model Notification {
