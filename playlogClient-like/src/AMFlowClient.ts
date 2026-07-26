@@ -30,8 +30,37 @@ import {
     BadRequestError,
     createAMFlowError,
     NotImplementedError,
+    RuntimeError,
+    TimeoutError,
     Carrier,
+    TransferChunk,
 } from "@yasshi2525/amflow-client-event-schema";
+
+/**
+ * 分割転送中の応答を組み立てるための状態。
+ * 全チャンクが揃った時点で、AMFlow の API として本来の `callback` を 1 度だけ呼ぶ。
+ */
+interface PendingTransferBase {
+    /** 次に受け取るべきチャンクの seq */
+    nextSeq: number;
+    stallTimer: ReturnType<typeof setTimeout> | null;
+}
+
+interface PendingTickListTransfer extends PendingTransferBase {
+    kind: "tickList";
+    from: number;
+    to: number;
+    ticks: Tick[];
+    callback: (err: Error | null, tickList?: TickList) => void;
+}
+
+interface PendingStartPointTransfer extends PendingTransferBase {
+    kind: "startPoint";
+    parts: string[];
+    callback: (err: Error | null, startPoint?: StartPoint) => void;
+}
+
+type PendingTransfer = PendingTickListTransfer | PendingStartPointTransfer;
 
 /**
  * 現在アクティブな trace context を Socket.IO イベントに載せるためのキャリアへ
@@ -52,12 +81,19 @@ interface AMFlowClientParameterObject {
      * @default 0
      */
     maxPreservingTickSize?: number;
+    /**
+     * 分割転送中、次のチャンクが届かないまま経過したら転送を失敗扱いにする時間 (ms)。
+     * @default 60000
+     */
+    transferStallTimeoutMs?: number;
 }
 
 export class AMFlowClient implements AMFlow {
     _socket: Socket<ListenSchema, EmitSchema>;
     _isOpened: boolean;
     _maxPreservingTickSize: number;
+    _transferStallTimeoutMs: number;
+    _transfers: Map<string, PendingTransfer>;
     _preservingTicks: Tick[];
     _tickHandlers: ((tick: Tick) => void)[];
     _eventHandlers: ((event: Event) => void)[];
@@ -67,11 +103,15 @@ export class AMFlowClient implements AMFlow {
     _onEventBound: ListenSchema[typeof ListenEvent.Event];
     _onPlayEndBound: ListenSchema[typeof ListenEvent.PlayEnd];
     _onPlayExtendBound: ListenSchema[typeof ListenEvent.PlayExtend];
+    _onTransferChunkBound: ListenSchema[typeof ListenEvent.TransferChunk];
+    _onDisconnectBound: () => void;
 
     constructor(param: AMFlowClientParameterObject) {
         this._socket = param.socket;
         this._isOpened = false;
         this._maxPreservingTickSize = param.maxPreservingTickSize ?? 0;
+        this._transferStallTimeoutMs = param.transferStallTimeoutMs ?? 60000;
+        this._transfers = new Map();
         this._preservingTicks = [];
         this._tickHandlers = [];
         this._eventHandlers = [];
@@ -81,6 +121,8 @@ export class AMFlowClient implements AMFlow {
         this._onEventBound = this._onEvent.bind(this);
         this._onPlayEndBound = this._onPlayEnd.bind(this);
         this._onPlayExtendBound = this._onPlayExtend.bind(this);
+        this._onTransferChunkBound = this._onTransferChunk.bind(this);
+        this._onDisconnectBound = this._onDisconnect.bind(this);
     }
 
     open(playId: string, callback?: (error: Error | null) => void) {
@@ -89,6 +131,11 @@ export class AMFlowClient implements AMFlow {
             this._socket.on(ListenEvent.Event, this._onEventBound);
             this._socket.on(ListenEvent.PlayEnd, this._onPlayEndBound);
             this._socket.on(ListenEvent.PlayExtend, this._onPlayExtendBound);
+            this._socket.on(
+                ListenEvent.TransferChunk,
+                this._onTransferChunkBound,
+            );
+            this._socket.on("disconnect", this._onDisconnectBound);
             this._socket.emit(EmitEvent.Open, playId, (err) => {
                 this._isOpened = true;
                 if (callback) {
@@ -103,10 +150,19 @@ export class AMFlowClient implements AMFlow {
     }
     close(callback?: (error: Error | null) => void) {
         if (this._assertsOpen(callback)) {
+            this._failTransfers(
+                new BadRequestError("session was closed."),
+                true,
+            );
             this._socket.off(ListenEvent.TickPack, this._onTickPackBound);
             this._socket.off(ListenEvent.Event, this._onEventBound);
             this._socket.off(ListenEvent.PlayEnd, this._onPlayEndBound);
             this._socket.off(ListenEvent.PlayExtend, this._onPlayExtendBound);
+            this._socket.off(
+                ListenEvent.TransferChunk,
+                this._onTransferChunkBound,
+            );
+            this._socket.off("disconnect", this._onDisconnectBound);
             this._socket.emit(EmitEvent.Close, (err) => {
                 if (!err) {
                     this._isOpened = false;
@@ -220,39 +276,53 @@ export class AMFlowClient implements AMFlow {
             typeof endOrCallbeck === "number" &&
             callback
         ) {
-            if (this._assertsOpen(callback)) {
-                this._socket.emit(
-                    EmitEvent.GetTickList,
-                    { begin: optsOrBegin, end: endOrCallbeck },
-                    injectCarrier(),
-                    (err, tickList) => {
-                        if (err) {
-                            callback(createAMFlowError(err));
-                        } else {
-                            callback(null, tickList ?? undefined);
-                        }
-                    },
-                );
-            }
+            this._requestTickList(
+                { begin: optsOrBegin, end: endOrCallbeck },
+                callback,
+            );
         } else if (
             typeof optsOrBegin !== "number" &&
             typeof endOrCallbeck !== "number"
         ) {
-            if (this._assertsOpen(endOrCallbeck)) {
-                this._socket.emit(
-                    EmitEvent.GetTickList,
-                    optsOrBegin,
-                    injectCarrier(),
-                    (err, tickList) => {
-                        if (err) {
-                            endOrCallbeck(createAMFlowError(err));
-                        } else {
-                            endOrCallbeck(null, tickList ?? undefined);
-                        }
-                    },
-                );
-            }
+            this._requestTickList(optsOrBegin, endOrCallbeck);
         }
+    }
+
+    /**
+     * サーバは応答をチャンクに分けて送ってくるため、ヘッダを受け取った時点では
+     * まだ完成していない。全チャンクが揃うまで `callback` の呼び出しを保留する。
+     */
+    _requestTickList(
+        opts: GetTickListOptions,
+        callback: (err: Error | null, tickList?: TickList) => void,
+    ) {
+        if (!this._assertsOpen(callback)) {
+            return;
+        }
+        this._socket.emit(
+            EmitEvent.GetTickList,
+            opts,
+            injectCarrier(),
+            (err, header) => {
+                if (err) {
+                    callback(createAMFlowError(err));
+                    return;
+                }
+                if (!header) {
+                    callback(null, undefined); // NOTE: 対象 Tick が無いのは正常
+                    return;
+                }
+                this._beginTransfer(header.transferId, {
+                    kind: "tickList",
+                    from: header.from,
+                    to: header.to,
+                    ticks: [],
+                    nextSeq: 0,
+                    stallTimer: null,
+                    callback,
+                });
+            },
+        );
     }
     putStartPoint(
         startPoint: StartPoint,
@@ -282,12 +352,22 @@ export class AMFlowClient implements AMFlow {
                 EmitEvent.GetStartPoint,
                 opts,
                 injectCarrier(),
-                (err, startPoint) => {
+                (err, header) => {
                     if (err) {
                         callback(createAMFlowError(err));
-                    } else {
-                        callback(null, startPoint ?? undefined);
+                        return;
                     }
+                    if (!header) {
+                        callback(null, undefined); // NOTE: 対象 StartPoint が無いのは正常
+                        return;
+                    }
+                    this._beginTransfer(header.transferId, {
+                        kind: "startPoint",
+                        parts: [],
+                        nextSeq: 0,
+                        stallTimer: null,
+                        callback,
+                    });
                 },
             );
         }
@@ -330,6 +410,144 @@ export class AMFlowClient implements AMFlow {
     _onPlayExtend(payload: PlayExtendPayload) {
         for (const handler of this._playExtendHandlers) {
             handler(payload);
+        }
+    }
+
+    _onDisconnect() {
+        this._failTransfers(
+            new RuntimeError("socket was disconnected during transfer."),
+            false,
+        );
+    }
+
+    _onTransferChunk(chunk: TransferChunk, ack: () => void) {
+        const transfer = this._transfers.get(chunk.transferId);
+        if (!transfer) {
+            // NOTE: キャンセル済みの転送。サーバの送出ループを止めないため ack だけ返す
+            ack();
+            return;
+        }
+        // NOTE: 同一コネクション上では順序が保たれるため、ずれていれば
+        // 取りこぼしが起きている。無音のまま壊れたデータを返さないよう失敗させる
+        if (chunk.seq !== transfer.nextSeq) {
+            ack();
+            this._abortTransfer(
+                chunk.transferId,
+                new RuntimeError(
+                    `unexpected chunk order. expected ${transfer.nextSeq} but ${chunk.seq}`,
+                ),
+            );
+            return;
+        }
+        if (transfer.kind === "tickList") {
+            if (!Array.isArray(chunk.payload)) {
+                ack();
+                this._abortTransfer(
+                    chunk.transferId,
+                    new RuntimeError("unexpected payload for tickList."),
+                );
+                return;
+            }
+            for (const tick of chunk.payload) {
+                transfer.ticks.push(tick);
+            }
+        } else {
+            if (typeof chunk.payload !== "string") {
+                ack();
+                this._abortTransfer(
+                    chunk.transferId,
+                    new RuntimeError("unexpected payload for startPoint."),
+                );
+                return;
+            }
+            transfer.parts.push(chunk.payload);
+        }
+        transfer.nextSeq++;
+        ack();
+        if (!chunk.last) {
+            this._armStallTimer(chunk.transferId, transfer);
+            return;
+        }
+        this._finishTransfer(chunk.transferId);
+        this._completeTransfer(transfer);
+    }
+
+    _completeTransfer(transfer: PendingTransfer) {
+        if (transfer.kind === "tickList") {
+            transfer.callback(
+                null,
+                transfer.ticks.length > 0
+                    ? [transfer.from, transfer.to, transfer.ticks]
+                    : [transfer.from, transfer.to],
+            );
+            return;
+        }
+        let startPoint: StartPoint;
+        try {
+            startPoint = JSON.parse(transfer.parts.join("")) as StartPoint;
+        } catch (err) {
+            transfer.callback(
+                new RuntimeError(`failed to parse startPoint. ${err}`),
+            );
+            return;
+        }
+        transfer.callback(null, startPoint);
+    }
+
+    _beginTransfer(transferId: string, transfer: PendingTransfer) {
+        this._transfers.set(transferId, transfer);
+        this._armStallTimer(transferId, transfer);
+    }
+
+    _armStallTimer(transferId: string, transfer: PendingTransfer) {
+        if (transfer.stallTimer != null) {
+            clearTimeout(transfer.stallTimer);
+        }
+        transfer.stallTimer = setTimeout(() => {
+            this._abortTransfer(
+                transferId,
+                new TimeoutError(
+                    `no chunk arrived in ${this._transferStallTimeoutMs} ms.`,
+                ),
+            );
+        }, this._transferStallTimeoutMs);
+    }
+
+    _finishTransfer(transferId: string) {
+        const transfer = this._transfers.get(transferId);
+        if (!transfer) {
+            return null;
+        }
+        if (transfer.stallTimer != null) {
+            clearTimeout(transfer.stallTimer);
+            transfer.stallTimer = null;
+        }
+        this._transfers.delete(transferId);
+        return transfer;
+    }
+
+    /**
+     * 転送を打ち切り、サーバ側の送出も止める
+     */
+    _abortTransfer(transferId: string, err: Error) {
+        const transfer = this._finishTransfer(transferId);
+        if (!transfer) {
+            return;
+        }
+        this._socket.emit(EmitEvent.CancelTransfer, transferId);
+        transfer.callback(err);
+    }
+
+    _failTransfers(err: Error, notifyServer: boolean) {
+        for (const transferId of [...this._transfers.keys()]) {
+            const transfer = this._finishTransfer(transferId);
+            if (!transfer) {
+                continue;
+            }
+            if (notifyServer) {
+                this._socket.emit(EmitEvent.CancelTransfer, transferId);
+            }
+            transfer.callback(err);
         }
     }
 

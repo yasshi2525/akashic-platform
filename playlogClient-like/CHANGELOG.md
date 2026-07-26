@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.0.0
+
+- Breaking Change
+  - 分割転送方式に対応
+  - `transferStallTimeoutMs` を追加 (既定 60000ms)
+
 ## 1.2.1
 
 - Misc

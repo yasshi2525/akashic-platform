@@ -1,6 +1,6 @@
 {
   "name": "@yasshi2525/akashic-server",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -18,7 +18,7 @@
   "license": "MIT",
   "devDependencies": {
     "@types/express": "^5.0.6",
-    "@yasshi2525/amflow-client-event-schema": "^1.1.0",
+    "@yasshi2525/amflow-client-event-schema": "^2.0.0",
     "prettier": "^3.8.3",
     "typescript": "^6.0.3"
   },

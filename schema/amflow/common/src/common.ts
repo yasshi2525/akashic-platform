@@ -4,9 +4,14 @@ import type {
     Permission,
     StartPoint,
 } from "@akashic/amflow";
-import type { Event, TickList } from "@akashic/playlog";
+import type { Event } from "@akashic/playlog";
 import { AMFlowError } from "./error";
 import { TickPack } from "./tick";
+import {
+    StartPointTransferHeader,
+    TickListTransferHeader,
+    TransferChunk,
+} from "./transfer";
 
 /**
  * 分散トレーシングのコンテキスト（W3C traceparent / X-Amzn-Trace-Id 等）を
@@ -29,6 +34,7 @@ const cliEvents = [
     "amf:getTickList",
     "amf:putStartPoint",
     "amf:getStartPoint",
+    "amf:cancelTransfer",
 ] as const;
 
 export type ClientEvent = (typeof cliEvents)[number];
@@ -46,6 +52,7 @@ export const cliEvMap = {
     GetTickList: "amf:getTickList",
     PutStartPoint: "amf:putStartPoint",
     GetStartPoint: "amf:getStartPoint",
+    CancelTransfer: "amf:cancelTransfer",
 } as const satisfies Record<string, ClientEvent>;
 
 export type ClientEventName = keyof typeof cliEvMap;
@@ -53,6 +60,7 @@ export type ClientEventName = keyof typeof cliEvMap;
 const srvEvents = [
     "amf:[tp]",
     "amf:[e]",
+    "amf:[c]",
     "amf:playEnd",
     "amf:playExtend",
 ] as const;
@@ -62,6 +70,7 @@ export type ServerEvent = (typeof srvEvents)[number];
 export const srvEvMap = {
     TickPack: "amf:[tp]",
     Event: "amf:[e]",
+    TransferChunk: "amf:[c]",
     PlayEnd: "amf:playEnd",
     PlayExtend: "amf:playExtend",
 } as const satisfies Record<string, ServerEvent>;
@@ -93,7 +102,7 @@ const cliSchema = {
         carrier: Carrier,
         cb: (
             err: AMFlowError | null,
-            tickList: TickList | null | undefined,
+            header: TickListTransferHeader | null | undefined,
         ) => void,
     ) => {},
     [cliEvMap.PutStartPoint]: (
@@ -106,9 +115,10 @@ const cliSchema = {
         carrier: Carrier,
         cb: (
             err: AMFlowError | null,
-            startPoint: StartPoint | null | undefined,
+            header: StartPointTransferHeader | null | undefined,
         ) => void,
     ) => {},
+    [cliEvMap.CancelTransfer]: (transferId: string) => {},
 } as const satisfies Record<ClientEvent, unknown>;
 
 export type ClientEventSchema = typeof cliSchema;
@@ -131,6 +141,7 @@ export interface PlayExtendPayload {
 const srvSchema = {
     [srvEvMap.TickPack]: (tickPack: TickPack) => {},
     [srvEvMap.Event]: (event: Event) => {},
+    [srvEvMap.TransferChunk]: (chunk: TransferChunk, ack: () => void) => {},
     [srvEvMap.PlayEnd]: (reason: PlayEndReason) => {},
     [srvEvMap.PlayExtend]: (payload: PlayExtendPayload) => {},
 } as const satisfies Record<ServerEvent, unknown>;

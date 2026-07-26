@@ -38,6 +38,14 @@ import { AMFlowServerManager } from "./AMFlowServerManager";
         http: http.getPublicHttp(),
         amfManager,
         allowOrigins,
+        transfer: {
+            ackTimeoutMs: parseInt(
+                process.env.TRANSFER_ACK_TIMEOUT_MS ?? "30000",
+            ),
+            startPointChunkSize: parseInt(
+                process.env.STARTPOINT_CHUNK_SIZE ?? "262144",
+            ),
+        },
     });
 
     const exit = async () => {

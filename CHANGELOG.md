@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## 2.2.0
+
+- Improve
+  - `TickList`, `StartPoint` の分割送信・多重送信防止によるOOM防止
+    - `./akashic-storage`
+      - Valkey からの多重取得防止、分割して応答
+    - `./playlogClient-like`
+      - 受信された結果分割の再構成。
+    - `./schema/amflow`
+      - 分割転送のためのイベント・型を追加
+    - 上記ライブラリ更新による再ビルド
+      - `./webapp`
+      - `./akashic-server`
+      - `./akashic-runner`
+
 ## 2.1.0
 
 - Feature

@@ -10,6 +10,11 @@ export interface CreateClientParameterObject {
      * @default 0
      */
     maxPreservingTickSize?: number;
+    /**
+     * 分割転送中、次のチャンクが届かないまま経過したら転送を失敗扱いにする時間 (ms)。
+     * @default 60000
+     */
+    transferStallTimeoutMs?: number;
 }
 
 export interface PlayInfo {
@@ -93,6 +98,7 @@ export class SessionLike {
         const client = new AMFlowClient({
             socket: this._socket!,
             maxPreservingTickSize: opts.maxPreservingTickSize,
+            transferStallTimeoutMs: opts.transferStallTimeoutMs,
         });
         cb(null, client);
     }
