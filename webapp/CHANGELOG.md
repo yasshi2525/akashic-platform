@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.1.1
+
+- Misc
+  - `playlogClient-like` の更新に伴う再ビルド
+
 ## 2.1.0
 
 - Feature

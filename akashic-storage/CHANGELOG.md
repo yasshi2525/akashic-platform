@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 1.3.0
+
+- Improve
+  - `getTickList`, `getStartPoint` をレスポンスする際、データを分割送信することでメモリ使用量を節約
+    - Valkey からの Tick 取得を一括からチャンク単位に
+    - チャンク送信後、クライアントからのackを待ってから次のチャンクの送出を開始する（送信待ちデータ量を 1 チャンクに限定）
+    - StartPoint は Valkey 上の JSON を parse せずそのまま分割して送出
+    - 切断・`amf:close`・`amf:cancelTransfer` で進行中の転送を破棄
+  - 環境変数 `TRANSFER_ACK_TIMEOUT_MS` / `STARTPOINT_CHUNK_SIZE` を追加
+
 ## 1.2.2
 
 - Improve

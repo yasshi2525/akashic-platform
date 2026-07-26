@@ -9,6 +9,7 @@ import {
     Attributes,
 } from "@opentelemetry/api";
 import type { Permission } from "@akashic/amflow";
+import type { Tick } from "@akashic/playlog";
 import {
     ListenSchema,
     EmitSchema,
@@ -20,10 +21,19 @@ import {
     BadRequestError,
     PermissionError,
     Carrier,
+    sliceTransferData,
 } from "@yasshi2525/amflow-server-event-schema";
 import { AMFlowServerManager } from "./AMFlowServerManager";
 import { AMFlowServer } from "./AMFlowServer";
+import { ChunkedTransferSender } from "./ChunkedTransferSender";
 import { applyBaggageAttributes } from "./tracingAttributes";
+
+export interface InitializeSocketParameterObject {
+    /** 1 チャンクあたりの ack 待ち上限。超過した転送は破棄する */
+    ackTimeoutMs: number;
+    /** StartPoint を分割転送する際の 1 チャンクあたりの文字数 */
+    startPointChunkSize: number;
+}
 
 const tracer = trace.getTracer("akashic-storage.amflow");
 
@@ -63,9 +73,14 @@ const withAmflowSpan = async <T>(
 export const initializeSocket = (
     socket: Socket<ListenSchema, EmitSchema>,
     amfManager: AMFlowServerManager,
+    param: InitializeSocketParameterObject,
 ) => {
     let server: AMFlowServer | null = null;
     let permission: Permission | null = null;
+    const transferSender = new ChunkedTransferSender({
+        socket,
+        ackTimeoutMs: param.ackTimeoutMs,
+    });
     const assertsUnOpen = () => {
         if (server) {
             throw new BadRequestError("session was already opened.");
@@ -96,7 +111,11 @@ export const initializeSocket = (
         }
     };
     socket.on("disconnect", () => {
+        transferSender.cancelAll(`socket was disconnected (id = ${socket.id})`);
         amfManager.onDisconnect(socket);
+    });
+    socket.on(ListenEvent.CancelTransfer, (transferId) => {
+        transferSender.cancel(transferId);
     });
     socket.on(ListenEvent.Open, (playId, cb) => {
         try {
@@ -111,6 +130,7 @@ export const initializeSocket = (
     socket.on(ListenEvent.Close, (cb) => {
         try {
             assertsOpen();
+            transferSender.cancelAll("session was closed");
             server!.leave(socket);
             server = null;
             cb(null);
@@ -198,17 +218,34 @@ export const initializeSocket = (
                 "amflow.tick.begin": opts.begin,
                 "amflow.tick.end": opts.end,
             },
-            async () => {
+            async (span) => {
+                let transferId: string;
+                let chunks: AsyncGenerator<Tick[]>;
                 try {
                     assertsOpen();
                     if (!permission?.readTick) {
                         throw new PermissionError();
                     }
-                    const tickList = await server!.getTickList(opts);
-                    cb(null, tickList); // NOTE: tickList が null なのは正常
+                    const transfer = server!.openTickListTransfer(opts);
+                    if (!transfer) {
+                        cb(null, null); // NOTE: 対象 Tick が無いのは正常
+                        return;
+                    }
+                    transferId = transferSender.createTransferId();
+                    chunks = transfer.chunks;
+                    // NOTE: ヘッダ(ack)とチャンクは同一コネクション上で順序が保たれるため、
+                    // クライアントは転送 ID を知った後にチャンクを受け取れる
+                    cb(null, {
+                        transferId,
+                        from: transfer.from,
+                        to: transfer.to,
+                    });
                 } catch (err) {
                     handleError(err, cb);
+                    return;
                 }
+                const sent = await transferSender.run(transferId, chunks);
+                span.setAttribute("amflow.transfer.chunk.count", sent);
             },
         );
     });
@@ -217,17 +254,38 @@ export const initializeSocket = (
             "amflow.getStartPoint",
             carrier,
             { "amflow.event": ListenEvent.GetStartPoint },
-            async () => {
+            async (span) => {
+                let transferId: string;
+                let chunks: string[];
                 try {
                     assertsOpen();
                     if (!permission?.readTick) {
                         throw new PermissionError();
                     }
-                    const startPoint = await server!.getStartPoint(opts);
-                    cb(null, startPoint); // NOTE: startPoint が null なのは正常
+                    const requested = server;
+                    const raw = await requested!.openStartPointTransfer(opts);
+                    // NOTE: Valkey 読み出し中に切断・クローズされた場合、その時点の
+                    // cancelAll ではこの転送はまだ登録されておらず対象外になる。
+                    // 読み出し後にセッションを確認しないと、無効な接続に対して
+                    // 数 MB のスナップショットを ack タイムアウトまで抱え続けてしまう
+                    if (server !== requested || !socket.connected) {
+                        throw new BadRequestError(
+                            "session was closed while loading startPoint.",
+                        );
+                    }
+                    if (raw == null) {
+                        cb(null, null); // NOTE: 対象 StartPoint が無いのは正常
+                        return;
+                    }
+                    transferId = transferSender.createTransferId();
+                    chunks = sliceTransferData(raw, param.startPointChunkSize);
+                    cb(null, { transferId });
                 } catch (err) {
                     handleError(err, cb);
+                    return;
                 }
+                const sent = await transferSender.run(transferId, chunks);
+                span.setAttribute("amflow.transfer.chunk.count", sent);
             },
         );
     });

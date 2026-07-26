@@ -10,4 +10,5 @@ export {
     Carrier,
 } from "./common";
 export * from "./tick";
+export * from "./transfer";
 export * from "./error";
