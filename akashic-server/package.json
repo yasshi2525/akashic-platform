@@ -33,7 +33,7 @@
     "@opentelemetry/instrumentation-http": "^0.219.0",
     "@opentelemetry/propagator-aws-xray": "^2.2.0",
     "@opentelemetry/resources": "^2.8.0",
-    "@opentelemetry/sdk-node": "^0.219.0",
+    "@opentelemetry/sdk-node": "^0.221.0",
     "@opentelemetry/semantic-conventions": "^1.41.1",
     "@yasshi2525/persist-schema": "^1.10.0",
     "@yasshi2525/runner-ipc-schema": "^1.0.0",
