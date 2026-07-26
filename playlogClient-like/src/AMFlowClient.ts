@@ -94,6 +94,8 @@ export class AMFlowClient implements AMFlow {
     _maxPreservingTickSize: number;
     _transferStallTimeoutMs: number;
     _transfers: Map<string, PendingTransfer>;
+    /** close / 切断のたびに進む。応答が現行セッションのものか判定するために使う */
+    _sessionGeneration: number;
     _preservingTicks: Tick[];
     _tickHandlers: ((tick: Tick) => void)[];
     _eventHandlers: ((event: Event) => void)[];
@@ -112,6 +114,7 @@ export class AMFlowClient implements AMFlow {
         this._maxPreservingTickSize = param.maxPreservingTickSize ?? 0;
         this._transferStallTimeoutMs = param.transferStallTimeoutMs ?? 60000;
         this._transfers = new Map();
+        this._sessionGeneration = 0;
         this._preservingTicks = [];
         this._tickHandlers = [];
         this._eventHandlers = [];
@@ -150,6 +153,7 @@ export class AMFlowClient implements AMFlow {
     }
     close(callback?: (error: Error | null) => void) {
         if (this._assertsOpen(callback)) {
+            this._sessionGeneration++;
             this._failTransfers(
                 new BadRequestError("session was closed."),
                 true,
@@ -299,11 +303,21 @@ export class AMFlowClient implements AMFlow {
         if (!this._assertsOpen(callback)) {
             return;
         }
+        const generation = this._sessionGeneration;
         this._socket.emit(
             EmitEvent.GetTickList,
             opts,
             injectCarrier(),
             (err, header) => {
+                if (
+                    this._rejectStaleHeader(
+                        generation,
+                        header?.transferId,
+                        callback,
+                    )
+                ) {
+                    return;
+                }
                 if (err) {
                     callback(createAMFlowError(err));
                     return;
@@ -348,11 +362,21 @@ export class AMFlowClient implements AMFlow {
         callback: (error: Error | null, startPoint?: StartPoint) => void,
     ) {
         if (this._assertsOpen(callback)) {
+            const generation = this._sessionGeneration;
             this._socket.emit(
                 EmitEvent.GetStartPoint,
                 opts,
                 injectCarrier(),
                 (err, header) => {
+                    if (
+                        this._rejectStaleHeader(
+                            generation,
+                            header?.transferId,
+                            callback,
+                        )
+                    ) {
+                        return;
+                    }
                     if (err) {
                         callback(createAMFlowError(err));
                         return;
@@ -414,10 +438,31 @@ export class AMFlowClient implements AMFlow {
     }
 
     _onDisconnect() {
+        this._sessionGeneration++;
         this._failTransfers(
             new RuntimeError("socket was disconnected during transfer."),
             false,
         );
+    }
+
+    /**
+     * ヘッダの ack が届く前に close / 切断された場合、その転送を登録しても
+     * チャンクを消費する経路が既に外れており、誰にも完了させられない。
+     * 呼び出し元のコールバックを即座に解決し、宙に浮いたタイマーを残さない。
+     */
+    _rejectStaleHeader(
+        generation: number,
+        transferId: string | undefined,
+        callback: (err: Error | null) => void,
+    ) {
+        if (generation === this._sessionGeneration) {
+            return false;
+        }
+        if (transferId != null) {
+            this._socket.emit(EmitEvent.CancelTransfer, transferId);
+        }
+        callback(new BadRequestError("session was closed."));
+        return true;
     }
 
     _onTransferChunk(chunk: TransferChunk, ack: () => void) {

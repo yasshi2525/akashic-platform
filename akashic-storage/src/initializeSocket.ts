@@ -262,7 +262,17 @@ export const initializeSocket = (
                     if (!permission?.readTick) {
                         throw new PermissionError();
                     }
-                    const raw = await server!.openStartPointTransfer(opts);
+                    const requested = server;
+                    const raw = await requested!.openStartPointTransfer(opts);
+                    // NOTE: Valkey 読み出し中に切断・クローズされた場合、その時点の
+                    // cancelAll ではこの転送はまだ登録されておらず対象外になる。
+                    // 読み出し後にセッションを確認しないと、無効な接続に対して
+                    // 数 MB のスナップショットを ack タイムアウトまで抱え続けてしまう
+                    if (server !== requested || !socket.connected) {
+                        throw new BadRequestError(
+                            "session was closed while loading startPoint.",
+                        );
+                    }
                     if (raw == null) {
                         cb(null, null); // NOTE: 対象 StartPoint が無いのは正常
                         return;
