@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 1.3.0
+## 2.0.0
 
 - Improve
   - `getTickList`, `getStartPoint` をレスポンスする際、データを分割送信することでメモリ使用量を節約
