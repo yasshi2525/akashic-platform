@@ -7,7 +7,10 @@ import type {
     PlayEndedRequest,
 } from "@yasshi2525/runner-ipc-schema";
 import { RunnerManager } from "./runnerManager";
-import { createMaskTransform } from "./maskStream";
+import { maskSecrets } from "./secretMasker";
+
+// akashic-runner がバッファしうる量 (4MiB) に余裕をみた上限。
+const LOG_BATCH_LIMIT = "8mb";
 
 interface HttpServerParameterObject {
     manager: RunnerManager;
@@ -71,6 +74,7 @@ export class HttpServer {
         app.post(
             "/internal/logs",
             this._authWith(this._serverRunnerApiToken),
+            express.text({ type: "*/*", limit: LOG_BATCH_LIMIT }),
             (req, res) => {
                 const playId = parseInt(String(req.query.playId));
                 if (Number.isNaN(playId)) {
@@ -83,26 +87,15 @@ export class HttpServer {
                     res.status(404).json({ ok: false, reason: "NotFound" });
                     return;
                 }
-                const mask = createMaskTransform();
-                let finished = false;
-                // ログ本文を読み切ってから応答。途中応答で keep-alive 接続が
-                // 早期クローズされるのを防ぐため。
-                const finish = () => {
-                    if (finished) {
-                        return;
-                    }
-                    finished = true;
+                const body = typeof req.body === "string" ? req.body : "";
+                // 行単位で送出されるため、シークレットがバッチ境界で分断されることはない。
+                if (body && !logStream.writableEnded) {
+                    logStream.write(maskSecrets(body));
+                }
+                if (req.query.final === "1") {
                     runner.markLogDrained();
-                    if (!res.headersSent) {
-                        res.json({ ok: true });
-                    }
-                };
-                req.on("end", finish);
-                req.on("close", finish);
-                req.on("error", finish);
-                // logStream の end は finalize 側に任せるため end:false。
-                mask.pipe(logStream, { end: false });
-                req.pipe(mask);
+                }
+                res.json({ ok: true });
             },
         );
 

@@ -318,15 +318,23 @@ export const openapi = {
         "/internal/logs": {
             post: {
                 summary:
-                    "[internal] Receive content-log stream from akashic-runner (X-Akashic-Internal-Token = SERVER_RUNNER_API_TOKEN)",
+                    "[internal] Receive a content-log batch from akashic-runner (X-Akashic-Internal-Token = SERVER_RUNNER_API_TOKEN)",
                 description:
-                    "akashic-runner が投稿スクリプトの content-log を chunked ndjson で送出する。 akashic-server がマスクして S3 へ流す。",
+                    "akashic-runner が投稿スクリプトの content-log を ndjson のバッチで送出する。 akashic-server がマスクして S3 へ流す。 長命リクエストは HTTP サーバーの既定タイムアウトで切断されるため、短命な POST を繰り返す。",
                 parameters: [
                     {
                         name: "playId",
                         in: "query",
                         required: true,
                         schema: { type: "integer", format: "int32" },
+                    },
+                    {
+                        name: "final",
+                        in: "query",
+                        required: false,
+                        description:
+                            '"1" のとき、このプレイの最終バッチであることを示す。 akashic-server はこれを受けて S3 への確定を開始する。',
+                        schema: { type: "string", enum: ["1"] },
                     },
                 ],
                 requestBody: {
@@ -336,7 +344,7 @@ export const openapi = {
                             schema: {
                                 type: "string",
                                 description:
-                                    "改行区切り JSON のログ行ストリーム",
+                                    "改行区切り JSON のログ行 (行単位で区切られたバッチ)",
                             },
                         },
                     },
