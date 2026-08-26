@@ -7,7 +7,6 @@ import type {
     PlayEndedRequest,
 } from "@yasshi2525/runner-ipc-schema";
 import { RunnerManager } from "./runnerManager";
-import { maskSecrets } from "./secretMasker";
 
 // akashic-runner がバッファしうる量 (4MiB) に余裕をみた上限。
 const LOG_BATCH_LIMIT = "8mb";
@@ -82,15 +81,15 @@ export class HttpServer {
                     return;
                 }
                 const runner = this._manager.get(playId);
-                const logStream = runner?.getLogStream();
-                if (!runner || !logStream) {
+                if (!runner || !runner.acceptsLog()) {
                     res.status(404).json({ ok: false, reason: "NotFound" });
                     return;
                 }
+                const seq = Number.parseInt(String(req.query.seq), 10);
                 const body = typeof req.body === "string" ? req.body : "";
                 // 行単位で送出されるため、シークレットがバッチ境界で分断されることはない。
-                if (body && !logStream.writableEnded) {
-                    logStream.write(maskSecrets(body));
+                if (body) {
+                    runner.appendLog(body, Number.isNaN(seq) ? undefined : seq);
                 }
                 if (req.query.final === "1") {
                     runner.markLogDrained();

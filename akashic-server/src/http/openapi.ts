@@ -329,6 +329,14 @@ export const openapi = {
                         schema: { type: "integer", format: "int32" },
                     },
                     {
+                        name: "seq",
+                        in: "query",
+                        required: false,
+                        description:
+                            "プレイ内で 1 から連番のバッチ番号。応答が失われた際の再送は同じ番号で送られ、 akashic-server は適用済みの番号を捨てて重複を防ぐ。",
+                        schema: { type: "integer", format: "int32" },
+                    },
+                    {
                         name: "final",
                         in: "query",
                         required: false,

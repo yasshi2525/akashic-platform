@@ -26,6 +26,7 @@ export class LogSender {
     _droppedLines = 0;
     _timer?: NodeJS.Timeout;
     _pending: Promise<void> = Promise.resolve();
+    _seq = 0;
     _closed = false;
     _givenUp = false;
 
@@ -117,7 +118,10 @@ export class LogSender {
         if (!body && !final) {
             return;
         }
-        const url = `${this._baseUrl}/internal/logs?playId=${this._playId}${
+        // 応答が失われたときの再送で content-log に同じ行が二重に載らないよう、
+        // バッチに通し番号を振る。リトライは同じ番号のまま送り直す。
+        const seq = ++this._seq;
+        const url = `${this._baseUrl}/internal/logs?playId=${this._playId}&seq=${seq}${
             final ? "&final=1" : ""
         }`;
         let lastError: unknown;

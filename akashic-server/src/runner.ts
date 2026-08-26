@@ -5,6 +5,7 @@ import { prisma } from "@yasshi2525/persist-schema";
 import type { RunnerClient } from "./runnerClient";
 import { playStorage } from "./logger";
 import { withPlayBaggage } from "./playBaggage";
+import { maskSecrets } from "./secretMasker";
 import { createContentLogUpload } from "./s3Logger";
 
 const PLAY_DURATION_MS = 30 * 60 * 1000;
@@ -15,6 +16,9 @@ const EXTEND_MS = 30 * 60 * 1000;
 const IDLE_GRACE_MS = 5 * 60 * 1000;
 // 参加者数をポーリングする間隔。猶予よりも十分短くする。
 const IDLE_POLL_INTERVAL_MS = 30 * 1000;
+// content-log は S3 へ確定するまでメモリ上の PassThrough に溜まるため、投稿スクリプトが
+// 大量出力してもメモリと S3 オブジェクトが際限なく膨らまないよう上限を設ける。
+const MAX_CONTENT_LOG_BYTES = 16 * 1024 * 1024;
 
 export interface RunnerParameterObject {
     publicWebappUrl: string;
@@ -51,6 +55,9 @@ export class Runner {
     _upload?: Upload;
     _logDrainedPromise?: Promise<void>;
     _resolveLogDrained?: () => void;
+    _lastLogSeq = 0;
+    _logBytes = 0;
+    _logTruncated = false;
 
     constructor(param: RunnerParameterObject) {
         this._param = param;
@@ -138,8 +145,38 @@ export class Runner {
         );
     }
 
-    getLogStream() {
-        return this._logStream;
+    acceptsLog() {
+        return this._logStream != null && !this._logStream.writableEnded;
+    }
+
+    appendLog(body: string, seq?: number) {
+        // 応答が失われた際 akashic-runner は同じバッチを再送するため、
+        // 適用済みの通し番号は捨てて content-log の重複を防ぐ。
+        if (seq != null) {
+            if (seq <= this._lastLogSeq) {
+                return;
+            }
+            this._lastLogSeq = seq;
+        }
+        if (!this.acceptsLog() || this._logTruncated) {
+            return;
+        }
+        const masked = maskSecrets(body);
+        const size = Buffer.byteLength(masked);
+        if (this._logBytes + size > MAX_CONTENT_LOG_BYTES) {
+            this._logTruncated = true;
+            this._logStream!.write(
+                JSON.stringify({
+                    timestamp: new Date().toISOString(),
+                    level: "warn",
+                    playId: this._playId,
+                    message: `content-log が上限 (${MAX_CONTENT_LOG_BYTES} バイト) に達したため、以降のログを打ち切りました。`,
+                }) + "\n",
+            );
+            return;
+        }
+        this._logBytes += size;
+        this._logStream!.write(masked);
     }
 
     resolveAllowedAsset(url: string) {
