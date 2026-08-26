@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2.2.1
+
+- Fix
+  - 長期間出力されなかったログが content-log に出力されない (#114)
+    - `./akashic-runner`
+      - 分割送信するよう修正
+    - `./akashic-server`
+      - 分割受信するよう修正
+
 ## 2.2.0
 
 - Improve

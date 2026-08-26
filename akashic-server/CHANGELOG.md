@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.1.2
+
+- Fix
+  - akashic-runner から content-log を分割して受信するよう修正
+
 ## 2.1.1
 
 - Misc

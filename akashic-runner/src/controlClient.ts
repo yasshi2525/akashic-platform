@@ -1,8 +1,8 @@
-import { PassThrough, Readable } from "node:stream";
 import type {
     AssetRequest,
     PlayEndedRequest,
 } from "@yasshi2525/runner-ipc-schema";
+import { LogSender } from "./logSender";
 
 export class ControlClient {
     _baseUrl: string;
@@ -37,24 +37,8 @@ export class ControlClient {
         return await res.text();
     }
 
-    openLogStream(playId: number) {
-        const stream = new PassThrough();
-        fetch(`${this._baseUrl}/internal/logs?playId=${playId}`, {
-            method: "POST",
-            headers: {
-                "content-type": "application/x-ndjson",
-                "x-akashic-internal-token": this._token,
-            },
-            body: Readable.toWeb(stream) as ReadableStream,
-            duplex: "half",
-        } as RequestInit & { duplex: "half" }).catch((err) => {
-            console.warn(
-                "failed to stream logs to control (playId = %s)",
-                playId,
-                err,
-            );
-        });
-        return stream;
+    openLogSender(playId: number) {
+        return new LogSender(this._baseUrl, this._token, playId);
     }
 
     async reportPlayEnded(payload: PlayEndedRequest) {

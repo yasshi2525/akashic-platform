@@ -1,20 +1,52 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import type { PassThrough } from "node:stream";
 import util from "node:util";
+
+export interface LogSink {
+    write(line: string): void;
+}
 
 export interface PlayContext {
     playId: number;
     onError?: () => void;
-    logStream?: PassThrough;
+    logSink?: LogSink;
 }
 
 export const playStorage = new AsyncLocalStorage<PlayContext>();
 
-export function installConsoleOverride() {
-    const _origLog = console.log.bind(console);
-    const _origWarn = console.warn.bind(console);
-    const _origError = console.error.bind(console);
+const origLog = console.log.bind(console);
+const origWarn = console.warn.bind(console);
+const origError = console.error.bind(console);
 
+function formatLine(
+    level: "info" | "warn" | "error",
+    playId: number | undefined,
+    message: string,
+) {
+    return JSON.stringify({
+        timestamp: new Date().toISOString(),
+        level,
+        playId,
+        message,
+    });
+}
+
+/**
+ * content-log 転送層自身の失敗を記録する。
+ *
+ * console.warn を使うと転送バッファに積まれ、「転送失敗 → 記録 → また転送失敗」
+ * の循環になるため、標準出力だけに出す。
+ */
+export function warnTransport(...args: unknown[]) {
+    origWarn(
+        formatLine(
+            "warn",
+            playStorage.getStore()?.playId,
+            util.format(...args),
+        ),
+    );
+}
+
+export function installConsoleOverride() {
     const patchedLog = (
         level: "info" | "warn" | "error",
         args: unknown[],
@@ -33,24 +65,17 @@ export function installConsoleOverride() {
                 message += "\n" + trimmed;
             }
         }
-        const line = JSON.stringify({
-            timestamp: new Date().toISOString(),
-            level,
-            playId: ctx.playId,
-            message,
-        });
-        if (ctx.logStream && !ctx.logStream.writableEnded) {
-            ctx.logStream.write(line + "\n");
-        }
+        const line = formatLine(level, ctx.playId, message);
+        ctx.logSink?.write(line + "\n");
         output(line);
     };
 
-    console.log = (...args: unknown[]) => patchedLog("info", args, _origLog);
-    console.info = (...args: unknown[]) => patchedLog("info", args, _origLog);
-    console.debug = (...args: unknown[]) => patchedLog("info", args, _origLog);
-    console.warn = (...args: unknown[]) => patchedLog("warn", args, _origWarn);
+    console.log = (...args: unknown[]) => patchedLog("info", args, origLog);
+    console.info = (...args: unknown[]) => patchedLog("info", args, origLog);
+    console.debug = (...args: unknown[]) => patchedLog("info", args, origLog);
+    console.warn = (...args: unknown[]) => patchedLog("warn", args, origWarn);
     console.error = (...args: unknown[]) => {
-        patchedLog("error", args, _origError);
+        patchedLog("error", args, origError);
         playStorage.getStore()?.onError?.();
     };
 }
