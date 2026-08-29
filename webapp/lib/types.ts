@@ -1,5 +1,9 @@
 import type { NicoliveSupportedModes } from "@akashic/game-configuration";
-import type { NotificationType } from "@yasshi2525/persist-schema";
+import type {
+    NotificationType,
+    ReportReason,
+    ReportTargetType,
+} from "@yasshi2525/persist-schema";
 
 const authTypes = ["guest", "oauth"] as const;
 type AuthType = (typeof authTypes)[number];
@@ -198,6 +202,47 @@ export const BOARD_MESSAGE_NAME_MAX = 20;
 
 export const MUTE_LIMIT_DEFAULT = 200;
 export const MUTE_LABEL_BODY_MAX = 40;
+
+export const REPORT_DETAIL_MAX = 1000;
+export const CONTACT_BODY_MAX = 2000;
+export const CONTACT_NAME_MAX = 40;
+
+// 通報理由の表示ラベル。選択肢の順序もこの定義順に従う
+export const REPORT_REASON_LABELS: Record<ReportReason, string> = {
+    HARASSMENT: "嫌がらせ・誹謗中傷",
+    INAPPROPRIATE: "不適切な内容・不快にさせる表現",
+    PRIVACY: "個人情報・プライバシー侵害",
+    SPAM: "スパム・宣伝",
+    OTHER: "その他",
+};
+
+export const REPORT_REASONS = Object.keys(
+    REPORT_REASON_LABELS,
+) as ReportReason[];
+
+export type ReportSource = "board" | "chat";
+
+// 投稿以外の通報対象の指定に使う
+export type ReportTargetInput =
+    | { kind: "message"; source: ReportSource; messageId: number }
+    | { kind: "play"; playId: number }
+    | { kind: "user"; userId: string };
+
+export type ReportFormState = {
+    ok: boolean;
+    message?: string;
+    submitted: boolean;
+    submittedAt?: number;
+};
+
+export type ContactFormState = {
+    ok: boolean;
+    message?: string;
+    submitted: boolean;
+    submittedAt?: number;
+};
+
+export type { ReportReason, ReportTargetType };
 
 export interface LocalMuteEntry {
     anonKey: string;

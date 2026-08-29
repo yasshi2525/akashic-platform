@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.12.0
+
+- Feature
+  - 通報機能として `Report` テーブルを追加
+  - 問い合わせ機能として `ContactMessage` テーブルを追加
+
 ## 1.11.0
 
 - Feature

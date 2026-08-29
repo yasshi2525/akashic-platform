@@ -38,6 +38,7 @@ import {
     updateUserHandleAction,
     updateUserNameAction,
 } from "@/lib/server/user";
+import { ReportMenu } from "@/components/report-menu";
 import { CopyLinkBox, CopyStatusSnackbar } from "@/components/copy-link-box";
 import { PlayCreateDialog } from "@/components/play-create-dialog";
 import { UserFeedbackList } from "@/components/user-feedback-list";
@@ -354,6 +355,21 @@ export default function UserPage() {
                                     <UserAuthProvider
                                         provider={profile.provider}
                                     />
+                                )}
+                                {!isOwner && (
+                                    <>
+                                        <Box sx={{ flexGrow: 1 }} />
+                                        <ReportMenu
+                                            ariaLabel="ユーザーの操作"
+                                            target={{
+                                                kind: "user",
+                                                userId: profile.id,
+                                            }}
+                                            size="medium"
+                                            dialogTitle="ユーザーを通報"
+                                            dialogDescription="このユーザーを運営に通報します。相手には通知されません。"
+                                        />
+                                    </>
                                 )}
                             </Stack>
                             {isOwner && (

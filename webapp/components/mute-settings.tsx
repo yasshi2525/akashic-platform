@@ -68,7 +68,11 @@ function PersistedMutes() {
         );
     }
     if (error) {
-        return <Alert severity="error">{error}</Alert>;
+        return (
+            <Alert variant="outlined" severity="error">
+                {error}
+            </Alert>
+        );
     }
     const mutes = list ?? [];
     return (
@@ -77,7 +81,11 @@ function PersistedMutes() {
                 サインインしているため、ミュートはアカウントに保存され、他の端末にも反映されます（
                 {mutes.length} / {MUTE_LIMIT_DEFAULT} 件）。
             </Typography>
-            {actionError && <Alert severity="warning">{actionError}</Alert>}
+            {actionError && (
+                <Alert variant="outlined" severity="warning">
+                    {actionError}
+                </Alert>
+            )}
             {mutes.length === 0 ? (
                 <EmptyNote />
             ) : (
@@ -91,6 +99,7 @@ function PersistedMutes() {
                                     size="small"
                                     onClick={() => unmute(mute.id)}
                                     disabled={pending}
+                                    variant="outlined"
                                 >
                                     解除
                                 </Button>
@@ -139,6 +148,7 @@ function LocalMutes() {
                                 <Button
                                     size="small"
                                     onClick={() => remove(entry.anonKey)}
+                                    variant="outlined"
                                 >
                                     解除
                                 </Button>

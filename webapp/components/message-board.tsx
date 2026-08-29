@@ -95,7 +95,9 @@ function MessageItem({
 }) {
     if (mute.isMuted(message)) {
         return (
-            <MutedMessage>
+            <MutedMessage
+                menu={<MuteMenu message={message} mute={mute} source="board" />}
+            >
                 <MessageBody message={message} />
             </MutedMessage>
         );
@@ -108,7 +110,7 @@ function MessageItem({
             <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                 <MessageBody message={message} />
             </Box>
-            <MuteMenu message={message} mute={mute} />
+            <MuteMenu message={message} mute={mute} source="board" />
         </Stack>
     );
 }
@@ -264,7 +266,9 @@ export function MessageBoard() {
                                 <CircularProgress size={24} />
                             </Stack>
                         ) : error ? (
-                            <Alert severity="error">{error}</Alert>
+                            <Alert variant="outlined" severity="error">
+                                {error}
+                            </Alert>
                         ) : messages.length === 0 ? (
                             <Typography
                                 variant="body2"

@@ -2,23 +2,29 @@
 
 import { useState } from "react";
 import {
+    Divider,
     IconButton,
     ListItemIcon,
     ListItemText,
     Menu,
     MenuItem,
 } from "@mui/material";
-import { MoreVert, VisibilityOff, Visibility } from "@mui/icons-material";
+import { Flag, MoreVert, VisibilityOff, Visibility } from "@mui/icons-material";
 import { MuteTargetMessage, useMute } from "@/lib/client/useMute";
+import { ReportSource } from "@/lib/types";
+import { ReportDialog } from "./report-dialog";
 
 export function MuteMenu({
     message,
     mute,
+    source,
 }: {
     message: MuteTargetMessage;
     mute: ReturnType<typeof useMute>;
+    source: ReportSource;
 }) {
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+    const [reportOpen, setReportOpen] = useState(false);
     const muted = mute.isMuted(message);
 
     // 匿名キーも投稿者 ID も無い投稿 (削除済みユーザーなど) は対象にできない
@@ -67,7 +73,25 @@ export function MuteMenu({
                         }
                     />
                 </MenuItem>
+                <Divider />
+                <MenuItem
+                    onClick={() => {
+                        setReportOpen(true);
+                        setAnchorEl(null);
+                    }}
+                >
+                    <ListItemIcon>
+                        <Flag fontSize="small" color="error" />
+                    </ListItemIcon>
+                    <ListItemText primary="この投稿を通報" />
+                </MenuItem>
             </Menu>
+            <ReportDialog
+                open={reportOpen}
+                onClose={() => setReportOpen(false)}
+                target={{ kind: "message", source, messageId: message.id }}
+                title="投稿を通報"
+            />
         </>
     );
 }

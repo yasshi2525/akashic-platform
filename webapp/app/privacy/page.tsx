@@ -3,13 +3,16 @@
 import {
     Box,
     Container,
+    Link,
     List,
     ListItem,
     Stack,
     Typography,
+    useTheme,
 } from "@mui/material";
 
 export default function PrivacyPolicyPage() {
+    const theme = useTheme();
     return (
         <Container maxWidth="md" sx={{ py: 4 }}>
             <Stack
@@ -100,7 +103,24 @@ export default function PrivacyPolicyPage() {
                 <Typography variant="body1" gutterBottom>
                     本ポリシーは必要に応じて改定することがあります。改定後は本サービス上に表示した時点で効力を生じます。
                 </Typography>
-                <Typography variant="body2">2026年2月4日 制定</Typography>
+                <Typography variant="h6" component="h2">
+                    8. お問い合わせ・開示等の請求窓口
+                </Typography>
+                <Typography variant="body1" gutterBottom>
+                    個人情報の開示・訂正・削除等のご請求、その他本ポリシーに関するお問い合わせは、
+                    <Link
+                        href="/contact"
+                        sx={{
+                            color: theme.palette.primary.light,
+                        }}
+                    >
+                        お問い合わせフォーム
+                    </Link>
+                    よりご連絡ください。運営者が内容を確認のうえ、必要に応じてメールで対応します。
+                </Typography>
+                <Typography variant="body2">
+                    2026年2月4日 制定, 2026年7月26日 改定
+                </Typography>
             </Stack>
         </Container>
     );

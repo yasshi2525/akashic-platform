@@ -27,6 +27,8 @@ model User {
   chatMessages  PlayChatMessage[]
   mutes         Mute[]            @relation("MuteOwner")
   mutedBy       Mute[]            @relation("MuteTarget")
+  reports       Report[]
+  contacts      ContactMessage[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -221,6 +223,51 @@ model Mute {
   @@index([ownerId])
 }
 
+/// 利用者からの通報。管理 UI は設けず、psql と通報メールで捌く。
+/// 対象の投稿・部屋・ユーザーは後から消えることがあるため、通報時点の
+/// 内容を bodySnapshot に控え、証拠保全と後追い調査を可能にする。
+model Report {
+  id           Int              @id @default(autoincrement())
+  targetType   ReportTargetType
+  /// 対象の識別子。種別により int(メッセージ/部屋) と cuid(ユーザー) が
+  /// 混在するため文字列で保持する
+  targetId     String
+  reason       ReportReason
+  detail       String?
+  /// 通報時点の対象内容の控え（投稿本文・部屋名・ユーザー名など）
+  bodySnapshot String
+  status       ReportStatus     @default(OPEN)
+
+  reporterId      String?
+  reporterGuestId String?
+
+  createdAt DateTime @default(now())
+
+  reporter User? @relation(fields: [reporterId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([targetType, targetId])
+}
+
+/// 運営者への自由記述の問い合わせ。返信は SES から個別に行う想定で、
+/// 返信先メールは任意入力（サインイン済みでもメールは自動取得しない）。
+model ContactMessage {
+  id         Int           @id @default(autoincrement())
+  name       String
+  replyEmail String?
+  body       String
+  status     ContactStatus @default(OPEN)
+
+  senderId      String?
+  senderGuestId String?
+
+  createdAt DateTime @default(now())
+
+  sender User? @relation(fields: [senderId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+}
+
 model Notification {
   id      Int              @id @default(autoincrement())
   userId  String
@@ -255,4 +302,32 @@ enum NotificationType {
   GAME_CRASHED
   GAME_ERROR_LOGGED
   CLIENT_LOG_SUBMITTED
+}
+
+enum ReportTargetType {
+  BOARD_MESSAGE
+  PLAY_CHAT_MESSAGE
+  PLAY
+  USER
+}
+
+enum ReportReason {
+  HARASSMENT
+  INAPPROPRIATE
+  PRIVACY
+  SPAM
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  IN_PROGRESS
+  ACTIONED
+  REJECTED
+}
+
+enum ContactStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
 }

@@ -10,8 +10,15 @@ const BAR_MIN_HEIGHT = 32;
 /**
  * ミュートした投稿は完全には消さず折りたたむ。会話の流れを追えなくなると
  * 前後の文脈が読めず、かえって不安を招くため。
+ * 展開時は menu（ミュート解除・通報）を出し、隠したままでは操作させない。
  */
-export function MutedMessage({ children }: { children: ReactNode }) {
+export function MutedMessage({
+    children,
+    menu,
+}: {
+    children: ReactNode;
+    menu?: ReactNode;
+}) {
     const [revealed, setRevealed] = useState(false);
 
     if (revealed) {
@@ -25,7 +32,13 @@ export function MutedMessage({ children }: { children: ReactNode }) {
                         ミュート中の投稿を表示しています（クリックで隠す）
                     </Typography>
                 </ButtonBase>
-                {children}
+                <Stack
+                    direction="row"
+                    sx={{ alignItems: "flex-start", columnGap: 0.5 }}
+                >
+                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>{children}</Box>
+                    {menu}
+                </Stack>
             </Box>
         );
     }

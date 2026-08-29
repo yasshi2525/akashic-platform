@@ -135,12 +135,7 @@ function AuthorizedMenu({ user, anchorEl, handleClose }: AuthorizedMenuProps) {
                     ゲームを投稿
                 </Typography>
             </MenuItem>
-            <MenuItem
-                component={Link}
-                href="/edit-game"
-                divider={true}
-                sx={{ py: 1.5 }}
-            >
+            <MenuItem component={Link} href="/edit-game" sx={{ py: 1.5 }}>
                 <ListAlt />
                 <Typography variant="body1" sx={{ ml: 1 }}>
                     投稿ゲーム一覧

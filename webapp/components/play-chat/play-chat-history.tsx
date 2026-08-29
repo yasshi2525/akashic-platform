@@ -64,7 +64,9 @@ function HistoryItem({
 }) {
     if (mute.isMuted(message)) {
         return (
-            <MutedMessage>
+            <MutedMessage
+                menu={<MuteMenu message={message} mute={mute} source="chat" />}
+            >
                 <HistoryBody message={message} />
             </MutedMessage>
         );
@@ -77,7 +79,7 @@ function HistoryItem({
             <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                 <HistoryBody message={message} />
             </Box>
-            <MuteMenu message={message} mute={mute} />
+            <MuteMenu message={message} mute={mute} source="chat" />
         </Stack>
     );
 }
