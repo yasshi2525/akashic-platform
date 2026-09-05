@@ -1,5 +1,6 @@
 import { prisma, ReportTargetType } from "@yasshi2525/persist-schema";
 import { GUEST_NAME } from "../types";
+import { authorizePlayChat } from "./play-chat";
 
 const GLOBAL_WINDOW_SECONDS = parseInt(
     process.env.REPORT_RATE_GLOBAL_WINDOW_SECONDS ?? "60",
@@ -131,6 +132,12 @@ export async function resolveReportTarget(
             },
         });
         if (!m) return null;
+        // 入室権を持たない相手が連番 messageId を推測して通報すると、非公開
+        // メッセージの本文が bodySnapshot に控えられ管理者メールにも載る。
+        // ミュートと同じく、通報を受理する前に部屋の閲覧権を確認する
+        if (!(await authorizePlayChat(m.playId)).ok) {
+            return null;
+        }
         return {
             targetType: ReportTargetType.PLAY_CHAT_MESSAGE,
             targetId: `${m.id}`,
