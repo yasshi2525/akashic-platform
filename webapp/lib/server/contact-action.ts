@@ -9,6 +9,7 @@ import {
 } from "../types";
 import { getAuth } from "./auth";
 import { notifyAdmin } from "./mail";
+import { checkContactRateLimit } from "./contact";
 
 function failure(message: string): ContactFormState {
     return { ok: false, message, submitted: true, submittedAt: Date.now() };
@@ -43,6 +44,14 @@ export async function submitContactAction(
     const senderGuestId = user?.authType === "guest" ? user.id : undefined;
     const name =
         user?.authType === "oauth" ? user.name : inputName || GUEST_NAME;
+
+    // DB 挿入・メール送信の前に、flood で DB や SES クォータを溶かされないよう絞る
+    const rate = await checkContactRateLimit({ senderId, senderGuestId });
+    if (!rate.ok) {
+        return failure(
+            `送信が続いています。${rate.retryAfterSeconds} 秒ほど待ってから再度お試しください。`,
+        );
+    }
 
     let contact;
     try {

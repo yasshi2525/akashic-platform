@@ -256,6 +256,43 @@ export class HttpServer {
             }
         });
 
+        // 視聴者トークンの発行を storage admin へ転送する。webapp は入室・BAN
+        // 判定を通した後にここを呼ぶため、トークンが認可の背後に置かれる。
+        app.get("/join", async (req, res) => {
+            const playId = req.query.playId;
+            if (!playId?.toString()) {
+                res.status(400).json({ ok: false, reason: "MissingPlayId" });
+                return;
+            }
+            try {
+                const upstream = await fetch(
+                    `${this._storageAdminUrl}/join?playId=${encodeURIComponent(
+                        playId.toString(),
+                    )}`,
+                    {
+                        headers: {
+                            "x-akashic-internal-token": this._storageAdminToken,
+                        },
+                    },
+                );
+                if (!upstream.ok) {
+                    res.status(502).json({
+                        ok: false,
+                        reason: "InternalError",
+                        message: `storage join responded ${upstream.status}`,
+                    });
+                    return;
+                }
+                res.json(await upstream.json());
+            } catch (err) {
+                res.status(500).json({
+                    ok: false,
+                    reason: "InternalError",
+                    message: (err as Error).message,
+                });
+            }
+        });
+
         // webapp からの BAN 即時切断を storage admin へ転送する。
         // storage admin (3033) へは akashic-server のみ到達可能としたいため。
         app.get("/kick", async (req, res) => {

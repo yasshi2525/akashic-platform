@@ -3,6 +3,7 @@
 import { prisma } from "@yasshi2525/persist-schema";
 import { getAuth } from "./auth";
 import { buildLabelSnapshot, countMutes, MUTE_LIMIT } from "./mute";
+import { authorizePlayChat } from "./play-chat";
 
 export type MuteFormState = {
     ok: boolean;
@@ -29,25 +30,51 @@ function success(): MuteFormState {
 }
 
 async function findMessage(source: string, messageId: number) {
-    const select = {
-        authorId: true,
-        authorName: true,
-        guestId: true,
-        body: true,
-    };
     if (source === "board") {
         return await prisma.boardMessage.findUnique({
             where: { id: messageId },
-            select,
+            select: {
+                authorId: true,
+                authorName: true,
+                guestId: true,
+                body: true,
+            },
         });
     }
     if (source === "chat") {
         return await prisma.playChatMessage.findUnique({
             where: { id: messageId },
-            select,
+            select: {
+                authorId: true,
+                authorName: true,
+                guestId: true,
+                body: true,
+                playId: true,
+            },
         });
     }
     return null;
+}
+
+type FoundMessage = NonNullable<Awaited<ReturnType<typeof findMessage>>>;
+
+/**
+ * 部屋チャットの発言をミュート対象にする前に、その部屋の閲覧権を確認する。
+ * 確認を省くと、連番の messageId を推測するだけで、合言葉つき限定部屋の
+ * 発言者名・本文冒頭を labelSnapshot 経由で抜き取れてしまう。
+ */
+async function canAccessMessage(
+    source: string,
+    message: FoundMessage,
+): Promise<boolean> {
+    if (source !== "chat") {
+        return true;
+    }
+    const playId = (message as { playId?: number }).playId;
+    if (playId == null) {
+        return false;
+    }
+    return (await authorizePlayChat(playId)).ok;
 }
 
 /**
@@ -71,6 +98,9 @@ export async function muteAuthorAction(
 
     const message = await findMessage(source, messageId);
     if (!message) {
+        return failure("対象の投稿が見つかりませんでした。");
+    }
+    if (!(await canAccessMessage(source, message))) {
         return failure("対象の投稿が見つかりませんでした。");
     }
     if (!message.authorId && !message.guestId) {

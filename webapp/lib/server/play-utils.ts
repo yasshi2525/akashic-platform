@@ -5,14 +5,13 @@ import { User } from "../types";
 import {
     akashicServerUrl,
     internalContentBaseUrl,
-    internalPlaylogServerUrl,
     withAkashicServerAuth,
 } from "./akashic";
 
 export async function fetchPlayToken(playId: number, contentId: number) {
-    const res = await fetch(
-        `${internalPlaylogServerUrl}/join?playId=${playId}`,
-    );
+    const res = await fetch(`${akashicServerUrl}/join?playId=${playId}`, {
+        headers: withAkashicServerAuth(),
+    });
     if (res.status !== 200) {
         throw new Error(
             `playlog server responded error message. (contentId = "${contentId}", detail = "${await res.text()}")`,

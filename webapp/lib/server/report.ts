@@ -1,6 +1,10 @@
 import { prisma, ReportTargetType } from "@yasshi2525/persist-schema";
 import { GUEST_NAME } from "../types";
 
+const GLOBAL_WINDOW_SECONDS = parseInt(
+    process.env.REPORT_RATE_GLOBAL_WINDOW_SECONDS ?? "60",
+);
+const GLOBAL_MAX = parseInt(process.env.REPORT_RATE_GLOBAL_MAX ?? "60");
 const SHORT_WINDOW_SECONDS = parseInt(
     process.env.REPORT_RATE_SHORT_WINDOW_SECONDS ?? "60",
 );
@@ -47,14 +51,17 @@ async function checkWindow(
 export async function checkReportRateLimit(
     keys: ReporterKeys,
 ): Promise<ReportRateResult> {
-    // 通報者を特定できない場合はレート判定できないため素通しする
-    if (!keys.reporterId && !keys.reporterGuestId) {
-        return { ok: true };
+    const checks: Promise<number | undefined>[] = [
+        checkWindow({}, GLOBAL_WINDOW_SECONDS, GLOBAL_MAX),
+    ];
+    // 通報者を特定できる場合のみ通報者単位でも絞る
+    if (keys.reporterId || keys.reporterGuestId) {
+        checks.push(
+            checkWindow(keys, SHORT_WINDOW_SECONDS, SHORT_MAX),
+            checkWindow(keys, MEDIUM_WINDOW_SECONDS, MEDIUM_MAX),
+        );
     }
-    const results = await Promise.all([
-        checkWindow(keys, SHORT_WINDOW_SECONDS, SHORT_MAX),
-        checkWindow(keys, MEDIUM_WINDOW_SECONDS, MEDIUM_MAX),
-    ]);
+    const results = await Promise.all(checks);
     const retryAfterSeconds = results.reduce<number | undefined>(
         (acc, cur) =>
             cur == null ? acc : acc == null ? cur : Math.max(acc, cur),

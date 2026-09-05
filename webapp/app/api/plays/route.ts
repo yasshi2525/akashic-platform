@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@yasshi2525/persist-schema";
+import { Prisma, prisma } from "@yasshi2525/persist-schema";
 import {
     internalPlaylogServerUrl,
     publicContentBaseUrl,
@@ -12,7 +12,7 @@ import {
 } from "@/lib/types";
 import { getAuth } from "@/lib/server/auth";
 import { anonKey } from "@/lib/server/anon-key";
-import { getMuteSet, isMuted } from "@/lib/server/mute";
+import { getMuteSet } from "@/lib/server/mute";
 
 export async function GET(req: NextRequest) {
     const keyword = req.nextUrl.searchParams.get("keyword") ?? undefined;
@@ -51,6 +51,22 @@ export async function GET(req: NextRequest) {
 
     const viewer = await getAuth();
     const muteSet = await getMuteSet(viewer);
+    // ミュートは take/skip の前に DB で除外する。後段でフィルタすると
+    // ページ内にミュート対象がある分だけ件数が減り、無限スクロールが
+    // 打ち切られて後続の部屋に到達できなくなる
+    const mutedOwnerConds: Prisma.PlayWhereInput[] = [];
+    if (muteSet.userIds.size > 0) {
+        mutedOwnerConds.push({ gmUserId: { in: [...muteSet.userIds] } });
+    }
+    if (muteSet.guestIds.size > 0) {
+        mutedOwnerConds.push({
+            gmUserId: null,
+            gameMasterId: { in: [...muteSet.guestIds] },
+        });
+    }
+    if (mutedOwnerConds.length > 0) {
+        where.NOT = mutedOwnerConds;
+    }
     const rows = await prisma.play.findMany({
         take: limits,
         skip: page * limits,
@@ -91,9 +107,7 @@ export async function GET(req: NextRequest) {
         authorId: play.gmUserId,
         guestId: play.gmUserId ? null : play.gameMasterId,
     });
-    // 件数はページングの後で減るが、部屋一覧は無限スクロールで
-    // 追補されるため、ページを詰め直すより素直に落とす
-    const result = rows.filter((play) => !isMuted(muteSet, gameMasterOf(play)));
+    const result = rows;
     const participants = await Promise.all(
         result.map(async ({ id }) => {
             const res = await fetch(

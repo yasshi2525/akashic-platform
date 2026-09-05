@@ -115,7 +115,10 @@ export class HttpServer {
             }
         });
 
-        publicRouter.get("/join", async (req, res) => {
+        // 視聴者トークンの発行は admin に置く。public に晒すと、BAN された
+        // 利用者が playId を指定して新しいトークンを取り直し、webapp の入室
+        // ガードを迂回して再接続できてしまうため
+        adminRouter.get("/join", async (req, res) => {
             const playId = req.query.playId;
             if (!playId?.toString()) {
                 res.status(400).json({ ok: false, reason: "MissingPlayId" });

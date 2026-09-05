@@ -5,51 +5,6 @@ export const openapi = {
         version: "0.1.0",
     },
     paths: {
-        "/join": {
-            get: {
-                summary: "Join a play session",
-                parameters: [
-                    {
-                        name: "playId",
-                        in: "query",
-                        required: true,
-                        schema: { type: "string" },
-                    },
-                ],
-                responses: {
-                    "200": {
-                        description: "OK",
-                        content: {
-                            "application/json": {
-                                schema: {
-                                    $ref: "#/components/schemas/PlayTokenResponse",
-                                },
-                            },
-                        },
-                    },
-                    "400": {
-                        description: "Bad Request",
-                        content: {
-                            "application/json": {
-                                schema: {
-                                    $ref: "#/components/schemas/ErrorResponse",
-                                },
-                            },
-                        },
-                    },
-                    "422": {
-                        description: "Unprocessable Entity",
-                        content: {
-                            "application/json": {
-                                schema: {
-                                    $ref: "#/components/schemas/ErrorResponse",
-                                },
-                            },
-                        },
-                    },
-                },
-            },
-        },
         "/participants": {
             get: {
                 summary: "Get participants",
