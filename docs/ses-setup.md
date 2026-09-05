@@ -1,6 +1,6 @@
 # SES メール送信・受信のセットアップ
 
-通報・問い合わせの運営通知メール（送信）と、運営窓口メール `support@multi-indiegame.net`（受信）の構成手順。本番リージョンは `ap-northeast-1`（東京）を前提とする。
+通報・問い合わせの運営通知メール（送信）と、運営窓口メール `support@example.com`（受信）の構成手順。本番リージョンは `ap-northeast-1`（東京）を前提とする。
 
 webapp 側のコードは `SES_FROM_ADDRESS` と `SES_ADMIN_ADDRESS` が両方設定されたときだけメールを送る。未設定なら通報・問い合わせは DB 保存のみで正常動作する（[webapp/lib/server/mail.ts](../webapp/lib/server/mail.ts)）。
 
@@ -8,7 +8,7 @@ webapp 側のコードは `SES_FROM_ADDRESS` と `SES_ADMIN_ADDRESS` が両方�
 
 | 変数                                | 用途                                                                |
 | ----------------------------------- | ------------------------------------------------------------------- |
-| `SES_FROM_ADDRESS`                  | 送信元。例 `noreply@multi-indiegame.net`（Custom MAIL FROM 配下）   |
+| `SES_FROM_ADDRESS`                  | 送信元。例 `noreply@example.com`（Custom MAIL FROM 配下）   |
 | `SES_ADMIN_ADDRESS`                 | 通報・問い合わせの通知先。運営が読む受信箱（転送先の個人 Gmail 等） |
 | `SES_REGION`                        | 省略時は `S3_REGION` → `us-east-1` の順でフォールバック             |
 | `SES_ENDPOINT`                      | ローカルの疑似 SES を使う場合のみ。本番は未設定                     |
@@ -18,10 +18,10 @@ IAM ロールには `ses:SendEmail` を許可する。
 
 ## 送信（Sending）
 
-1. **ドメイン検証 + Easy DKIM**: SES コンソールで `multi-indiegame.net` を verified identity として登録し、Easy DKIM の CNAME 3 本を DNS に追加。
-2. **Custom MAIL FROM**: サブドメイン `mail.multi-indiegame.net` を MAIL FROM に設定（MX と SPF の TXT を追加）。apex ドメインの評判を巻き込まないため。
+1. **ドメイン検証 + Easy DKIM**: SES コンソールで `example.com` を verified identity として登録し、Easy DKIM の CNAME 3 本を DNS に追加。
+2. **Custom MAIL FROM**: サブドメイン `mail.example.com` を MAIL FROM に設定（MX と SPF の TXT を追加）。apex ドメインの評判を巻き込まないため。
 3. **SPF**: `mail` サブドメインに `v=spf1 include:amazonses.com -all`。
-4. **DMARC**: `_dmarc.multi-indiegame.net` に `p=none` で開始し、レポートを見ながら `quarantine` → `reject` と段階的に締める。
+4. **DMARC**: `_dmarc.example.com` に `p=none` で開始し、レポートを見ながら `quarantine` → `reject` と段階的に締める。
 5. **サンドボックス解除申請**: 未申請だと検証済みアドレス宛にしか送れず、1 日 200 通・1 通/秒に制限される。本番前に「Request production access」を申請する。
 6. **バウンス/苦情ハンドリング**: Configuration Set を作り、SNS トピック経由でバウンス・苦情を受ける。苦情率 0.1% / バウンス率 5% を超えるとアカウントレビュー対象。
 
@@ -29,12 +29,12 @@ IAM ロールには `ses:SendEmail` を許可する。
 
 ap-northeast-1 は SES の受信に対応（`inbound-smtp.ap-northeast-1.amazonaws.com`）。東京リージョンで完結できる。
 
-1. **MX レコード**: `multi-indiegame.net` の MX を `10 inbound-smtp.ap-northeast-1.amazonaws.com` に。
-2. **受信ルールセット**: 宛先 `support@multi-indiegame.net` を S3 に保存し、Lambda を起動するルールを作る。
+1. **MX レコード**: `example.com` の MX を `10 inbound-smtp.ap-northeast-1.amazonaws.com` に。
+2. **受信ルールセット**: 宛先 `support@example.com` を S3 に保存し、Lambda を起動するルールを作る。
 3. **Lambda で転送**: 受信メールを個人 Gmail へ転送する。素朴に転送すると転送元の SPF が壊れて Gmail に弾かれるため、Lambda で以下を行う（`aws-lambda-ses-forwarder` が定番実装）:
-   - `From:` を `support@multi-indiegame.net`（自ドメイン）に書き換える
+   - `From:` を `support@example.com`（自ドメイン）に書き換える
    - `Reply-To:` に元の送信者を入れる
-4. **返信**: Gmail の「名前を指定して送信（send mail as）」で `support@multi-indiegame.net` を追加し、SES SMTP 認証情報で送信する。差出人を support@ にして返信できる。
+4. **返信**: Gmail の「名前を指定して送信（send mail as）」で `support@example.com` を追加し、SES SMTP 認証情報で送信する。差出人を support@ にして返信できる。
 
 ### 2026年1月の Gmail 仕様変更について
 
