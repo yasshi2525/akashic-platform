@@ -39,7 +39,7 @@ import {
 import { useMute } from "@/lib/client/useMute";
 import { UserInline } from "./user-inline";
 import { MutedMessage } from "./muted-message";
-import { MuteMenu } from "./mute-menu";
+import { ModerationMenu } from "./moderation-menu";
 
 const initialFormState: BoardMessageFormState = {
     ok: true,
@@ -96,7 +96,13 @@ function MessageItem({
     if (mute.isMuted(message)) {
         return (
             <MutedMessage
-                menu={<MuteMenu message={message} mute={mute} source="board" />}
+                menu={
+                    <ModerationMenu
+                        message={message}
+                        mute={mute}
+                        source="board"
+                    />
+                }
             >
                 <MessageBody message={message} />
             </MutedMessage>
@@ -110,7 +116,7 @@ function MessageItem({
             <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                 <MessageBody message={message} />
             </Box>
-            <MuteMenu message={message} mute={mute} source="board" />
+            <ModerationMenu message={message} mute={mute} source="board" />
         </Stack>
     );
 }

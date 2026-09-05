@@ -9,7 +9,6 @@ import {
     DialogContent,
     DialogContentText,
     DialogTitle,
-    Divider,
     IconButton,
     ListItemIcon,
     ListItemText,
@@ -43,6 +42,7 @@ function BanConfirmDialog({
     playId,
     messageId,
     authorName,
+    targetIsGuest,
     onDone,
 }: {
     open: boolean;
@@ -50,16 +50,17 @@ function BanConfirmDialog({
     playId: number;
     messageId: number;
     authorName: string;
+    targetIsGuest: boolean;
     onDone?: () => void;
 }) {
     const [user] = useAuth();
     const [state, setState] = useState<BanFormState>(initialBanState);
     const [pending, startTransition] = useTransition();
-    // サインイン部屋主は全部屋、ゲスト部屋主はこの部屋のみに効く
+    // サインイン部屋主は自分の全部屋、ゲスト部屋主はこの部屋のみに効く
     const scopeNote =
         user?.authType === "oauth"
-            ? "あなたが作成した部屋すべてに入室できなくなります。"
-            : "この部屋に入室できなくなります。";
+            ? "この発言者は、以後あなたが作成する部屋すべてに入室できなくなります。"
+            : "この発言者は、この部屋にのみ再入室できなくなります（部屋を閉じると解除されます）。";
 
     const submit = () => {
         const fd = new FormData();
@@ -88,9 +89,10 @@ function BanConfirmDialog({
                 ) : (
                     <>
                         <DialogContentText variant="body2">
-                            この発言者をBANします。{scopeNote}
-                            未サインインの相手は再入室を完全には防げないため、
-                            繰り返す場合はゲスト参加禁止の部屋をご利用ください。
+                            {scopeNote}
+                            {targetIsGuest &&
+                                user?.authType === "oauth" &&
+                                " ゲストの迷惑行為が続く場合、ゲスト参加禁止設定の利用をご検討ください。"}
                         </DialogContentText>
                         {!state.ok && state.submitted && (
                             <Alert
@@ -101,34 +103,32 @@ function BanConfirmDialog({
                                 {state.message}
                             </Alert>
                         )}
+                        <DialogActions sx={{ flexWrap: "wrap", gap: 1 }}>
+                            <Button
+                                variant="outlined"
+                                color="inherit"
+                                onClick={onClose}
+                                disabled={pending}
+                            >
+                                キャンセル
+                            </Button>
+                            <Button
+                                onClick={submit}
+                                variant="contained"
+                                color="error"
+                                disabled={pending}
+                            >
+                                BANする
+                            </Button>
+                        </DialogActions>
                     </>
                 )}
             </DialogContent>
-            {!done && (
-                <DialogActions>
-                    <Button
-                        variant="outlined"
-                        color="inherit"
-                        onClick={onClose}
-                        disabled={pending}
-                    >
-                        キャンセル
-                    </Button>
-                    <Button
-                        onClick={submit}
-                        variant="contained"
-                        color="error"
-                        disabled={pending}
-                    >
-                        BANする
-                    </Button>
-                </DialogActions>
-            )}
         </Dialog>
     );
 }
 
-export function MuteMenu({
+export function ModerationMenu({
     message,
     mute,
     source,
@@ -191,7 +191,6 @@ export function MuteMenu({
                         }
                     />
                 </MenuItem>
-                <Divider />
                 <MenuItem
                     onClick={() => {
                         setReportOpen(true);
@@ -230,6 +229,7 @@ export function MuteMenu({
                     playId={banContext.playId}
                     messageId={message.id}
                     authorName={message.author.name}
+                    targetIsGuest={!message.author.id}
                     onDone={banContext.onDone}
                 />
             )}

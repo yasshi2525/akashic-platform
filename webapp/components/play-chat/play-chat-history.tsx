@@ -16,7 +16,7 @@ import { usePlayChatContext } from "@/lib/client/usePlayChatContext";
 import { useMute } from "@/lib/client/useMute";
 import { UserInline } from "../user-inline";
 import { MutedMessage } from "../muted-message";
-import { MuteMenu, BanContext } from "../mute-menu";
+import { ModerationMenu, BanContext } from "../moderation-menu";
 
 function HistoryBody({ message }: { message: PlayChatMessageInfo }) {
     return (
@@ -68,7 +68,7 @@ function HistoryItem({
         return (
             <MutedMessage
                 menu={
-                    <MuteMenu
+                    <ModerationMenu
                         message={message}
                         mute={mute}
                         source="chat"
@@ -88,7 +88,7 @@ function HistoryItem({
             <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                 <HistoryBody message={message} />
             </Box>
-            <MuteMenu
+            <ModerationMenu
                 message={message}
                 mute={mute}
                 source="chat"
