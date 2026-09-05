@@ -765,6 +765,7 @@ export function PlayView({
             )}
             <PlayChatProvider
                 playId={playId}
+                isGameMaster={isGameMaster}
                 enabled={chatEnabled}
                 fullscreen={fullscreenOn}
                 playerName={playerName}

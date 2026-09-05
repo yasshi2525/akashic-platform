@@ -18,9 +18,11 @@ import { ja } from "date-fns/locale";
 import { MUTE_LIMIT_DEFAULT } from "@/lib/types";
 import { useAuth } from "@/lib/client/useAuth";
 import { useMutes } from "@/lib/client/useMutes";
+import { useBans } from "@/lib/client/useBans";
 import { useLocalMutes } from "@/lib/client/useLocalMutes";
 import { clearMuteOverrides } from "@/lib/client/mute-store";
 import { unmuteAction } from "@/lib/server/mute-action";
+import { unbanAction } from "@/lib/server/ban-action";
 
 const initialState = { ok: true, submitted: false } as const;
 
@@ -174,23 +176,129 @@ function LocalMutes() {
     );
 }
 
-export function MuteSettings() {
+function BanList() {
     const [user] = useAuth();
+    // ゲスト部屋主の BAN は部屋単位で、部屋を閉じると無意味になるため管理 UI は
+    // 設けない。サインイン部屋主 (全部屋 BAN) のみ一覧・解除できる
+    const { isLoading, list, error, mutate } = useBans(
+        user?.authType === "oauth",
+    );
+    const [pending, startTransition] = useTransition();
+    const [actionError, setActionError] = useState<string | undefined>();
+
+    const unban = (banId: number) => {
+        setActionError(undefined);
+        const fd = new FormData();
+        fd.set("banId", `${banId}`);
+        startTransition(async () => {
+            const state = await unbanAction({ ok: true, submitted: false }, fd);
+            if (!state.ok) {
+                setActionError(state.message);
+                return;
+            }
+            await mutate();
+        });
+    };
+
+    if (user?.authType !== "oauth") {
+        return null;
+    }
+    if (isLoading) {
+        return (
+            <Stack sx={{ alignItems: "center", py: 2 }}>
+                <CircularProgress size={24} />
+            </Stack>
+        );
+    }
+    if (error) {
+        return (
+            <Alert variant="outlined" severity="error">
+                {error}
+            </Alert>
+        );
+    }
+    const bans = list ?? [];
+    return (
+        <Stack spacing={1}>
+            {actionError && (
+                <Alert variant="outlined" severity="warning">
+                    {actionError}
+                </Alert>
+            )}
+            {bans.length === 0 ? (
+                <Typography
+                    variant="body2"
+                    color="textSecondary"
+                    sx={{ py: 1 }}
+                >
+                    BANしている相手はいません。
+                </Typography>
+            ) : (
+                <List disablePadding>
+                    {bans.map((ban) => (
+                        <ListItem
+                            key={ban.id}
+                            divider
+                            secondaryAction={
+                                <Button
+                                    size="small"
+                                    onClick={() => unban(ban.id)}
+                                    variant="outlined"
+                                    disabled={pending}
+                                >
+                                    解除
+                                </Button>
+                            }
+                        >
+                            <ListItemText
+                                primary={ban.label}
+                                secondary={`${relative(
+                                    new Date(ban.createdAt),
+                                )} にBAN`}
+                                slotProps={{
+                                    primary: {
+                                        variant: "body2",
+                                        sx: { overflowWrap: "anywhere" },
+                                    },
+                                }}
+                            />
+                        </ListItem>
+                    ))}
+                </List>
+            )}
+        </Stack>
+    );
+}
+
+export function ModerationSettings() {
+    const [user] = useAuth();
+    const isOAuth = user?.authType === "oauth";
 
     return (
         <Box sx={{ maxWidth: "sm", mx: "auto", py: 2, px: { xs: 1.5, sm: 0 } }}>
-            <Stack spacing={2}>
-                <Box>
-                    <Typography variant="h6">ミュート</Typography>
-                    <Typography variant="body2" color="textSecondary">
-                        ミュートした相手の投稿は折りたたまれ、その人が立てた部屋は一覧に表示されなくなります。相手には通知されません。
-                    </Typography>
-                </Box>
-                <Divider />
-                {user?.authType === "oauth" ? (
-                    <PersistedMutes />
-                ) : (
-                    <LocalMutes />
+            <Stack spacing={3}>
+                <Stack spacing={2}>
+                    <Box>
+                        <Typography variant="h6">ミュート</Typography>
+                        <Typography variant="body2" color="textSecondary">
+                            ミュートした相手の投稿は折りたたまれ、その人が立てた部屋は一覧に表示されなくなります。相手には通知されません。
+                        </Typography>
+                    </Box>
+                    <Divider />
+                    {isOAuth ? <PersistedMutes /> : <LocalMutes />}
+                </Stack>
+                {/* ゲスト部屋主の BAN は部屋を閉じると無意味になるため管理 UI を出さない */}
+                {isOAuth && (
+                    <Stack spacing={2}>
+                        <Box>
+                            <Typography variant="h6">BAN</Typography>
+                            <Typography variant="body2" color="textSecondary">
+                                自分の部屋への入室を禁止した相手の一覧です。解除すると再び入室できるようになります。
+                            </Typography>
+                        </Box>
+                        <Divider />
+                        <BanList />
+                    </Stack>
                 )}
             </Stack>
         </Box>

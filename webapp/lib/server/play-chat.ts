@@ -4,6 +4,7 @@ import { prisma } from "@yasshi2525/persist-schema";
 import { getS3Client } from "./content-utils";
 import { getAuth } from "./auth";
 import { checkPlayAccess } from "./play-access-token";
+import { isBannedFromPlay } from "./ban";
 
 const SHORT_WINDOW_SECONDS = parseInt(
     process.env.PLAY_CHAT_RATE_SHORT_WINDOW_SECONDS ?? "10",
@@ -37,7 +38,7 @@ export async function authorizePlayChat(playId: number): Promise<
 > {
     const play = await prisma.play.findUnique({
         where: { id: playId },
-        select: { isActive: true, chatEnabled: true },
+        select: { id: true, isActive: true, chatEnabled: true, gmUserId: true },
     });
     if (!play) {
         return { ok: false, reason: "NotFound" };
@@ -54,6 +55,12 @@ export async function authorizePlayChat(playId: number): Promise<
     }
     const access = await checkPlayAccess(playId, user.id);
     if (!access.ok) {
+        return { ok: false, reason: "Forbidden" };
+    }
+    // 入室ガードをすり抜けた古い Cookie でも投稿させない
+    if (
+        await isBannedFromPlay(user, { id: play.id, gmUserId: play.gmUserId })
+    ) {
         return { ok: false, reason: "Forbidden" };
     }
     return { ok: true, user, needsRenew: access.needsRenew };

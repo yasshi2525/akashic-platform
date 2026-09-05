@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.2.0
+
+- Feature
+  - 即時 BAN 用に webapp 認証の `/kick?playId&playToken` を追加し、storage admin の `/kick` へ転送する
+
 ## 2.1.0
 
 - Feature

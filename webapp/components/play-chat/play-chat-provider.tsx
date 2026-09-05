@@ -6,6 +6,7 @@ import { usePlayChat } from "@/lib/client/usePlayChat";
 
 export function PlayChatProvider({
     playId,
+    isGameMaster,
     enabled,
     fullscreen,
     playerName,
@@ -13,6 +14,7 @@ export function PlayChatProvider({
     children,
 }: {
     playId: string;
+    isGameMaster: boolean;
     enabled: boolean;
     fullscreen: boolean;
     playerName: string;
@@ -22,7 +24,14 @@ export function PlayChatProvider({
     const chat = usePlayChat(playId, enabled);
     return (
         <PlayChatContext
-            value={{ playId, fullscreen, playerName, setPlayerName, ...chat }}
+            value={{
+                playId,
+                isGameMaster,
+                fullscreen,
+                playerName,
+                setPlayerName,
+                ...chat,
+            }}
         >
             {children}
         </PlayChatContext>

@@ -178,6 +178,28 @@ export class HttpServer {
             }
         });
 
+        adminRouter.get("/kick", async (req, res) => {
+            const playId = req.query.playId;
+            const playToken = req.query.playToken;
+            if (!playId?.toString() || !playToken?.toString()) {
+                res.status(400).json({ ok: false, reason: "InvalidParams" });
+                return;
+            }
+            try {
+                await this._amfManager
+                    .getServer(playId.toString())
+                    .kick(playToken.toString());
+                res.json({ ok: true });
+            } catch (err) {
+                // 部屋が既に終了していれば切断対象は存在しない。BAN は再入室
+                // 拒否側 (webapp) で担保されるため、ここは正常応答でよい
+                console.warn(
+                    `kick skipped (playId = "${playId}", cause = "${(err as Error).message}")`,
+                );
+                res.json({ ok: true, skipped: true });
+            }
+        });
+
         publicRouter.post("/extend", (req, res) => {
             const { playId, expiresAt, remainingMs, extendMs } = req.body as {
                 playId?: string;

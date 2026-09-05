@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.13.0
+
+- Feature
+  - BAN 機能として `Ban` テーブルと `BanOrigin` を追加
+  - 即時 BAN 用に `PlaySession` テーブル（発行した playToken の記録）を追加
+
 ## 1.12.0
 
 - Feature

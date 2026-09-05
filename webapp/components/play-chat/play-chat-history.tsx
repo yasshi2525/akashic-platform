@@ -16,7 +16,7 @@ import { usePlayChatContext } from "@/lib/client/usePlayChatContext";
 import { useMute } from "@/lib/client/useMute";
 import { UserInline } from "../user-inline";
 import { MutedMessage } from "../muted-message";
-import { MuteMenu } from "../mute-menu";
+import { MuteMenu, BanContext } from "../mute-menu";
 
 function HistoryBody({ message }: { message: PlayChatMessageInfo }) {
     return (
@@ -58,14 +58,23 @@ function HistoryBody({ message }: { message: PlayChatMessageInfo }) {
 function HistoryItem({
     message,
     mute,
+    banContext,
 }: {
     message: PlayChatMessageInfo;
     mute: ReturnType<typeof useMute>;
+    banContext?: BanContext;
 }) {
     if (mute.isMuted(message)) {
         return (
             <MutedMessage
-                menu={<MuteMenu message={message} mute={mute} source="chat" />}
+                menu={
+                    <MuteMenu
+                        message={message}
+                        mute={mute}
+                        source="chat"
+                        banContext={banContext}
+                    />
+                }
             >
                 <HistoryBody message={message} />
             </MutedMessage>
@@ -79,7 +88,12 @@ function HistoryItem({
             <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                 <HistoryBody message={message} />
             </Box>
-            <MuteMenu message={message} mute={mute} source="chat" />
+            <MuteMenu
+                message={message}
+                mute={mute}
+                source="chat"
+                banContext={banContext}
+            />
         </Stack>
     );
 }
@@ -89,8 +103,13 @@ export function PlayChatHistory({
 }: {
     messages: PlayChatMessageInfo[];
 }) {
-    const { isLoading, error, refresh } = usePlayChatContext();
+    const { isLoading, error, refresh, isGameMaster, playId } =
+        usePlayChatContext();
     const mute = useMute("chat", refresh);
+    // 部屋主のときだけ、発言者をBANする導線を出す
+    const banContext: BanContext | undefined = isGameMaster
+        ? { playId: parseInt(playId), onDone: refresh }
+        : undefined;
     const listRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -116,7 +135,9 @@ export function PlayChatHistory({
                     <CircularProgress size={24} />
                 </Stack>
             ) : error ? (
-                <Alert severity="error">{error}</Alert>
+                <Alert variant="outlined" severity="error">
+                    {error}
+                </Alert>
             ) : messages.length === 0 ? (
                 <Typography variant="body2" color="textSecondary">
                     まだコメントはありません。
@@ -128,6 +149,7 @@ export function PlayChatHistory({
                             key={message.id}
                             message={message}
                             mute={mute}
+                            banContext={banContext}
                         />
                     ))}
                 </Stack>

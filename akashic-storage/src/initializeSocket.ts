@@ -126,7 +126,7 @@ export const initializeSocket = (
             async () => {
                 try {
                     assertsOpen();
-                    permission = await server!.authenticate(token);
+                    permission = await server!.authenticate(socket, token);
                     cb(null, permission);
                 } catch (err) {
                     handleError(err, cb);

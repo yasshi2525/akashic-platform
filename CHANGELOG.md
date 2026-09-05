@@ -17,6 +17,16 @@
       - 運営者への問い合わせフォーム追加
     - `./schema/persist`
       - 関連テーブル追加
+  - BAN機能を追加
+    - `./webapp`
+      - 自分の部屋の特定の参加者を即時退室させる機能を追加
+      - サインイン時は今後作成する部屋に対しても入室禁止措置継続
+    - `./akashic-storage`
+      - BANされた人の即時切断・再認証拒否を追加
+    - `./akashic-server`
+      - `webapp` から `akashic-server` へのBAN情報を伝達
+    - `./schema/persist`
+      - 関連テーブル追加
 
 ## 2.1.0
 

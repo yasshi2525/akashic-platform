@@ -261,6 +261,19 @@ export type MutesGetErrorType = (typeof mutesGetErrReasons)[number];
 export type MutesGetResponse =
     { ok: true; data: MuteInfo[] } | { ok: false; reason: MutesGetErrorType };
 
+export interface BanInfo {
+    id: number;
+    label: string;
+    /** サインイン部屋主の全部屋 BAN なら true、ゲスト部屋主の部屋単位 BAN なら false */
+    allRooms: boolean;
+    createdAt: Date;
+}
+
+const bansGetErrReasons = ["Unauthorized", "InternalError"] as const;
+export type BansGetErrorType = (typeof bansGetErrReasons)[number];
+export type BansGetResponse =
+    { ok: true; data: BanInfo[] } | { ok: false; reason: BansGetErrorType };
+
 export interface MessageAuthorInfo {
     id?: string;
     name: string;
@@ -271,6 +284,8 @@ export interface MessageAuthorInfo {
      * 未サインイン利用者が端末内ミュートの対象を記録するのに使う。
      */
     anonKey?: string;
+    /** 閲覧者自身の投稿。自分をミュート・BANできないよう UI で判定に使う */
+    isSelf?: boolean;
 }
 
 export interface BoardMessageInfo {
@@ -402,6 +417,7 @@ const playErrReasons = [
     "JoinWordRequired",
     "InvalidJoinWord",
     "SignInRequired",
+    "Banned",
     "InternalError",
 ] as const;
 export type PlayErrorType = (typeof playErrReasons)[number];
@@ -460,7 +476,11 @@ export type LiveInfo = {
 } & (
     | {
           requiresJoinWord: true;
-          reason: "JoinWordRequired" | "InvalidJoinWord" | "SignInRequired";
+          reason:
+              | "JoinWordRequired"
+              | "InvalidJoinWord"
+              | "SignInRequired"
+              | "Banned";
       }
     | {
           requiresJoinWord: false;

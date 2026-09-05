@@ -69,7 +69,7 @@ function AnonymousMenu({
             >
                 <VisibilityOff />
                 <Typography variant="body1" sx={{ ml: 1 }}>
-                    ミュートの設定
+                    モデレーション設定
                 </Typography>
             </MenuItem>
         </Menu>
@@ -149,7 +149,7 @@ function AuthorizedMenu({ user, anchorEl, handleClose }: AuthorizedMenuProps) {
             >
                 <VisibilityOff />
                 <Typography variant="body1" sx={{ ml: 1 }}>
-                    ミュートの設定
+                    モデレーション設定
                 </Typography>
             </MenuItem>
             <MenuItem

@@ -24,6 +24,9 @@ export class AMFlowServer {
     _playId: string;
     _store: ValkeyAMFlowStore;
     _clients: Set<Socket>;
+    // 認証に使われた token を socket 単位で覚えておく。BAN 時に
+    // 対象の playToken を持つ socket だけを狙って切断するために使う。
+    _socketTokens: Map<Socket, string>;
     _tickSubscribers: Set<Socket>;
     _eventSubscribers: Set<Socket>;
     // store からの tick 購読ハンドラ。SendTickPack イベント自体ではなく
@@ -37,6 +40,7 @@ export class AMFlowServer {
         this._tickSubscribers = new Set();
         this._eventSubscribers = new Set();
         this._clients = new Set();
+        this._socketTokens = new Map();
         this._broadcastTickBound = this._broadcastTick.bind(this);
         this._broadcastEventBound = this._broadcastEvent.bind(this);
         this._store.onTick(this._broadcastTickBound);
@@ -61,10 +65,26 @@ export class AMFlowServer {
         this.unsubscribeTick(socket);
         this.unsubscribeEvent(socket);
         this._clients.delete(socket);
+        this._socketTokens.delete(socket);
     }
 
-    async authenticate(token: string) {
-        return await this._store.authenticate(token);
+    async authenticate(socket: Socket, token: string) {
+        const permission = await this._store.authenticate(token);
+        this._socketTokens.set(socket, token);
+        return permission;
+    }
+
+    /**
+     * 指定した playToken で認証済みの socket を即時切断し、token を失効させる。
+     * 切断だけでは同じ token で再認証できてしまうため、Valkey からも消す。
+     */
+    async kick(playToken: string) {
+        for (const [socket, token] of this._socketTokens) {
+            if (token === playToken) {
+                socket.disconnect(true);
+            }
+        }
+        await this._store.revokeToken(playToken);
     }
 
     async sendTickPack(tickPack: TickPack) {

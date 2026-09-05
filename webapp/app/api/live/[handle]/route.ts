@@ -14,6 +14,8 @@ import {
 } from "@/lib/server/play-utils";
 import { isFavorited } from "@/lib/server/favorite";
 import { setPlayAccessCookie } from "@/lib/server/play-access-token";
+import { isBannedFromPlay } from "@/lib/server/ban";
+import { recordPlaySession } from "@/lib/server/play-session";
 
 export async function GET(
     req: NextRequest,
@@ -116,6 +118,18 @@ export async function GET(
                 },
             });
         }
+        if (
+            await isBannedFromPlay(user, { id: play.id, gmUserId: gmUser.id })
+        ) {
+            return NextResponse.json({
+                ok: true,
+                data: {
+                    owner,
+                    requiresJoinWord: true,
+                    reason: "Banned",
+                },
+            });
+        }
         const remaining = await fetchPlayRemaining(play.id);
         if (!remaining) {
             // play 終了直後はまだ active だが、セッションは既に破棄済み。終了扱い
@@ -129,6 +143,7 @@ export async function GET(
         }
         const { remainingMs, expiresAt } = remaining;
         const gameJson = await fetchGameJson(play.contentId);
+        const playToken = await fetchPlayToken(play.id, play.contentId);
         const res = NextResponse.json<LiveResponse>({
             ok: true,
             data: {
@@ -136,7 +151,7 @@ export async function GET(
                 requiresJoinWord: false,
                 info: {
                     id: play.id,
-                    playToken: await fetchPlayToken(play.id, play.contentId),
+                    playToken,
                     playName: play.name,
                     isLimited: play.isLimited,
                     requireSignIn: play.requireSignIn,
@@ -183,6 +198,7 @@ export async function GET(
         });
         if (user) {
             setPlayAccessCookie(res, play.id, user.id, req.cookies.getAll());
+            await recordPlaySession(play.id, user.id, playToken);
         }
         return res;
     } catch (err) {

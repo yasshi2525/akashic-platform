@@ -31,6 +31,9 @@ function toInfo(
             name: message.authorName,
             iconURL: message.author?.image ?? undefined,
             anonKey: viewerId ? anonKey(subject, viewerId) : undefined,
+            isSelf:
+                !!viewerId &&
+                (viewerId === subject.authorId || viewerId === subject.guestId),
         },
         body: message.body,
         createdAt: message.createdAt,
