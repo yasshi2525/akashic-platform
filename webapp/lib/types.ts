@@ -202,6 +202,7 @@ export const BOARD_MESSAGE_NAME_MAX = 20;
 
 export const MUTE_LIMIT_DEFAULT = 200;
 export const MUTE_LABEL_BODY_MAX = 40;
+export const BAN_LIMIT_DEFAULT = 200;
 
 export const REPORT_DETAIL_MAX = 1000;
 export const CONTACT_BODY_MAX = 2000;

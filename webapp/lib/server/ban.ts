@@ -1,7 +1,25 @@
 import { prisma } from "@yasshi2525/persist-schema";
-import type { User } from "../types";
+import { BAN_LIMIT_DEFAULT, type User } from "../types";
 
 const LABEL_BODY_MAX = 40;
+
+export const BAN_LIMIT = parseInt(
+    process.env.BAN_LIMIT ?? `${BAN_LIMIT_DEFAULT}`,
+);
+
+/** BAN の発行スコープ。サインイン部屋主は全部屋、ゲスト部屋主は部屋単位。 */
+export type BanScope =
+    { gmUserId: string; playId: null } | { gmGuestId: string; playId: number };
+
+/**
+ * 上限判定用の、サインイン部屋主の全 BAN 件数。
+ * ゲスト部屋主の BAN は解除 UI が無く部屋終了で消えるため上限の対象外。
+ * 永続して増えるのはサインイン部屋主の BAN (playId=null) だけなので、
+ * こちらのみ数える。
+ */
+export async function countGmBans(gmUserId: string): Promise<number> {
+    return prisma.ban.count({ where: { gmUserId } });
+}
 
 export interface BanTarget {
     targetUserId?: string;

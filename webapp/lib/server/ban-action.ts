@@ -2,7 +2,7 @@
 
 import { prisma } from "@yasshi2525/persist-schema";
 import { getAuth } from "./auth";
-import { buildBanLabel } from "./ban";
+import { BAN_LIMIT, BanScope, buildBanLabel, countGmBans } from "./ban";
 import { kickViewerFromPlays } from "./play-kick";
 
 export type BanFormState = {
@@ -79,7 +79,7 @@ export async function banFromChatAction(
     }
 
     // サインイン部屋主は全部屋 (playId=null)、ゲスト部屋主はこの部屋のみ
-    const scope =
+    const scope: BanScope =
         user.authType === "oauth"
             ? { gmUserId: user.id, playId: null }
             : { gmGuestId: user.id, playId: play.id };
@@ -89,6 +89,15 @@ export async function banFromChatAction(
         select: { id: true },
     });
     if (!existing) {
+        // ゲスト部屋主の BAN は解除 UI が無く部屋終了で消えるため上限の対象外
+        if (
+            user.authType === "oauth" &&
+            (await countGmBans(user.id)) >= BAN_LIMIT
+        ) {
+            return failure(
+                `BAN は ${BAN_LIMIT} 件までです。モデレーション設定から不要なものを解除してください。`,
+            );
+        }
         try {
             await prisma.ban.create({
                 data: {
