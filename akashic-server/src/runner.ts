@@ -395,6 +395,24 @@ export class Runner {
                 err,
             );
         }
+        try {
+            // 発行済み playToken の記録は部屋終了で不要になる
+            await prisma.playSession.deleteMany({ where: { playId } });
+        } catch (err) {
+            console.warn(
+                `failed to delete play sessions (playId = "${playId}")`,
+                err,
+            );
+        }
+        try {
+            // ゲスト部屋主の部屋単位 BAN は部屋終了で意味を失う
+            await prisma.ban.deleteMany({ where: { playId } });
+        } catch (err) {
+            console.warn(
+                `failed to delete room-scoped bans (playId = "${playId}")`,
+                err,
+            );
+        }
     }
 
     async _runBackgroundUpload(

@@ -258,6 +258,25 @@ export function LiveContainer({ handle }: { handle: string }) {
             </>
         );
     }
+    if (data?.requiresJoinWord && data.reason === "Banned") {
+        return (
+            <>
+                <LiveHeader
+                    userId={data.owner.userId}
+                    name={data.owner.name}
+                    iconURL={data.owner.iconURL}
+                    isOwner={false}
+                    isPlaying={true}
+                    width="narrow"
+                />
+                <Container maxWidth="md" sx={{ mt: 2 }}>
+                    <Alert variant="outlined" severity="error">
+                        あなたはこの部屋に入室できません。
+                    </Alert>
+                </Container>
+            </>
+        );
+    }
     if (data?.requiresJoinWord) {
         return (
             <>

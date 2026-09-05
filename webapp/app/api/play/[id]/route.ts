@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma, prisma } from "@yasshi2525/persist-schema";
 import { GUEST_NAME, PlayResponse } from "@/lib/types";
 import { getAuth } from "@/lib/server/auth";
+import { getAuthEnsuringGuest } from "@/lib/server/auth-ensure";
 import { publicContentBaseUrl } from "@/lib/server/akashic";
 import { fetchLicense } from "@/lib/server/game-info";
 import { getContentExternal } from "@/lib/server/content-get-external";
@@ -14,6 +15,9 @@ import {
 } from "@/lib/server/play-utils";
 import { isFavorited } from "@/lib/server/favorite";
 import { setPlayAccessCookie } from "@/lib/server/play-access-token";
+import { isBannedFromPlay } from "@/lib/server/ban";
+import { recordPlaySession } from "@/lib/server/play-session";
+import { kickViewerFromPlays } from "@/lib/server/play-kick";
 
 const playViewSelect = {
     id: true,
@@ -134,7 +138,9 @@ export async function GET(
                 reason: "NotFound",
             });
         }
-        const user = await getAuth();
+        // 身元の無い呼び出しにもゲストを発行し、発行する playToken を必ず
+        // PlaySession に紐づける（追跡不能・kick 不能な token をなくす）
+        const user = await getAuthEnsuringGuest();
         if (!play.isActive) {
             return closedPlayResponse(play, user);
         }
@@ -145,17 +151,26 @@ export async function GET(
         if (denied) {
             return NextResponse.json(denied);
         }
+        if (
+            await isBannedFromPlay(user, {
+                id: play.id,
+                gmUserId: play.gmUser?.id ?? null,
+            })
+        ) {
+            return NextResponse.json({ ok: false, reason: "Banned" });
+        }
         const remaining = await fetchPlayRemaining(play.id);
         if (!remaining) {
             // 終了直後はDB未反映でactive。remaining の方がより確実
             return closedPlayResponse(play, user);
         }
         const gameJson = await fetchGameJson(play.contentId);
+        const playToken = await fetchPlayToken(play.id, play.contentId);
         const res = NextResponse.json<PlayResponse>({
             ok: true,
             data: {
                 isActive: play.isActive,
-                playToken: await fetchPlayToken(play.id, play.contentId),
+                playToken,
                 playName: play.name,
                 isLimited: play.isLimited,
                 requireSignIn: play.requireSignIn,
@@ -196,6 +211,20 @@ export async function GET(
             },
         });
         if (user) {
+            // BAN 時の即時切断ハンドルとして発行 token を記録する
+            await recordPlaySession(play.id, user.id, playToken);
+            // 記録の後にもう一度 BAN 判定する。入室と BAN 発行が競合しても、
+            // 記録済みなら自分の token を確実に失効させられる（発行側 kick が
+            // 記録前に走って取りこぼしても、ここで拾う）
+            if (
+                await isBannedFromPlay(user, {
+                    id: play.id,
+                    gmUserId: play.gmUser?.id ?? null,
+                })
+            ) {
+                await kickViewerFromPlays([play.id], user.id);
+                return NextResponse.json({ ok: false, reason: "Banned" });
+            }
             setPlayAccessCookie(res, play.id, user.id, req.cookies.getAll());
         }
         return res;

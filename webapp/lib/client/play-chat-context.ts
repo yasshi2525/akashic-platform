@@ -3,6 +3,7 @@ import { PlayChatMessageInfo } from "../types";
 
 export const PlayChatContext = createContext<{
     playId: string;
+    isGameMaster: boolean;
     fullscreen: boolean;
     playerName: string;
     setPlayerName: (name: string) => void;

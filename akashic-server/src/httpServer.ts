@@ -15,6 +15,8 @@ interface HttpServerParameterObject {
     manager: RunnerManager;
     webappApiToken: string;
     serverRunnerApiToken: string;
+    storageAdminUrl: string;
+    storageAdminToken: string;
 }
 
 export class HttpServer {
@@ -23,6 +25,8 @@ export class HttpServer {
     _server?: Server;
     _webappApiToken: string;
     _serverRunnerApiToken: string;
+    _storageAdminUrl: string;
+    _storageAdminToken: string;
 
     constructor(param: HttpServerParameterObject) {
         this._manager = param.manager;
@@ -34,6 +38,8 @@ export class HttpServer {
         }
         this._webappApiToken = param.webappApiToken;
         this._serverRunnerApiToken = param.serverRunnerApiToken;
+        this._storageAdminUrl = param.storageAdminUrl;
+        this._storageAdminToken = param.storageAdminToken;
         this._app = this._createHttp();
     }
 
@@ -247,6 +253,81 @@ export class HttpServer {
                         message: (err as Error).message,
                     });
                 }
+            }
+        });
+
+        // 視聴者トークンの発行を storage admin へ転送する。webapp は入室・BAN
+        // 判定を通した後にここを呼ぶため、トークンが認可の背後に置かれる。
+        app.get("/join", async (req, res) => {
+            const playId = req.query.playId;
+            if (!playId?.toString()) {
+                res.status(400).json({ ok: false, reason: "MissingPlayId" });
+                return;
+            }
+            try {
+                const upstream = await fetch(
+                    `${this._storageAdminUrl}/join?playId=${encodeURIComponent(
+                        playId.toString(),
+                    )}`,
+                    {
+                        headers: {
+                            "x-akashic-internal-token": this._storageAdminToken,
+                        },
+                    },
+                );
+                if (!upstream.ok) {
+                    res.status(502).json({
+                        ok: false,
+                        reason: "InternalError",
+                        message: `storage join responded ${upstream.status}`,
+                    });
+                    return;
+                }
+                res.json(await upstream.json());
+            } catch (err) {
+                res.status(500).json({
+                    ok: false,
+                    reason: "InternalError",
+                    message: (err as Error).message,
+                });
+            }
+        });
+
+        // webapp からの BAN 即時切断を storage admin へ転送する。
+        // storage admin (3033) へは akashic-server のみ到達可能としたいため。
+        app.get("/kick", async (req, res) => {
+            const playId = req.query.playId;
+            const playToken = req.query.playToken;
+            if (!playId?.toString() || !playToken?.toString()) {
+                res.status(400).json({ ok: false, reason: "InvalidParams" });
+                return;
+            }
+            try {
+                const upstream = await fetch(
+                    `${this._storageAdminUrl}/kick?playId=${encodeURIComponent(
+                        playId.toString(),
+                    )}&playToken=${encodeURIComponent(playToken.toString())}`,
+                    {
+                        headers: {
+                            "x-akashic-internal-token": this._storageAdminToken,
+                        },
+                    },
+                );
+                if (!upstream.ok) {
+                    res.status(502).json({
+                        ok: false,
+                        reason: "InternalError",
+                        message: `storage kick responded ${upstream.status}`,
+                    });
+                    return;
+                }
+                res.json({ ok: true });
+            } catch (err) {
+                res.status(500).json({
+                    ok: false,
+                    reason: "InternalError",
+                    message: (err as Error).message,
+                });
             }
         });
 

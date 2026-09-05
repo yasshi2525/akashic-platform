@@ -25,6 +25,12 @@ model User {
   favorites     Favorite[]
   boardMessages BoardMessage[]
   chatMessages  PlayChatMessage[]
+  mutes         Mute[]            @relation("MuteOwner")
+  mutedBy       Mute[]            @relation("MuteTarget")
+  reports       Report[]
+  contacts      ContactMessage[]
+  bansIssued    Ban[]             @relation("BanOwner")
+  bansReceived  Ban[]             @relation("BanTarget")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -135,6 +141,7 @@ model Play {
   content      Content           @relation(fields: [contentId], references: [id], onDelete: Cascade)
   gmUser       User?             @relation(fields: [gmUserId], references: [id], onDelete: Cascade)
   chatMessages PlayChatMessage[]
+  sessions     PlaySession[]
 }
 
 model FeedbackPost {
@@ -196,6 +203,122 @@ model PlayChatMessage {
   @@index([playId, guestId, createdAt])
 }
 
+/// ミュートは閲覧者ごとの見え方の設定であり、相手の権利は変えない。
+/// 未サインイン利用者は端末内 (localStorage) に持つため、ここには現れない。
+model Mute {
+  id            Int     @id @default(autoincrement())
+  ownerId       String
+  /// 相手がサインイン利用者の場合のみ設定される
+  targetUserId  String?
+  /// 相手が未サインイン利用者の場合のみ設定される。相手が Cookie を消すと失効する
+  targetGuestId String?
+  /// 解除 UI で相手を判別するための手がかり。ゲストは表示名が自称のため、
+  /// ミュートした時点の名前と本文の冒頭を控えておかないと一覧が読めない
+  labelSnapshot String
+
+  createdAt DateTime @default(now())
+
+  owner      User  @relation("MuteOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  targetUser User? @relation("MuteTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, targetUserId])
+  @@unique([ownerId, targetGuestId])
+  @@index([ownerId])
+}
+
+/// 部屋主による入室禁止 (BAN)。ミュートと違い相手の入室を制約する。
+/// サインイン部屋主は自分の全部屋に効き (playId = null)、ゲスト部屋主は
+/// その部屋のみ (playId 指定)。ゲスト相手は Cookie を消すと逃れられるため
+/// best-effort で、締め出しきれない場合は requireSignIn 部屋へ誘導する。
+model Ban {
+  id            Int       @id @default(autoincrement())
+  /// サインイン部屋主の場合に設定。この部屋主の全部屋に効く
+  gmUserId      String?
+  /// ゲスト部屋主の場合に設定 (記録用)。この場合 playId で範囲を限定する
+  gmGuestId     String?
+  /// ゲスト部屋主の BAN、または部屋単位に限定したい場合の対象部屋
+  playId        Int?
+  /// 相手がサインイン利用者の場合のみ設定される
+  targetUserId  String?
+  /// 相手が未サインイン利用者の場合のみ設定される
+  targetGuestId String?
+  /// ブロック連動で自動付与された BAN は解除時にまとめて外すため区別する
+  origin        BanOrigin @default(MANUAL)
+  /// 解除 UI で相手を判別するための手がかり
+  labelSnapshot String
+
+  createdAt DateTime @default(now())
+
+  gmUser     User? @relation("BanOwner", fields: [gmUserId], references: [id], onDelete: Cascade)
+  targetUser User? @relation("BanTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  @@index([gmUserId])
+  @@index([playId])
+  @@index([targetUserId])
+  @@index([targetGuestId])
+}
+
+/// 入室時に視聴者へ発行した playToken の記録。BAN 時に対象の socket を
+/// 即時切断するためのハンドルとして使う。playToken は秘密情報のため
+/// API から一切露出させない。部屋終了時に削除する。
+model PlaySession {
+  id        Int      @id @default(autoincrement())
+  playId    Int
+  /// 視聴者の識別子。サインインなら userId、未サインインなら guestId
+  viewerId  String
+  playToken String
+  createdAt DateTime @default(now())
+
+  play Play @relation(fields: [playId], references: [id], onDelete: Cascade)
+
+  @@index([playId, viewerId])
+}
+
+/// 利用者からの通報。管理 UI は設けず、psql と通報メールで捌く。
+/// 対象の投稿・部屋・ユーザーは後から消えることがあるため、通報時点の
+/// 内容を bodySnapshot に控え、証拠保全と後追い調査を可能にする。
+model Report {
+  id           Int              @id @default(autoincrement())
+  targetType   ReportTargetType
+  /// 対象の識別子。種別により int(メッセージ/部屋) と cuid(ユーザー) が
+  /// 混在するため文字列で保持する
+  targetId     String
+  reason       ReportReason
+  detail       String?
+  /// 通報時点の対象内容の控え（投稿本文・部屋名・ユーザー名など）
+  bodySnapshot String
+  status       ReportStatus     @default(OPEN)
+
+  reporterId      String?
+  reporterGuestId String?
+
+  createdAt DateTime @default(now())
+
+  reporter User? @relation(fields: [reporterId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([targetType, targetId])
+}
+
+/// 運営者への自由記述の問い合わせ。返信は SES から個別に行う想定で、
+/// 返信先メールは任意入力（サインイン済みでもメールは自動取得しない）。
+model ContactMessage {
+  id         Int           @id @default(autoincrement())
+  name       String
+  replyEmail String?
+  body       String
+  status     ContactStatus @default(OPEN)
+
+  senderId      String?
+  senderGuestId String?
+
+  createdAt DateTime @default(now())
+
+  sender User? @relation(fields: [senderId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+}
+
 model Notification {
   id      Int              @id @default(autoincrement())
   userId  String
@@ -230,4 +353,37 @@ enum NotificationType {
   GAME_CRASHED
   GAME_ERROR_LOGGED
   CLIENT_LOG_SUBMITTED
+}
+
+enum ReportTargetType {
+  BOARD_MESSAGE
+  PLAY_CHAT_MESSAGE
+  PLAY
+  USER
+}
+
+enum ReportReason {
+  HARASSMENT
+  INAPPROPRIATE
+  PRIVACY
+  SPAM
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  IN_PROGRESS
+  ACTIONED
+  REJECTED
+}
+
+enum ContactStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+}
+
+enum BanOrigin {
+  MANUAL
+  VIA_BLOCK
 }

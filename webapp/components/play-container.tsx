@@ -25,7 +25,7 @@ export function PlayContainer() {
     const inviteHash = searchParams.get("inviteHash") ?? undefined;
     const [joinWord, setJoinWord] = useState("");
     const [submittedJoinWord, setSubmittedJoinWord] = useState<string>();
-    const { isLoading, data, error, requiresJoinWord, requiresSignIn } =
+    const { isLoading, data, error, requiresJoinWord, requiresSignIn, banned } =
         usePlay(id, inviteHash, submittedJoinWord);
     const [user] = useAuth();
     const container = useRef<HTMLDivElement>(null);
@@ -45,6 +45,15 @@ export function PlayContainer() {
     if (requiresSignIn) {
         return (
             <SignInAlert message="この部屋はサインインしたユーザーのみ参加できます。" />
+        );
+    }
+    if (banned) {
+        return (
+            <Container maxWidth="md" sx={{ mt: 2 }}>
+                <Alert variant="outlined" severity="error">
+                    あなたはこの部屋に入室できません。
+                </Alert>
+            </Container>
         );
     }
     if (requiresJoinWord) {

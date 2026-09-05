@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## 1.13.0
+
+- Feature
+  - BAN 機能として `Ban` テーブルと `BanOrigin` を追加
+  - 即時 BAN 用に `PlaySession` テーブル（発行した playToken の記録）を追加
+
+## 1.12.0
+
+- Feature
+  - 通報機能として `Report` テーブルを追加
+  - 問い合わせ機能として `ContactMessage` テーブルを追加
+
+## 1.11.0
+
+- Feature
+  - ミュート機能として `Mute` テーブルを追加
+
 ## 1.10.0
 
 - Feature

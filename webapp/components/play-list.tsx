@@ -40,6 +40,7 @@ import {
     SpeakerNotesOff,
 } from "@mui/icons-material";
 import { PlayInfo } from "@/lib/types";
+import { useLocalMutes } from "@/lib/client/useLocalMutes";
 import { usePlayList } from "@/lib/client/usePlayList";
 import { UserInline } from "./user-inline";
 import { SignInDialog } from "./sign-in-dialog";
@@ -65,9 +66,15 @@ function NoResult() {
 
 function PlayGrid({ list }: { list: PlayInfo[] }) {
     const theme = useTheme();
+    const localMutes = useLocalMutes();
+    // サインイン利用者の分はサーバーで除外済み。
+    // 未サインイン利用者のミュートは端末内にしかないためここで落とす
+    const visible = list.filter(
+        (info) => !localMutes.isMuted(info.gameMaster.anonKey),
+    );
     return (
         <Grid container spacing={2}>
-            {list.map((info) => (
+            {visible.map((info) => (
                 <Grid
                     key={info.id}
                     size={{

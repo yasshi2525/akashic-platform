@@ -22,6 +22,7 @@ import {
 import { KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
 import { PlayChatMessageInfo } from "@/lib/types";
 import { usePlayChatContext } from "@/lib/client/usePlayChatContext";
+import { useMute } from "@/lib/client/useMute";
 import { PlayChatHistory } from "./play-chat-history";
 
 const ROW_HEIGHT = 34;
@@ -115,6 +116,7 @@ function useCommentQueue(
     trackWidth: number,
 ) {
     const { incoming, consumeIncoming } = usePlayChatContext();
+    const mute = useMute("chat");
     const queueRef = useRef<PlayChatMessageInfo[]>([]);
     const [flowing, setFlowing] = useState<FlowingItem[]>([]);
 
@@ -122,9 +124,12 @@ function useCommentQueue(
         if (incoming.length === 0) {
             return;
         }
-        queueRef.current.push(...incoming);
+        // ミュート対象は画面上を流さない。流れてしまうと隠せないから
+        queueRef.current.push(
+            ...incoming.filter((message) => !mute.isMuted(message)),
+        );
         consumeIncoming(incoming[incoming.length - 1].id);
-    }, [incoming, consumeIncoming]);
+    }, [incoming, consumeIncoming, mute]);
 
     const handleMeasured = useCallback(
         (key: string, width: number) => {

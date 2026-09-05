@@ -523,4 +523,13 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         this._keyList.push(key);
         return token;
     }
+
+    /**
+     * 発行済みの playToken を失効させる。BAN で切断した相手が同じ token で
+     * 再認証するのを防ぐため、認証で参照する Valkey のキーを削除する。
+     */
+    async revokeToken(token: string) {
+        const key = genKey(ValkeyKey.Token, this._hashPlayId, token);
+        await this._valkey.del([key]);
+    }
 }

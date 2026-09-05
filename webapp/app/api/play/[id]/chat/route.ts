@@ -6,25 +6,40 @@ import {
     PLAY_CHAT_FETCH_LIMIT,
 } from "@/lib/server/play-chat";
 import { setPlayAccessCookie } from "@/lib/server/play-access-token";
+import { anonKey } from "@/lib/server/anon-key";
+import { getMuteSet, isMuted, MuteSet } from "@/lib/server/mute";
 
 type PlayChatRecord = {
     id: number;
     authorName: string;
+    guestId: string | null;
     body: string;
     createdAt: Date;
     author: { id: string; image: string | null } | null;
 };
 
-function toInfo(message: PlayChatRecord): PlayChatMessageInfo {
+function toInfo(
+    message: PlayChatRecord,
+    viewerId: string,
+    muteSet: MuteSet,
+): PlayChatMessageInfo {
+    const subject = {
+        authorId: message.author?.id,
+        guestId: message.guestId,
+    };
     return {
         id: message.id,
         author: {
             id: message.author?.id ?? undefined,
             name: message.authorName,
             iconURL: message.author?.image ?? undefined,
+            anonKey: anonKey(subject, viewerId),
+            isSelf:
+                viewerId === subject.authorId || viewerId === subject.guestId,
         },
         body: message.body,
         createdAt: message.createdAt,
+        muted: isMuted(muteSet, subject) || undefined,
     };
 }
 
@@ -47,6 +62,7 @@ export async function GET(
         if (!auth.ok) {
             return NextResponse.json({ ok: false, reason: auth.reason });
         }
+        const muteSet = await getMuteSet(auth.user);
         const messages = await prisma.playChatMessage.findMany({
             where: {
                 playId,
@@ -57,6 +73,7 @@ export async function GET(
             select: {
                 id: true,
                 authorName: true,
+                guestId: true,
                 body: true,
                 createdAt: true,
                 author: {
@@ -69,7 +86,9 @@ export async function GET(
         });
         const res = NextResponse.json<PlayChatGetResponse>({
             ok: true,
-            data: messages.reverse().map(toInfo),
+            data: messages
+                .reverse()
+                .map((message) => toInfo(message, auth.user.id, muteSet)),
         });
         if (auth.needsRenew) {
             setPlayAccessCookie(

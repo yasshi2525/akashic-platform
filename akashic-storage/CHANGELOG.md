@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.1.0
+
+- Feature
+  - 即時 BAN 用の admin API `/kick?playId&playToken` を追加。対象 playToken の socket を切断し、token を失効させて再認証を拒否する
+
 ## 2.0.0
 
 - Improve

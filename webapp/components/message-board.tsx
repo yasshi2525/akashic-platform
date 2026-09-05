@@ -36,7 +36,10 @@ import {
     BoardMessageFormState,
     postBoardMessageAction,
 } from "@/lib/server/board-message-post";
+import { useMute } from "@/lib/client/useMute";
 import { UserInline } from "./user-inline";
+import { MutedMessage } from "./muted-message";
+import { ModerationMenu } from "./moderation-menu";
 
 const initialFormState: BoardMessageFormState = {
     ok: true,
@@ -46,7 +49,7 @@ const initialFormState: BoardMessageFormState = {
 // タッチターゲットとして確保する最小高さ
 const COLLAPSED_BAR_MIN_HEIGHT = 48;
 
-function MessageItem({ message }: { message: BoardMessageInfo }) {
+function MessageBody({ message }: { message: BoardMessageInfo }) {
     return (
         <Stack spacing={0.25}>
             <Stack
@@ -83,6 +86,41 @@ function MessageItem({ message }: { message: BoardMessageInfo }) {
     );
 }
 
+function MessageItem({
+    message,
+    mute,
+}: {
+    message: BoardMessageInfo;
+    mute: ReturnType<typeof useMute>;
+}) {
+    if (mute.isMuted(message)) {
+        return (
+            <MutedMessage
+                menu={
+                    <ModerationMenu
+                        message={message}
+                        mute={mute}
+                        source="board"
+                    />
+                }
+            >
+                <MessageBody message={message} />
+            </MutedMessage>
+        );
+    }
+    return (
+        <Stack
+            direction="row"
+            sx={{ alignItems: "flex-start", columnGap: 0.5 }}
+        >
+            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                <MessageBody message={message} />
+            </Box>
+            <ModerationMenu message={message} mute={mute} source="board" />
+        </Stack>
+    );
+}
+
 function SendButton({ disabled }: { disabled: boolean }) {
     const { pending } = useFormStatus();
     return (
@@ -101,6 +139,7 @@ export function MessageBoard() {
     const theme = useTheme();
     const [user] = useAuth();
     const { isLoading, list, error, mutate } = useBoardMessages();
+    const mute = useMute("board", mutate);
     const [expanded, setExpanded] = useState(false);
     const [body, setBody] = useState("");
     const [guestName, setGuestName] = useLocalStorage(
@@ -114,7 +153,10 @@ export function MessageBoard() {
     const listRef = useRef<HTMLDivElement>(null);
 
     const messages = list ?? [];
-    const latest = messages.length ? messages[messages.length - 1] : undefined;
+    // 折りたたみ時のプレビューにミュート対象を出すと、隠した意味がなくなる
+    const latest = [...messages]
+        .reverse()
+        .find((message) => !mute.isMuted(message));
     const isOAuth = user?.authType === "oauth";
 
     useEffect(() => {
@@ -230,7 +272,9 @@ export function MessageBoard() {
                                 <CircularProgress size={24} />
                             </Stack>
                         ) : error ? (
-                            <Alert severity="error">{error}</Alert>
+                            <Alert variant="outlined" severity="error">
+                                {error}
+                            </Alert>
                         ) : messages.length === 0 ? (
                             <Typography
                                 variant="body2"
@@ -245,6 +289,7 @@ export function MessageBoard() {
                                     <MessageItem
                                         key={message.id}
                                         message={message}
+                                        mute={mute}
                                     />
                                 ))}
                             </Stack>
@@ -253,6 +298,15 @@ export function MessageBoard() {
                     {!state.ok && state.submitted && (
                         <Alert severity="warning" variant="outlined">
                             {state.message}
+                        </Alert>
+                    )}
+                    {mute.error && (
+                        <Alert
+                            severity="warning"
+                            variant="outlined"
+                            onClose={mute.clearError}
+                        >
+                            {mute.error}
                         </Alert>
                     )}
                     <Stack
