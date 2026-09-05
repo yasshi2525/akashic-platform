@@ -10,7 +10,7 @@ webapp 側のコードは `SES_FROM_ADDRESS` と `SES_ADMIN_ADDRESS` が両方�
 | ----------------------------------- | ------------------------------------------------------------------- |
 | `SES_FROM_ADDRESS`                  | 送信元。例 `noreply@multi-indiegame.net`（Custom MAIL FROM 配下）   |
 | `SES_ADMIN_ADDRESS`                 | 通報・問い合わせの通知先。運営が読む受信箱（転送先の個人 Gmail 等） |
-| `SES_REGION`                        | 省略時は `S3_REGION` → `ap-northeast-1` の順でフォールバック        |
+| `SES_REGION`                        | 省略時は `S3_REGION` → `us-east-1` の順でフォールバック             |
 | `SES_ENDPOINT`                      | ローカルの疑似 SES を使う場合のみ。本番は未設定                     |
 | `SES_ACCESS_KEY` / `SES_SECRET_KEY` | 本番は未設定にして IAM ロールの既定認証情報を使う（S3 と同じ方針）  |
 

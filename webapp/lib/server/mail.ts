@@ -11,9 +11,7 @@ function getClient() {
     if (!client) {
         client = new SESv2Client({
             region:
-                process.env.SES_REGION ??
-                process.env.S3_REGION ??
-                "ap-northeast-1",
+                process.env.SES_REGION ?? process.env.S3_REGION ?? "us-east-1",
             // ローカルの疑似 SES を向ける場合のみ指定
             endpoint: process.env.SES_ENDPOINT,
             credentials:
