@@ -18,10 +18,15 @@ AMFlow ハンドラ → Valkey R/W」が 1 トレースに連結され、どこ�
 ### 主要なスパンと属性
 
 - `amflow.sendTickPack` / `amflow.getTickList` / `amflow.putStartPoint` / `amflow.getStartPoint` / `amflow.authenticate`（SERVER）
+  - `amflow.getTickList` / `amflow.getStartPoint` は分割転送の完了までを 1 スパンで覆う。
+    転送はクライアントの ack 待ちで進むため、低速な回線の途中参加者では**分単位になるのが正常**。
+    - **`amflow.transfer.chunk.count`**: 送出して ack を得たチャンク数。
+      要求レンジの割にこれが少ない場合、途中で中断（切断・キャンセル・ack タイムアウト）している。
 - `valkey.pushTick`（CLIENT）
   - **`valkey.write_queue.depth`**: 書き込みキューの滞留量。`_drainValkeyQueue` は直列処理のため、断続ラグの主要因はまずここに現れる。
   - `amflow.event.count`, `amflow.tick.frame`
-- `valkey.getTickList`（CLIENT）: `amflow.score.count`, `amflow.tick.from/to`
+- `valkey.getTickList`（CLIENT）: `amflow.chunk.index`。
+  チャンク 1 件ごとに 1 スパンとなるため、1 回の `amflow.getTickList` の配下に複数ぶら下がる。
 - `valkey.putStartPoint` / `valkey.authenticate`（CLIENT）
 
 トレースから切り分かない場合は、ElastiCache の CloudWatch メトリクス

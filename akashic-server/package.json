@@ -18,7 +18,7 @@
   "license": "MIT",
   "devDependencies": {
     "@types/express": "^5.0.6",
-    "@yasshi2525/amflow-client-event-schema": "^1.1.0",
+    "@yasshi2525/amflow-client-event-schema": "^2.0.0",
     "prettier": "^3.8.3",
     "typescript": "^6.0.3"
   },
@@ -33,7 +33,7 @@
     "@opentelemetry/instrumentation-http": "^0.219.0",
     "@opentelemetry/propagator-aws-xray": "^2.2.0",
     "@opentelemetry/resources": "^2.8.0",
-    "@opentelemetry/sdk-node": "^0.219.0",
+    "@opentelemetry/sdk-node": "^0.221.0",
     "@opentelemetry/semantic-conventions": "^1.41.1",
     "@yasshi2525/persist-schema": "^1.10.0",
     "@yasshi2525/runner-ipc-schema": "^1.0.0",

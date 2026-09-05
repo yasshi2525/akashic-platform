@@ -1,6 +1,6 @@
 {
   "name": "@yasshi2525/akashic-platform",
-  "version": "2.1.0",
+  "version": "2.3.0",
   "private": true,
   "author": "yasshi2525",
   "license": "MIT",
@@ -23,14 +23,18 @@
   "overrides": {
     "postcss": "^8.5.10",
     "esbuild": "^0.28.1",
-    "@hono/node-server": "^1.19.13"
+    "@hono/node-server": "^1.19.13",
+    "minimatch": "^10.2.5",
+    "find-my-way": "^9.7.0",
+    "sharp": "^0.35.3",
+    "valibot": "^1.4.2"
   },
   "allowScripts": {
-    "@prisma/engines@7.8.0": true,
+    "@prisma/engines@7.9.0": true,
     "@scarf/scarf@1.4.0": true,
     "esbuild@0.28.1": true,
-    "prisma@7.8.0": true,
-    "protobufjs@7.6.4": true,
+    "prisma@7.9.0": true,
+    "protobufjs@7.6.5": true,
     "sharp@0.34.5": true,
     "unrs-resolver@1.12.2": true
   }

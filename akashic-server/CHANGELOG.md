@@ -5,6 +5,16 @@
 - Feature
   - 即時 BAN 用に webapp 認証の `/kick?playId&playToken` を追加し、storage admin の `/kick` へ転送する
 
+## 2.1.2
+
+- Fix
+  - akashic-runner から content-log を分割して受信するよう修正
+
+## 2.1.1
+
+- Misc
+  - `playlogClient-like` の更新に伴う再ビルド
+
 ## 2.1.0
 
 - Feature

@@ -1,4 +1,3 @@
-import type { PassThrough } from "node:stream";
 import type { AMFlow } from "@akashic/amflow";
 import { EventCode, JoinEvent, MessageEvent } from "@akashic/playlog";
 import { RunnerV3 } from "@akashic/headless-driver";
@@ -14,6 +13,7 @@ import {
     SessionLike,
 } from "@yasshi2525/playlog-client-like";
 import type { ControlClient } from "./controlClient";
+import type { LogSender } from "./logSender";
 import { playStorage } from "./logger";
 
 // `akashic-gameview` の ProtocolType と同じ。
@@ -27,7 +27,7 @@ export class ExecRunner {
     _runner?: RunnerV3;
     _session?: SessionLike;
     _onPlayEndBound: (reason: PlayEndReason) => void;
-    _logStream?: PassThrough;
+    _logSender?: LogSender;
     _crashing = false;
     _errorLogged = false;
     _reported = false;
@@ -40,9 +40,9 @@ export class ExecRunner {
 
     async start() {
         const playId = this._param.playId;
-        this._logStream = this._control.openLogStream(playId);
+        this._logSender = this._control.openLogSender(playId);
         await playStorage.run(
-            { playId, logStream: this._logStream },
+            { playId, logSink: this._logSender },
             async () => {
                 const ctx = playStorage.getStore();
                 if (ctx) {
@@ -73,10 +73,11 @@ export class ExecRunner {
             await this._closeSession(this._session);
             this._session = undefined;
         }
-        if (this._logStream && !this._logStream.writableEnded) {
-            this._logStream.end();
+        // 未送出のログを送り切ってから応答する。ここまでのログが content-log に載る。
+        if (this._logSender) {
+            await this._logSender.close();
+            this._logSender = undefined;
         }
-        this._logStream = undefined;
         return {
             ok: true,
             crashed: this._crashing,

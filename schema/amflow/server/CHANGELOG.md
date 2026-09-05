@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.0.0
+
+- Breaking Change
+  - 分割転送方式に変更
+
 ## 1.1.0
 
 - Feature

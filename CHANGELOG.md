@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.2.0
+## 2.3.0
 
 - Feature
   - ミュート機能を追加
@@ -27,6 +27,30 @@
       - `webapp` から `akashic-server` へのBAN情報を伝達
     - `./schema/persist`
       - 関連テーブル追加
+
+## 2.2.1
+
+- Fix
+  - 長期間出力されなかったログが content-log に出力されない (#114)
+    - `./akashic-runner`
+      - 分割送信するよう修正
+    - `./akashic-server`
+      - 分割受信するよう修正
+
+## 2.2.0
+
+- Improve
+  - `TickList`, `StartPoint` の分割送信・多重送信防止によるOOM防止
+    - `./akashic-storage`
+      - Valkey からの多重取得防止、分割して応答
+    - `./playlogClient-like`
+      - 受信された結果分割の再構成。
+    - `./schema/amflow`
+      - 分割転送のためのイベント・型を追加
+    - 上記ライブラリ更新による再ビルド
+      - `./webapp`
+      - `./akashic-server`
+      - `./akashic-runner`
 
 ## 2.1.0
 

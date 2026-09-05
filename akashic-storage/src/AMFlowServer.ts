@@ -111,12 +111,12 @@ export class AMFlowServer {
         this._eventSubscribers.delete(socket);
     }
 
-    async getTickList(opts: GetTickListOptions) {
-        return await this._store.getTickList(opts);
+    openTickListTransfer(opts: GetTickListOptions) {
+        return this._store.openTickListTransfer(opts);
     }
 
-    async getStartPoint(opts: GetStartPointOptions) {
-        return await this._store.getStartPoint(opts);
+    async openStartPointTransfer(opts: GetStartPointOptions) {
+        return await this._store.openStartPointTransfer(opts);
     }
 
     async putStartPoint(startPoint: StartPoint) {

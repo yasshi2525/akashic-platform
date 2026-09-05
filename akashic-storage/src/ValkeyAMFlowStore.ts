@@ -260,60 +260,84 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         }
     }
 
-    async getTickList(opts: GetTickListOptions): Promise<TickList | null> {
+    /**
+     * getTickList の応答を分割転送するための入口。
+     * 対象フレームが存在しない場合は null を返す。
+     *
+     * NOTE: 範囲確定とチャンク列の生成を 1 回の呼び出しにまとめている。
+     * 別々に呼ぶと、その間に進行した tick によって応答ヘッダの `to` と
+     * 実際に流すデータの範囲がずれる。
+     */
+    openTickListTransfer(opts: GetTickListOptions) {
         const from = opts.begin;
         const to = Math.min(opts.end - 1, this._latestTickFrame);
         if (to < from) {
             return null;
         }
         const filterIgnorable = opts.excludeEventFlags?.ignorable ?? false;
-
-        const ticks = await this._collectTicks(from, to, filterIgnorable);
-        return ticks.length > 0 ? [from, to, ticks] : [from, to];
+        return {
+            from,
+            to,
+            chunks: this._streamTicks(from, to, filterIgnorable),
+        };
     }
 
-    private async _collectTicks(
+    /**
+     * 指定範囲の Tick をチャンク単位で順に yield する。
+     * 対象が 1 件も無い場合でも、空配列を 1 度だけ yield する。
+     *
+     * NOTE: 全チャンクをまとめて取得・連結すると、長時間プレイの全ログ要求
+     * （途中参加者）で数十 MB のヒープを一度に確保することになる。Valkey への
+     * 問い合わせも 1 チャンクずつに分け、消費された分だけメモリに載るようにしている。
+     */
+    private async *_streamTicks(
+        from: number,
+        to: number,
+        filterIgnorable: boolean,
+    ): AsyncGenerator<Tick[]> {
+        const firstChunk = Math.floor(from / this._chunkSize);
+        const lastChunk = Math.floor(to / this._chunkSize);
+
+        let yielded = false;
+        for (let idx = firstChunk; idx <= lastChunk; idx++) {
+            const ticks =
+                this._getMemoryChunk(idx) ??
+                (await this._fetchChunkFromValkey(idx));
+            if (!ticks) {
+                continue;
+            }
+            const selected = this._selectTicks(
+                ticks,
+                from,
+                to,
+                filterIgnorable,
+            );
+            if (selected.length === 0) {
+                continue;
+            }
+            yielded = true;
+            yield selected;
+        }
+        if (!yielded) {
+            yield [];
+        }
+    }
+
+    private _selectTicks(
+        ticks: Tick[],
         from: number,
         to: number,
         filterIgnorable: boolean,
     ) {
-        const firstChunk = Math.floor(from / this._chunkSize);
-        const lastChunk = Math.floor(to / this._chunkSize);
-
-        const chunkTicksByIndex = new Map<number, Tick[]>();
-        const valkeyChunkIndices: number[] = [];
-        for (let idx = firstChunk; idx <= lastChunk; idx++) {
-            const memTicks = this._getMemoryChunk(idx);
-            if (memTicks) {
-                chunkTicksByIndex.set(idx, memTicks);
-            } else {
-                valkeyChunkIndices.push(idx);
-            }
-        }
-
-        if (valkeyChunkIndices.length > 0) {
-            const fetched =
-                await this._fetchChunksFromValkey(valkeyChunkIndices);
-            for (const [idx, ticks] of fetched) {
-                chunkTicksByIndex.set(idx, ticks);
-            }
-        }
-
         const result: Tick[] = [];
-        for (let idx = firstChunk; idx <= lastChunk; idx++) {
-            const ticks = chunkTicksByIndex.get(idx);
-            if (!ticks) {
+        for (const tick of ticks) {
+            const frame = tick[TickIndex.Frame];
+            if (frame < from || frame > to) {
                 continue;
             }
-            for (const tick of ticks) {
-                const frame = tick[TickIndex.Frame];
-                if (frame < from || frame > to) {
-                    continue;
-                }
-                const events = this._filterEvents(tick, filterIgnorable);
-                if (events && events.length > 0) {
-                    result.push([frame, events]);
-                }
+            const events = this._filterEvents(tick, filterIgnorable);
+            if (events && events.length > 0) {
+                result.push([frame, events]);
             }
         }
         return result;
@@ -340,40 +364,30 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         );
     }
 
-    private async _fetchChunksFromValkey(chunkIndices: number[]) {
+    private async _fetchChunkFromValkey(chunkIndex: number) {
         return withValkeySpan(
             "valkey.getTickList",
             {
                 "db.system": "valkey",
                 "play.id": this.playId,
-                "amflow.chunk.count": chunkIndices.length,
-                "amflow.chunk.first": chunkIndices[0],
-                "amflow.chunk.last": chunkIndices[chunkIndices.length - 1],
+                "amflow.chunk.index": chunkIndex,
             },
             async () => {
-                const keys = chunkIndices.map((idx) =>
-                    genKey(ValkeyKey.TickChunk, this._hashPlayId, idx),
+                const value = await this._valkey.get(
+                    genKey(ValkeyKey.TickChunk, this._hashPlayId, chunkIndex),
                 );
-                const values = await this._valkey.mget(keys);
-                const result = new Map<number, Tick[]>();
-                values.forEach((value, i) => {
-                    if (value == null) {
-                        return;
-                    }
-                    const chunkIndex = chunkIndices[i];
-                    try {
-                        result.set(
-                            chunkIndex,
-                            JSON.parse(value.toString()) as Tick[],
-                        );
-                    } catch (err) {
-                        console.warn(
-                            `failed to parse tick chunk (playId = ${this.playId}, chunkIndex = ${chunkIndex})`,
-                            err,
-                        );
-                    }
-                });
-                return result;
+                if (value == null) {
+                    return null;
+                }
+                try {
+                    return JSON.parse(value.toString()) as Tick[];
+                } catch (err) {
+                    console.warn(
+                        `failed to parse tick chunk (playId = ${this.playId}, chunkIndex = ${chunkIndex})`,
+                        err,
+                    );
+                    return null;
+                }
             },
         );
     }
@@ -413,7 +427,11 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         return write;
     }
 
-    async getStartPoint(opts: GetStartPointOptions) {
+    /**
+     * getStartPoint の応答を分割転送するための入口。
+     * StartPoint を JSON 直列化した文字列を返す。該当が無い場合は null。
+     */
+    async openStartPointTransfer(opts: GetStartPointOptions) {
         const isFirst =
             opts.frame === 0 || (opts.frame == null && opts.timestamp == null);
 
@@ -434,7 +452,7 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         if (!target) {
             return null;
         }
-        return this._restoreStartPoint(target.id);
+        return this._restoreRawStartPoint(target.id);
     }
 
     private _findLatest(
@@ -450,10 +468,10 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
         return best;
     }
 
-    private async _restoreStartPoint(id: number) {
+    private async _restoreRawStartPoint(id: number) {
         const pending = this._pendingStartPoints.get(id);
         if (pending) {
-            return pending;
+            return JSON.stringify(pending);
         }
         const startpoint = await withValkeySpan(
             "valkey.getStartPoint",
@@ -473,15 +491,10 @@ export class ValkeyAMFlowStore extends AMFlowStoreBase {
             );
             return null;
         }
-        try {
-            return JSON.parse(startpoint.toString()) as StartPoint;
-        } catch (err) {
-            console.warn(
-                `failed to parse startpoint "${startpoint}" (playId = ${this.playId}, startpointId = ${id})`,
-                err,
-            );
-            return null;
-        }
+        // NOTE: Valkey には JSON 直列化した文字列を保存しているため、parse せず
+        // そのまま転送する。スナップショットは数 MB になり得るので、
+        // parse と再直列化を挟むだけでピークメモリが数倍に膨らむ。
+        return startpoint.toString();
     }
 
     async destroy() {
