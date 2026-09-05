@@ -77,14 +77,19 @@ export class AMFlowServer {
     /**
      * 指定した playToken で認証済みの socket を即時切断し、token を失効させる。
      * 切断だけでは同じ token で再認証できてしまうため、Valkey からも消す。
+     *
+     * 失効を切断より先に行う。逆順だと、失効の await 中に対象 token で認証を
+     * 済ませた socket が切断ループを通過した後に残り、生き残ってしまう。
+     * 先に失効させておけば、以降の認証は token 無しで失敗し、失効 await 中に
+     * 認証を終えた socket は後続の切断ループで捕捉できる。
      */
     async kick(playToken: string) {
+        await this._store.revokeToken(playToken);
         for (const [socket, token] of this._socketTokens) {
             if (token === playToken) {
                 socket.disconnect(true);
             }
         }
-        await this._store.revokeToken(playToken);
     }
 
     async sendTickPack(tickPack: TickPack) {

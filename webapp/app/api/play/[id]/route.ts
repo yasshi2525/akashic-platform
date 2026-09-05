@@ -16,6 +16,7 @@ import { isFavorited } from "@/lib/server/favorite";
 import { setPlayAccessCookie } from "@/lib/server/play-access-token";
 import { isBannedFromPlay } from "@/lib/server/ban";
 import { recordPlaySession } from "@/lib/server/play-session";
+import { kickViewerFromPlays } from "@/lib/server/play-kick";
 
 const playViewSelect = {
     id: true,
@@ -207,9 +208,21 @@ export async function GET(
             },
         });
         if (user) {
-            setPlayAccessCookie(res, play.id, user.id, req.cookies.getAll());
             // BAN 時の即時切断ハンドルとして発行 token を記録する
             await recordPlaySession(play.id, user.id, playToken);
+            // 記録の後にもう一度 BAN 判定する。入室と BAN 発行が競合しても、
+            // 記録済みなら自分の token を確実に失効させられる（発行側 kick が
+            // 記録前に走って取りこぼしても、ここで拾う）
+            if (
+                await isBannedFromPlay(user, {
+                    id: play.id,
+                    gmUserId: play.gmUser?.id ?? null,
+                })
+            ) {
+                await kickViewerFromPlays([play.id], user.id);
+                return NextResponse.json({ ok: false, reason: "Banned" });
+            }
+            setPlayAccessCookie(res, play.id, user.id, req.cookies.getAll());
         }
         return res;
     } catch (err) {
