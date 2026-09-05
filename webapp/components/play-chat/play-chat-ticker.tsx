@@ -117,6 +117,10 @@ function useCommentQueue(
 ) {
     const { incoming, consumeIncoming } = usePlayChatContext();
     const mute = useMute("chat");
+    // useMute は毎レンダー新しいオブジェクトを返すため、effect の依存にすると
+    // 毎回張り替わってしまう。最新の判定関数を ref で持ち、200ms ループから読む
+    const muteRef = useRef(mute);
+    muteRef.current = mute;
     const queueRef = useRef<PlayChatMessageInfo[]>([]);
     const [flowing, setFlowing] = useState<FlowingItem[]>([]);
 
@@ -149,11 +153,13 @@ function useCommentQueue(
         }
         const intervalId = setInterval(() => {
             const now = Date.now();
+            // 表示終了に加え、流れている最中にミュートされた分もここで落とす
             setFlowing((prev) =>
                 prev.filter(
                     (item) =>
-                        item.durationMs == null ||
-                        now < item.startedAt + item.durationMs,
+                        !muteRef.current.isMuted(item.message) &&
+                        (item.durationMs == null ||
+                            now < item.startedAt + item.durationMs),
                 ),
             );
             const track = trackRef.current;
@@ -171,7 +177,17 @@ function useCommentQueue(
                     return;
                 }
             }
-            const next = queueRef.current.shift()!;
+            // 待機中にミュートされた分は表示せず読み飛ばす。列に空きを取らせない
+            // ので、先頭に溜まったミュート対象はまとめて捨ててよい
+            let next: PlayChatMessageInfo | undefined;
+            while ((next = queueRef.current.shift())) {
+                if (!muteRef.current.isMuted(next)) {
+                    break;
+                }
+            }
+            if (!next) {
+                return;
+            }
             setFlowing((prev) => [
                 ...prev,
                 { key: `${next.id}-${now}`, message: next, startedAt: now },
