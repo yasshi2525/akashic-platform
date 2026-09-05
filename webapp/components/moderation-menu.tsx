@@ -187,7 +187,7 @@ export function ModerationMenu({
                         secondary={
                             mute.isPersisted
                                 ? undefined
-                                : "サインインすると他の端末にも引き継げます"
+                                : "サインインするとミュート設定を他端末と共有できます"
                         }
                     />
                 </MenuItem>

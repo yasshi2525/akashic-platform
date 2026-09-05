@@ -35,6 +35,7 @@ import {
 import { AnonymousPlayInfo, GameInfo } from "@/lib/types";
 import { useGameList } from "@/lib/client/useGameList";
 import { useAnonymousPlayList } from "@/lib/client/usePlayList";
+import { useLocalMutes } from "@/lib/client/useLocalMutes";
 import { UserInline } from "./user-inline";
 import { SignIn } from "./sign-in";
 
@@ -352,7 +353,15 @@ function LiveRoomsSection({
     onRequestSignIn: () => void;
 }) {
     const { isLoading, list, isEmpty } = useAnonymousPlayList();
-    const rooms = useMemo(() => list?.flat() ?? [], [list]);
+    const localMutes = useLocalMutes();
+    // 未サインイン利用者のミュートは端末内にしかないためここで落とす
+    const rooms = useMemo(
+        () =>
+            (list?.flat() ?? []).filter(
+                (room) => !localMutes.isMuted(room.ownerAnonKey),
+            ),
+        [list, localMutes],
+    );
 
     if (isLoading) {
         return (

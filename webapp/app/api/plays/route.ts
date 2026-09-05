@@ -129,15 +129,16 @@ export async function GET(req: NextRequest) {
     if (anonymous) {
         return NextResponse.json({
             ok: true,
-            data: result.map(
-                ({
+            data: result.map((play) => {
+                const {
                     id,
                     isLimited,
                     requireSignIn,
                     chatEnabled,
                     content,
                     createdAt,
-                }) => ({
+                } = play;
+                return {
                     id,
                     isLimited,
                     requireSignIn,
@@ -146,12 +147,17 @@ export async function GET(req: NextRequest) {
                         title: content.game.title,
                         iconURL: `${publicContentBaseUrl}/${content.id}/${content.icon}`,
                     },
+                    // 匿名一覧でも端末内ミュートで部屋を隠せるよう anonKey を返す。
+                    // 閲覧者スコープの非可逆ハッシュなので作者の身元は漏れない
+                    ownerAnonKey: viewer
+                        ? anonKey(gameMasterOf(play), viewer.id)
+                        : undefined,
                     participants:
                         participants.find((p) => p.id === id)?.participants ??
                         0,
                     createdAt,
-                }),
-            ) satisfies AnonymousPlayInfo[],
+                };
+            }) satisfies AnonymousPlayInfo[],
         });
     }
     return NextResponse.json({

@@ -68,7 +68,10 @@ export interface PlayInfo {
     createdAt: Date;
 }
 
-export type AnonymousPlayInfo = Omit<PlayInfo, "playName" | "gameMaster">;
+export type AnonymousPlayInfo = Omit<PlayInfo, "playName" | "gameMaster"> & {
+    /** 未サインイン利用者が端末内ミュートで部屋を隠すのに使う（身元は含まない） */
+    ownerAnonKey?: string;
+};
 
 export const FEEDBACK_LIMITS = 10;
 

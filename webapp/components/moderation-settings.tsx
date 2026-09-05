@@ -133,7 +133,7 @@ function LocalMutes() {
     return (
         <Stack spacing={1}>
             <Alert severity="info" variant="outlined">
-                サインインしていないため、ミュートはこの端末にのみ保存されます。サインインすると他の端末にも引き継げます。
+                サインインしていないため、ミュートはこの端末にのみ保存されます。サインインするとミュート設定を他端末と共有できるようになります（サインインすると下記の設定は引き継がれません）。
             </Alert>
             <Typography variant="body2" color="textSecondary">
                 {entries.length} / {MUTE_LIMIT_DEFAULT} 件

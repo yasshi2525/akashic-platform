@@ -170,6 +170,12 @@ export async function unmuteAuthorAction(
     if (!message) {
         return failure("対象の投稿が見つかりませんでした。");
     }
+    // 作者削除済み（onDelete: SetNull）で authorId/guestId が両方 null だと
+    // { targetGuestId: null } になり、対サインインユーザーのミュートを一括削除
+    // してしまう。対象を特定できないので登録側と同様に弾く
+    if (!message.authorId && !message.guestId) {
+        return failure("対象の投稿が見つかりませんでした。");
+    }
     const target = message.authorId
         ? { targetUserId: message.authorId }
         : { targetGuestId: message.guestId };
