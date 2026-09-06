@@ -72,12 +72,8 @@ export function usePlay(
     );
     return {
         isLoading: isLoading || !user,
-        data: data
-            ? {
-                  ...data,
-                  isGameMaster: !!user && user.id === data.gameMaster.id,
-              }
-            : undefined,
+        // isGameMaster はサーバーが認証種別込みで判定して返す
+        data: data ?? undefined,
         requiresJoinWord: requiresJoinWord(error),
         requiresSignIn: requiresSignIn(error),
         banned: isBanned(error),

@@ -440,9 +440,13 @@ interface BasePlayViewInfo {
     isLimited: boolean;
     requireSignIn: boolean;
     chatEnabled: boolean;
+    /** 閲覧者がこの部屋の部屋主か。サーバーが認証種別込みで判定して返す */
+    isGameMaster: boolean;
     game: GameInfo;
     gameMaster: {
-        id: string;
+        // ゲスト部屋主の gameMasterId は httpOnly な guest_id そのもので、
+        // 応答に載せると参加者に詐称されるため id は返さない（部屋主判定は
+        // 上の isGameMaster を使う）。userId は OAuth 利用者の公開 id のみ
         userId?: string;
         name: string;
         iconURL?: string;

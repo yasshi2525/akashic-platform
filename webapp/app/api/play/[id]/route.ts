@@ -17,7 +17,7 @@ import { setPlayAccessCookie } from "@/lib/server/play-access-token";
 import { isBannedFromPlay } from "@/lib/server/ban";
 import { recordPlaySession } from "@/lib/server/play-session";
 import { kickViewerFromPlays } from "@/lib/server/play-kick";
-import { sessionViewerId } from "@/lib/server/viewer-identity";
+import { isRoomOwner, sessionViewerId } from "@/lib/server/viewer-identity";
 
 const playViewSelect = {
     id: true,
@@ -83,8 +83,14 @@ async function closedPlayResponse(
             chatEnabled: play.chatEnabled,
             createdAt: play.createdAt,
             endedAt: play.endedAt ?? undefined,
+            isGameMaster: isRoomOwner(
+                {
+                    gameMasterId: play.gameMasterId,
+                    gmUserId: play.gmUser?.id ?? null,
+                },
+                user,
+            ),
             gameMaster: {
-                id: play.gameMasterId,
                 userId: play.gmUser?.id ?? undefined,
                 name: play.gmUser?.name ?? GUEST_NAME,
                 iconURL: play.gmUser?.image ?? undefined,
@@ -184,8 +190,14 @@ export async function GET(
                 chatEnabled: play.chatEnabled,
                 joinWord: play.joinWord ?? undefined,
                 inviteHash: play.inviteHash ?? undefined,
+                isGameMaster: isRoomOwner(
+                    {
+                        gameMasterId: play.gameMasterId,
+                        gmUserId: play.gmUser?.id ?? null,
+                    },
+                    user,
+                ),
                 gameMaster: {
-                    id: play.gameMasterId,
                     userId: play.gmUser?.id ?? undefined,
                     name: play.gmUser?.name ?? GUEST_NAME,
                     iconURL: play.gmUser?.image ?? undefined,

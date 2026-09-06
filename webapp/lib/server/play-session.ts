@@ -1,5 +1,6 @@
 import { prisma } from "@yasshi2525/persist-schema";
 import { PLAY_SESSION_LIMIT_DEFAULT } from "../types";
+import { revokeSessions } from "./play-kick";
 
 // 視聴者×部屋あたりの PlaySession 上限。リロード/再検証で無制限に増えると
 // BAN 時の kick fan-out が肥大化するため、古い記録を間引いて抑える。
@@ -21,20 +22,18 @@ export async function recordPlaySession(
     await prisma.playSession.create({
         data: { playId, viewerId, playToken },
     });
-    // 上限超過分の古い記録を間引く。記録自体は成功済みなので best-effort とし、
-    // 間引きの失敗で入室を止めない
+    // 上限超過分の古い記録を間引く。ただし token を失効させずに行だけ消すと、
+    // 参加者が古い token を保持したまま水増しして追跡対象から外れ、BAN を
+    // 生き延びられてしまう。よって失効(revoke)してから削除する。記録自体は
+    // 成功済みなので best-effort とし、間引きの失敗で入室を止めない
     try {
         const stale = await prisma.playSession.findMany({
             where: { playId, viewerId },
             orderBy: { id: "desc" },
             skip: PLAY_SESSION_LIMIT,
-            select: { id: true },
+            select: { id: true, playId: true, playToken: true },
         });
-        if (stale.length > 0) {
-            await prisma.playSession.deleteMany({
-                where: { id: { in: stale.map((s) => s.id) } },
-            });
-        }
+        await revokeSessions(stale, "prune");
     } catch (err) {
         console.warn(
             `failed to prune play sessions (playId = "${playId}")`,
