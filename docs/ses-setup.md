@@ -6,15 +6,21 @@ webapp 側のコードは `SES_FROM_ADDRESS` と `SES_ADMIN_ADDRESS` が両方�
 
 ## 環境変数（webapp）
 
-| 変数                                | 用途                                                                |
-| ----------------------------------- | ------------------------------------------------------------------- |
-| `SES_FROM_ADDRESS`                  | 送信元。例 `noreply@example.com`（Custom MAIL FROM 配下）   |
-| `SES_ADMIN_ADDRESS`                 | 通報・問い合わせの通知先。運営が読む受信箱（転送先の個人 Gmail 等） |
-| `SES_REGION`                        | 省略時は `S3_REGION` → `us-east-1` の順でフォールバック             |
-| `SES_ENDPOINT`                      | ローカルの疑似 SES を使う場合のみ。本番は未設定                     |
-| `SES_ACCESS_KEY` / `SES_SECRET_KEY` | 本番は未設定にして IAM ロールの既定認証情報を使う（S3 と同じ方針）  |
+| 変数                                | 用途                                                                                                                                                          |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SES_FROM_ADDRESS`                  | 送信元。例 `noreply@example.com`（Custom MAIL FROM 配下）                                                                                                     |
+| `SES_ADMIN_ADDRESS`                 | 通報・問い合わせの通知先。運営が読む受信箱。support@ を Lambda で転送する構成なら `support@example.com` 自体でよい（転送先の管理を forwarder に一元化できる） |
+| `SES_REGION`                        | 省略時は `S3_REGION` → `us-east-1` の順でフォールバック                                                                                                       |
+| `SES_ENDPOINT`                      | ローカルの疑似 SES を使う場合のみ。本番は未設定                                                                                                               |
+| `SES_ACCESS_KEY` / `SES_SECRET_KEY` | 本番は未設定にして IAM ロールの既定認証情報を使う（S3 と同じ方針）                                                                                            |
 
 IAM ロールには `ses:SendEmail` を許可する。
+
+`SES_ADMIN_ADDRESS` を `support@example.com` にすると、通知メールは「SES 送信 → MX → SES 受信 → S3 保存 → Lambda → 個人 Gmail へ転送」という一往復を経由する。以下だけ注意する。
+
+- 転送先（`aws-lambda-ses-forwarder` の `forwardMapping`）に `support@example.com` 自身など受信ルール対象のアドレスを入れない。転送ループになる。
+- 受信バケットには通知メールも溜まる。ライフサイクルルールで一定期間後に削除する。
+- 転送 Lambda が壊れると通知も問い合わせも同時に止まる。原本は S3 に残るので後から追える。
 
 ## 送信（Sending）
 
@@ -34,7 +40,22 @@ ap-northeast-1 は SES の受信に対応（`inbound-smtp.ap-northeast-1.amazona
 3. **Lambda で転送**: 受信メールを個人 Gmail へ転送する。素朴に転送すると転送元の SPF が壊れて Gmail に弾かれるため、Lambda で以下を行う（`aws-lambda-ses-forwarder` が定番実装）:
    - `From:` を `support@example.com`（自ドメイン）に書き換える
    - `Reply-To:` に元の送信者を入れる
-4. **返信**: Gmail の「名前を指定して送信（send mail as）」で `support@example.com` を追加し、SES SMTP 認証情報で送信する。差出人を support@ にして返信できる。
+4. **返信**: Gmail の「名前を指定して送信（send mail as）」で `support@example.com` を追加し、SES SMTP 認証情報で送信する。差出人を support@ にして返信できる（次節）。
+
+### support@ として問い合わせに返信する
+
+問い合わせフォームで返信先アドレスが入力されると、webapp は通知メールの `Reply-To` にそれを入れて送る。`aws-lambda-ses-forwarder` は既存の `Reply-To` を上書きしないため、転送されてきたメールに Gmail で「返信」すると宛先は自動的に問い合わせ者になる。あとは差出人を support@ にするだけで、利用者からは support@ とのやり取りに見える。個人 Gmail のアドレスは相手に出ない。
+
+セットアップ（1 回だけ）:
+
+1. **サンドボックス解除が前提**。未解除だと検証済みアドレス以外に送れないので、問い合わせ者へ返信できない。
+2. SES コンソール → **SMTP settings** → 「Create SMTP credentials」で SMTP ユーザー名・パスワードを発行する（実体は IAM ユーザー）。
+3. Gmail → 設定 → **アカウントとインポート** → 「他のメールアドレスを追加」で `support@example.com` を追加。「エイリアスとして扱う」は ON。SMTP サーバーは **`email-smtp.ap-northeast-1.amazonaws.com` / ポート 587 / TLS**、ユーザー名・パスワードは 2 で発行したもの。
+   - ここで Gmail 側のサーバーを選ぶと、DMARC 上は Gmail から自ドメイン名義で送ることになり弾かれる。必ず SES の SMTP を指定する。
+4. 追加時の確認コードは `support@example.com` 宛に届き、通常の受信フロー（S3 → Lambda → 転送）で Gmail に落ちてくる。それを入力して完了。
+5. 「デフォルトの返信モード」を「メールを受信したアドレスから返信する」にしておく。ただし転送メールは `Delivered-To` が個人アドレスのため support@ が自動選択されないことがある。**送信前に差出人が support@ になっているか都度確認する**。
+
+利用者が返信すると再び MX → SES 受信 → 転送で Gmail に届くので、以降は同じスレッド上でやり取りが続く。
 
 ### 2026年1月の Gmail 仕様変更について
 
