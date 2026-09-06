@@ -144,11 +144,13 @@ export function ModerationMenu({
     const [banOpen, setBanOpen] = useState(false);
     const muted = mute.isMuted(message);
 
-    // 匿名キーも投稿者 ID も無い投稿 (削除済みユーザーなど) は対象にできない。
     // 自分の投稿はミュート・通報・BAN いずれも対象外なのでメニュー自体を出さない
-    if (!message.author.anonKey || message.author.isSelf) {
+    if (message.author.isSelf) {
         return null;
     }
+    // 匿名キーも投稿者 ID も無い投稿 (削除済みユーザーなど) は投稿者を対象に
+    // できないためミュート・BAN は出せないが、投稿自体は通報できるので通報は残す
+    const canTargetAuthor = !!message.author.anonKey;
 
     return (
         <>
@@ -165,32 +167,34 @@ export function ModerationMenu({
                 open={!!anchorEl}
                 onClose={() => setAnchorEl(null)}
             >
-                <MenuItem
-                    onClick={() => {
-                        mute.toggle(message);
-                        setAnchorEl(null);
-                    }}
-                >
-                    <ListItemIcon>
-                        {muted ? (
-                            <Visibility fontSize="small" />
-                        ) : (
-                            <VisibilityOff fontSize="small" />
-                        )}
-                    </ListItemIcon>
-                    <ListItemText
-                        primary={
-                            muted
-                                ? "この人のミュートを解除"
-                                : "この人をミュート"
-                        }
-                        secondary={
-                            mute.isPersisted
-                                ? undefined
-                                : "サインインするとミュート設定を他端末と共有できます"
-                        }
-                    />
-                </MenuItem>
+                {canTargetAuthor && (
+                    <MenuItem
+                        onClick={() => {
+                            mute.toggle(message);
+                            setAnchorEl(null);
+                        }}
+                    >
+                        <ListItemIcon>
+                            {muted ? (
+                                <Visibility fontSize="small" />
+                            ) : (
+                                <VisibilityOff fontSize="small" />
+                            )}
+                        </ListItemIcon>
+                        <ListItemText
+                            primary={
+                                muted
+                                    ? "この人のミュートを解除"
+                                    : "この人をミュート"
+                            }
+                            secondary={
+                                mute.isPersisted
+                                    ? undefined
+                                    : "サインインするとミュート設定を他端末と共有できます"
+                            }
+                        />
+                    </MenuItem>
+                )}
                 <MenuItem
                     onClick={() => {
                         setReportOpen(true);
@@ -202,7 +206,7 @@ export function ModerationMenu({
                     </ListItemIcon>
                     <ListItemText primary="この投稿を通報" />
                 </MenuItem>
-                {banContext && (
+                {canTargetAuthor && banContext && (
                     <MenuItem
                         onClick={() => {
                             setBanOpen(true);

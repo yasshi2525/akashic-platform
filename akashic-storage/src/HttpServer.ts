@@ -188,18 +188,33 @@ export class HttpServer {
                 res.status(400).json({ ok: false, reason: "InvalidParams" });
                 return;
             }
+            let server;
             try {
-                await this._amfManager
-                    .getServer(playId.toString())
-                    .kick(playToken.toString());
-                res.json({ ok: true });
+                server = this._amfManager.getServer(playId.toString());
             } catch (err) {
                 // 部屋が既に終了していれば切断対象は存在しない。BAN は再入室
-                // 拒否側 (webapp) で担保されるため、ここは正常応答でよい
+                // 拒否側 (webapp) で担保されるため、ここは skip 応答でよい
                 console.warn(
                     `kick skipped (playId = "${playId}", cause = "${(err as Error).message}")`,
                 );
                 res.json({ ok: true, skipped: true });
+                return;
+            }
+            try {
+                await server.kick(playToken.toString());
+                res.json({ ok: true });
+            } catch (err) {
+                // token 失効/切断の失敗は token が有効なまま残る。成功扱いに
+                // すると webapp が再試行の控え (PlaySession) を消してしまうため
+                // 非 2xx で返し、失敗を伝播させる
+                console.warn(
+                    `kick failed (playId = "${playId}", cause = "${(err as Error).message}")`,
+                );
+                res.status(502).json({
+                    ok: false,
+                    reason: "KickFailed",
+                    message: `failed to kick. (playId = "${playId}", cause = "${(err as Error).message}")`,
+                });
             }
         });
 
