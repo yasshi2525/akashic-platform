@@ -209,6 +209,8 @@ export const BOARD_MESSAGE_NAME_MAX = 20;
 export const MUTE_LIMIT_DEFAULT = 200;
 export const MUTE_LABEL_BODY_MAX = 40;
 export const BAN_LIMIT_DEFAULT = 200;
+/** 視聴者×部屋あたりの PlaySession 上限（BAN 時 kick の fan-out を抑える） */
+export const PLAY_SESSION_LIMIT_DEFAULT = 100;
 
 export const REPORT_DETAIL_MAX = 1000;
 export const CONTACT_BODY_MAX = 2000;

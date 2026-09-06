@@ -147,10 +147,14 @@ export async function GET(
         if (!play.isActive) {
             return closedPlayResponse(play, user);
         }
-        const denied = await checkLimitedPlayAccess(play, user, {
-            joinWord,
-            inviteHash,
-        });
+        const denied = await checkLimitedPlayAccess(
+            { ...play, gmUserId: play.gmUser?.id ?? null },
+            user,
+            {
+                joinWord,
+                inviteHash,
+            },
+        );
         if (denied) {
             return NextResponse.json(denied);
         }

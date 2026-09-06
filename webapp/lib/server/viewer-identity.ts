@@ -22,6 +22,24 @@ export function isSameViewer(
 }
 
 /**
+ * 視聴者がこの部屋の部屋主(GM)本人か、認証種別を含めて判定する。
+ * `gmUserId` が入っていれば GM はサインイン利用者なので oauth 閲覧者のみ、
+ * 無ければゲスト部屋主なので guest 閲覧者のみと突き合わせる。生 id 比較だと
+ * ゲストが部屋主の公開 OAuth id を騙って GM 認可を得られてしまう。
+ */
+export function isRoomOwner(
+    play: { gameMasterId: string; gmUserId: string | null },
+    viewer: Pick<User, "authType" | "id"> | null | undefined,
+): boolean {
+    if (!viewer) {
+        return false;
+    }
+    return play.gmUserId
+        ? viewer.authType === "oauth" && viewer.id === play.gmUserId
+        : viewer.authType === "guest" && viewer.id === play.gameMasterId;
+}
+
+/**
  * PlaySession に記録する視聴者識別子。認証種別を接頭辞にして名前空間を分け、
  * ゲストが他人の id を騙っても別ユーザーの session と衝突しないようにする。
  */

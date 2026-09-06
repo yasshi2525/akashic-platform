@@ -112,9 +112,13 @@ export async function GET(
         if (!user) {
             return NextResponse.json({ ok: false, reason: "InternalError" });
         }
-        const denied = await checkLimitedPlayAccess(play, user, {
-            joinWord,
-        });
+        const denied = await checkLimitedPlayAccess(
+            { ...play, gmUserId: gmUser.id },
+            user,
+            {
+                joinWord,
+            },
+        );
         if (denied) {
             return NextResponse.json({
                 ok: true,
