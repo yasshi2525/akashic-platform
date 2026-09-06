@@ -110,10 +110,19 @@ export async function banFromChatAction(
                 },
             });
         } catch (err) {
-            console.warn("failed to create ban", err);
-            return failure(
-                "予期しないエラーが発生しました。時間をおいてリトライしてください。",
-            );
+            // 並走した BAN 発行が同一 BAN を先に作ると unique 制約違反(P2002)に
+            // なる。既に BAN 済みなので冪等に成功扱いにし、下の kick へ進む
+            const isDuplicate =
+                typeof err === "object" &&
+                err !== null &&
+                "code" in err &&
+                err.code === "P2002";
+            if (!isDuplicate) {
+                console.warn("failed to create ban", err);
+                return failure(
+                    "予期しないエラーが発生しました。時間をおいてリトライしてください。",
+                );
+            }
         }
     }
 

@@ -252,6 +252,11 @@ model Ban {
   gmUser     User? @relation("BanOwner", fields: [gmUserId], references: [id], onDelete: Cascade)
   targetUser User? @relation("BanTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
 
+  /// 同一の論理 BAN（同じ発行者・スコープ・対象・由来）の重複作成を防ぐ。
+  /// 各カラムは nullable のため、実際のインデックスは migration で
+  /// NULLS NOT DISTINCT を付与する（Prisma は NULLS 節を扱わないため素の
+  /// @@unique として保持され drift は出ない）。
+  @@unique([gmUserId, gmGuestId, playId, targetUserId, targetGuestId, origin], map: "Ban_owner_scope_target_origin_key")
   @@index([gmUserId])
   @@index([playId])
   @@index([targetUserId])

@@ -9,14 +9,20 @@ import { GUEST_COOKIE_MAX_AGE, GUEST_IDKEY } from "@/lib/types";
  * 発行元が複数になって別々の UUID が競合する事故を防げる。
  */
 export function proxy(req: NextRequest) {
-    if (req.cookies.get(GUEST_IDKEY)) {
-        return NextResponse.next();
+    const existing = req.cookies.get(GUEST_IDKEY)?.value;
+    const guestId = existing ?? crypto.randomUUID();
+    let res: NextResponse;
+    if (existing) {
+        res = NextResponse.next();
+    } else {
+        // 新規発行時は、同一リクエストの下流（getAuth 等）がこの guest_id を
+        // 読めるよう request の cookie を書き換え、更新後のヘッダを転送する
+        // （Next.js 公式パターン）
+        req.cookies.set(GUEST_IDKEY, guestId);
+        res = NextResponse.next({ request: { headers: req.headers } });
     }
-    const guestId = crypto.randomUUID();
-    // 同一リクエストの下流（getAuth 等）がこの guest_id を読めるよう、request の
-    // cookie を書き換え、更新後のヘッダを転送する（Next.js 公式パターン）
-    req.cookies.set(GUEST_IDKEY, guestId);
-    const res = NextResponse.next({ request: { headers: req.headers } });
+    // 毎リクエストで maxAge を再設定してスライド期限にする。固定期限だと能動利用
+    // 中でも失効し、新 guest_id 発行で local-mute の匿名キーが総入れ替えになる
     res.cookies.set(GUEST_IDKEY, guestId, {
         httpOnly: true,
         sameSite: "lax",

@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.13.1
+
+- Improve
+  - `Ban` の同一論理BAN 重複登録を防止
+
 ## 1.13.0
 
 - Feature
