@@ -164,13 +164,14 @@ export async function unbanAction(
     if (!user) {
         return failure("ページを更新してから再度お試しください。");
     }
+    // ゲスト部屋主の guest_id は in-game で公開され偽造できるため、解除は
+    // サインイン部屋主に限定する（ゲスト BAN は解除 UI が無く部屋終了で自動失効）
+    if (user.authType !== "oauth") {
+        return failure("サインインが必要です。");
+    }
     // 自分が発行した BAN のみ解除できる
-    const owner =
-        user.authType === "oauth"
-            ? { gmUserId: user.id }
-            : { gmGuestId: user.id };
     const { count } = await prisma.ban.deleteMany({
-        where: { id: banId, ...owner },
+        where: { id: banId, gmUserId: user.id },
     });
     if (count === 0) {
         return failure("対象のBANが見つかりませんでした。");
