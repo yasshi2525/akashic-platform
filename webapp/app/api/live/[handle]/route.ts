@@ -15,7 +15,10 @@ import {
 import { isFavorited } from "@/lib/server/favorite";
 import { setPlayAccessCookie } from "@/lib/server/play-access-token";
 import { isBannedFromPlay } from "@/lib/server/ban";
-import { recordPlaySession } from "@/lib/server/play-session";
+import {
+    findPlaySessionToken,
+    recordPlaySession,
+} from "@/lib/server/play-session";
 import { kickViewerFromPlays } from "@/lib/server/play-kick";
 import { sessionViewerId, verifyRoomOwner } from "@/lib/server/viewer-identity";
 
@@ -164,7 +167,12 @@ export async function GET(
         }
         const { remainingMs, expiresAt } = remaining;
         const gameJson = await fetchGameJson(play.contentId);
-        const playToken = await fetchPlayToken(play.id, play.contentId);
+        // revalidation で毎回発行すると使われない token が累積するため、この視聴者に
+        // 既発行の token があれば再利用する（新規時のみ発行・記録）
+        const viewerId = sessionViewerId(user);
+        const existingToken = await findPlaySessionToken(play.id, viewerId);
+        const playToken =
+            existingToken ?? (await fetchPlayToken(play.id, play.contentId));
         const res = NextResponse.json<LiveResponse>({
             ok: true,
             data: {
@@ -218,7 +226,10 @@ export async function GET(
             },
         });
         if (user) {
-            await recordPlaySession(play.id, sessionViewerId(user), playToken);
+            // 新規発行時のみ記録する。再利用時は既に記録済み
+            if (!existingToken) {
+                await recordPlaySession(play.id, viewerId, playToken);
+            }
             // 記録の後にもう一度 BAN 判定し、入室と BAN 発行の競合を潰す
             if (
                 await isBannedFromPlay(user, {
@@ -226,7 +237,7 @@ export async function GET(
                     gmUserId: gmUser.id,
                 })
             ) {
-                await kickViewerFromPlays([play.id], sessionViewerId(user));
+                await kickViewerFromPlays([play.id], viewerId);
                 return NextResponse.json({
                     ok: true,
                     data: { owner, requiresJoinWord: true, reason: "Banned" },

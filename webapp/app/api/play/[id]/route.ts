@@ -15,7 +15,10 @@ import {
 import { isFavorited } from "@/lib/server/favorite";
 import { setPlayAccessCookie } from "@/lib/server/play-access-token";
 import { isBannedFromPlay } from "@/lib/server/ban";
-import { recordPlaySession } from "@/lib/server/play-session";
+import {
+    findPlaySessionToken,
+    recordPlaySession,
+} from "@/lib/server/play-session";
 import { kickViewerFromPlays } from "@/lib/server/play-kick";
 import { sessionViewerId, verifyRoomOwner } from "@/lib/server/viewer-identity";
 import {
@@ -188,7 +191,12 @@ export async function GET(
             return closedPlayResponse(play, user, isOwner);
         }
         const gameJson = await fetchGameJson(play.contentId);
-        const playToken = await fetchPlayToken(play.id, play.contentId);
+        // revalidation で毎回発行すると使われない token が累積するため、この視聴者に
+        // 既発行の token があれば再利用する（新規時のみ発行・記録）
+        const viewerId = sessionViewerId(user);
+        const existingToken = await findPlaySessionToken(play.id, viewerId);
+        const playToken =
+            existingToken ?? (await fetchPlayToken(play.id, play.contentId));
         const res = NextResponse.json<PlayResponse>({
             ok: true,
             data: {
@@ -234,8 +242,10 @@ export async function GET(
             },
         });
         if (user) {
-            // BAN 時の即時切断ハンドルとして発行 token を記録する
-            await recordPlaySession(play.id, sessionViewerId(user), playToken);
+            // 新規発行時のみ記録する。再利用時は既に記録済み
+            if (!existingToken) {
+                await recordPlaySession(play.id, viewerId, playToken);
+            }
             // 記録の後にもう一度 BAN 判定する。入室と BAN 発行が競合しても、
             // 記録済みなら自分の token を確実に失効させられる（発行側 kick が
             // 記録前に走って取りこぼしても、ここで拾う）
@@ -245,7 +255,7 @@ export async function GET(
                     gmUserId: play.gmUser?.id ?? null,
                 })
             ) {
-                await kickViewerFromPlays([play.id], sessionViewerId(user));
+                await kickViewerFromPlays([play.id], viewerId);
                 return NextResponse.json({ ok: false, reason: "Banned" });
             }
             setPlayAccessCookie(res, play.id, user.id, req.cookies.getAll());
