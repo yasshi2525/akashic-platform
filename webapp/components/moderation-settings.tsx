@@ -20,7 +20,7 @@ import { useAuth } from "@/lib/client/useAuth";
 import { useMutes } from "@/lib/client/useMutes";
 import { useBans } from "@/lib/client/useBans";
 import { useLocalMutes } from "@/lib/client/useLocalMutes";
-import { clearMuteOverrides } from "@/lib/client/mute-store";
+import { clearMuteOverrides, setMuteOverride } from "@/lib/client/mute-store";
 import { unmuteAction } from "@/lib/server/mute-action";
 import { unbanAction } from "@/lib/server/ban-action";
 
@@ -149,7 +149,13 @@ function LocalMutes() {
                             secondaryAction={
                                 <Button
                                     size="small"
-                                    onClick={() => remove(entry.anonKey)}
+                                    onClick={() => {
+                                        remove(entry.anonKey);
+                                        // toggle 経由の解除と違い localStorage しか
+                                        // 消さないため、先に積まれた上書きも false に
+                                        // しないと戻った先でミュート表示が残る
+                                        setMuteOverride(entry.anonKey, false);
+                                    }}
                                     variant="outlined"
                                 >
                                     解除

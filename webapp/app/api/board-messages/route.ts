@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@yasshi2525/persist-schema";
 import { BoardMessageInfo, BoardMessagesGetResponse } from "@/lib/types";
 import { boardMessageCutoff } from "@/lib/server/board-message";
-import { getAuth } from "@/lib/server/auth";
+import { getAuthEnsuringGuest } from "@/lib/server/auth-ensure";
 import { anonKey } from "@/lib/server/anon-key";
 import { getMuteSet, isMuted, MuteSet } from "@/lib/server/mute";
 
@@ -43,7 +43,9 @@ function toInfo(
 
 export async function GET(): Promise<NextResponse<BoardMessagesGetResponse>> {
     try {
-        const user = await getAuth();
+        // 初回訪問で guest_id 未設置のまま anonKey を落とすと、ModerationMenu
+        // が次の再取得までミュート/通報を隠す。ここでゲストを確定して防ぐ
+        const user = await getAuthEnsuringGuest();
         const muteSet = await getMuteSet(user);
         const messages = await prisma.boardMessage.findMany({
             where: {

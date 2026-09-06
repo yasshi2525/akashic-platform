@@ -13,9 +13,9 @@ export async function kickViewerFromPlays(playIds: number[], viewerId: string) {
     }
     const sessions = await prisma.playSession.findMany({
         where: { playId: { in: playIds }, viewerId },
-        select: { playId: true, playToken: true },
+        select: { id: true, playId: true, playToken: true },
     });
-    await Promise.all(
+    const kickedIds = await Promise.all(
         sessions.map(async (s) => {
             try {
                 const res = await fetch(
@@ -28,16 +28,24 @@ export async function kickViewerFromPlays(playIds: number[], viewerId: string) {
                     console.warn(
                         `kick request failed (playId = "${s.playId}", status = ${res.status})`,
                     );
+                    return null;
                 }
+                return s.id;
             } catch (err) {
                 console.warn(
                     `kick request error (playId = "${s.playId}")`,
                     err,
                 );
+                return null;
             }
         }),
     );
-    await prisma.playSession.deleteMany({
-        where: { playId: { in: playIds }, viewerId },
-    });
+    // 失効に失敗した session は消さずに残す。控えを消すと再 BAN でも対象を
+    // 見つけられず、未失効の token でソケットが生き続けてしまうため
+    const succeeded = kickedIds.filter((id): id is number => id !== null);
+    if (succeeded.length > 0) {
+        await prisma.playSession.deleteMany({
+            where: { id: { in: succeeded } },
+        });
+    }
 }
