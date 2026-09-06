@@ -17,6 +17,7 @@ import { setPlayAccessCookie } from "@/lib/server/play-access-token";
 import { isBannedFromPlay } from "@/lib/server/ban";
 import { recordPlaySession } from "@/lib/server/play-session";
 import { kickViewerFromPlays } from "@/lib/server/play-kick";
+import { sessionViewerId } from "@/lib/server/viewer-identity";
 
 export async function GET(
     req: NextRequest,
@@ -203,7 +204,7 @@ export async function GET(
             },
         });
         if (user) {
-            await recordPlaySession(play.id, user.id, playToken);
+            await recordPlaySession(play.id, sessionViewerId(user), playToken);
             // 記録の後にもう一度 BAN 判定し、入室と BAN 発行の競合を潰す
             if (
                 await isBannedFromPlay(user, {
@@ -211,7 +212,7 @@ export async function GET(
                     gmUserId: gmUser.id,
                 })
             ) {
-                await kickViewerFromPlays([play.id], user.id);
+                await kickViewerFromPlays([play.id], sessionViewerId(user));
                 return NextResponse.json({
                     ok: true,
                     data: { owner, requiresJoinWord: true, reason: "Banned" },

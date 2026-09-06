@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@yasshi2525/persist-schema";
-import { BoardMessageInfo, BoardMessagesGetResponse } from "@/lib/types";
+import { BoardMessageInfo, BoardMessagesGetResponse, User } from "@/lib/types";
 import { boardMessageCutoff } from "@/lib/server/board-message";
 import { getAuth } from "@/lib/server/auth";
 import { anonKey } from "@/lib/server/anon-key";
 import { getMuteSet, isMuted, MuteSet } from "@/lib/server/mute";
+import { isSameViewer } from "@/lib/server/viewer-identity";
 
 type BoardMessageRecord = {
     id: number;
@@ -17,7 +18,7 @@ type BoardMessageRecord = {
 
 function toInfo(
     message: BoardMessageRecord,
-    viewerId: string | undefined,
+    viewer: User | null,
     muteSet: MuteSet,
 ): BoardMessageInfo {
     const subject = {
@@ -30,10 +31,8 @@ function toInfo(
             id: message.author?.id ?? undefined,
             name: message.authorName,
             iconURL: message.author?.image ?? undefined,
-            anonKey: viewerId ? anonKey(subject, viewerId) : undefined,
-            isSelf:
-                !!viewerId &&
-                (viewerId === subject.authorId || viewerId === subject.guestId),
+            anonKey: viewer ? anonKey(subject, viewer.id) : undefined,
+            isSelf: isSameViewer(subject, viewer),
         },
         body: message.body,
         createdAt: message.createdAt,
@@ -68,7 +67,7 @@ export async function GET(): Promise<NextResponse<BoardMessagesGetResponse>> {
         });
         return NextResponse.json({
             ok: true,
-            data: messages.map((message) => toInfo(message, user?.id, muteSet)),
+            data: messages.map((message) => toInfo(message, user, muteSet)),
         });
     } catch (err) {
         console.warn("failed to fetch board messages", err);

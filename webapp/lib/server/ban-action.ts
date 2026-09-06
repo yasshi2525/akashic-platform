@@ -4,6 +4,7 @@ import { prisma } from "@yasshi2525/persist-schema";
 import { getAuth } from "./auth";
 import { BAN_LIMIT, BanScope, buildBanLabel, countGmBans } from "./ban";
 import { kickViewerFromPlays } from "./play-kick";
+import { isSameViewer, targetSessionViewerId } from "./viewer-identity";
 
 export type BanFormState = {
     ok: boolean;
@@ -71,10 +72,7 @@ export async function banFromChatAction(
     const target = message.authorId
         ? { targetUserId: message.authorId }
         : { targetGuestId: message.guestId };
-    const targetViewerId = message.authorId ?? message.guestId!;
-    // ゲスト部屋主の発言は guestId のみを持つため、authorId だけでは
-    // 自分自身の判定が漏れる
-    if (targetViewerId === user.id) {
+    if (isSameViewer(message, user)) {
         return failure("自分自身はBANできません。");
     }
 
@@ -136,7 +134,10 @@ export async function banFromChatAction(
                   })
               ).map((p) => p.id)
             : [play.id];
-    await kickViewerFromPlays(playIds, targetViewerId);
+    const targetViewerId = targetSessionViewerId(message);
+    if (targetViewerId) {
+        await kickViewerFromPlays(playIds, targetViewerId);
+    }
 
     return success();
 }

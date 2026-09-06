@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@yasshi2525/persist-schema";
-import { PlayChatGetResponse, PlayChatMessageInfo } from "@/lib/types";
+import { PlayChatGetResponse, PlayChatMessageInfo, User } from "@/lib/types";
 import {
     authorizePlayChat,
     PLAY_CHAT_FETCH_LIMIT,
@@ -8,6 +8,7 @@ import {
 import { setPlayAccessCookie } from "@/lib/server/play-access-token";
 import { anonKey } from "@/lib/server/anon-key";
 import { getMuteSet, isMuted, MuteSet } from "@/lib/server/mute";
+import { isSameViewer } from "@/lib/server/viewer-identity";
 
 type PlayChatRecord = {
     id: number;
@@ -20,7 +21,7 @@ type PlayChatRecord = {
 
 function toInfo(
     message: PlayChatRecord,
-    viewerId: string,
+    viewer: User,
     muteSet: MuteSet,
 ): PlayChatMessageInfo {
     const subject = {
@@ -33,9 +34,8 @@ function toInfo(
             id: message.author?.id ?? undefined,
             name: message.authorName,
             iconURL: message.author?.image ?? undefined,
-            anonKey: anonKey(subject, viewerId),
-            isSelf:
-                viewerId === subject.authorId || viewerId === subject.guestId,
+            anonKey: anonKey(subject, viewer.id),
+            isSelf: isSameViewer(subject, viewer),
         },
         body: message.body,
         createdAt: message.createdAt,
@@ -88,7 +88,7 @@ export async function GET(
             ok: true,
             data: messages
                 .reverse()
-                .map((message) => toInfo(message, auth.user.id, muteSet)),
+                .map((message) => toInfo(message, auth.user, muteSet)),
         });
         if (auth.needsRenew) {
             setPlayAccessCookie(
