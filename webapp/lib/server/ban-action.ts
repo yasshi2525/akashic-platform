@@ -4,11 +4,13 @@ import { prisma } from "@yasshi2525/persist-schema";
 import { getAuth } from "./auth";
 import { BAN_LIMIT, BanScope, buildBanLabel, countGmBans } from "./ban";
 import { kickViewerFromPlays } from "./play-kick";
+import { cookies } from "next/headers";
 import {
-    isRoomOwner,
     isSameViewer,
     targetSessionViewerId,
+    verifyRoomOwner,
 } from "./viewer-identity";
+import { playOwnerCookieName } from "./play-owner-token";
 
 export type BanFormState = {
     ok: boolean;
@@ -51,9 +53,12 @@ export async function banFromChatAction(
     if (!play) {
         return failure("部屋が見つかりませんでした。");
     }
-    // 部屋主本人だけがBANできる。生 id 比較だとゲストが部屋主の OAuth id を
-    // 騙って GM 認可を得られるため、認証種別を含めて判定する
-    if (!isRoomOwner(play, user)) {
+    // 部屋主本人だけがBANできる。ゲスト部屋主は公開される guest_id では偽造できて
+    // しまうため、作成時に発行した署名 Cookie で本人確認する（OAuth はセッション）
+    const ownerToken = (await cookies()).get(
+        playOwnerCookieName(play.id),
+    )?.value;
+    if (!verifyRoomOwner(play, user, ownerToken)) {
         return failure("この部屋の部屋主のみがBANできます。");
     }
 

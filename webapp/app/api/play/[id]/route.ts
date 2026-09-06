@@ -17,7 +17,11 @@ import { setPlayAccessCookie } from "@/lib/server/play-access-token";
 import { isBannedFromPlay } from "@/lib/server/ban";
 import { recordPlaySession } from "@/lib/server/play-session";
 import { kickViewerFromPlays } from "@/lib/server/play-kick";
-import { isRoomOwner, sessionViewerId } from "@/lib/server/viewer-identity";
+import { sessionViewerId, verifyRoomOwner } from "@/lib/server/viewer-identity";
+import {
+    playOwnerCookieName,
+    refreshPlayOwnerCookie,
+} from "@/lib/server/play-owner-token";
 
 const playViewSelect = {
     id: true,
@@ -71,6 +75,7 @@ type PlayForView = Prisma.PlayGetPayload<{ select: typeof playViewSelect }>;
 async function closedPlayResponse(
     play: PlayForView,
     user: Awaited<ReturnType<typeof getAuth>>,
+    isGameMaster: boolean,
 ): Promise<NextResponse<PlayResponse>> {
     const iconURL = `${publicContentBaseUrl}/${play.contentId}/${play.content.icon}`;
     return NextResponse.json({
@@ -83,13 +88,7 @@ async function closedPlayResponse(
             chatEnabled: play.chatEnabled,
             createdAt: play.createdAt,
             endedAt: play.endedAt ?? undefined,
-            isGameMaster: isRoomOwner(
-                {
-                    gameMasterId: play.gameMasterId,
-                    gmUserId: play.gmUser?.id ?? null,
-                },
-                user,
-            ),
+            isGameMaster,
             gameMaster: {
                 userId: play.gmUser?.id ?? undefined,
                 name: play.gmUser?.name ?? GUEST_NAME,
@@ -150,16 +149,27 @@ export async function GET(
         if (!user) {
             return NextResponse.json({ ok: false, reason: "InternalError" });
         }
+        const ownerToken = req.cookies.get(playOwnerCookieName(play.id))?.value;
+        const isOwner = verifyRoomOwner(
+            {
+                id: play.id,
+                gameMasterId: play.gameMasterId,
+                gmUserId: play.gmUser?.id ?? null,
+            },
+            user,
+            ownerToken,
+        );
         if (!play.isActive) {
-            return closedPlayResponse(play, user);
+            return closedPlayResponse(play, user, isOwner);
         }
         const denied = await checkLimitedPlayAccess(
-            { ...play, gmUserId: play.gmUser?.id ?? null },
+            play,
             user,
             {
                 joinWord,
                 inviteHash,
             },
+            isOwner,
         );
         if (denied) {
             return NextResponse.json(denied);
@@ -175,7 +185,7 @@ export async function GET(
         const remaining = await fetchPlayRemaining(play.id);
         if (!remaining) {
             // 終了直後はDB未反映でactive。remaining の方がより確実
-            return closedPlayResponse(play, user);
+            return closedPlayResponse(play, user, isOwner);
         }
         const gameJson = await fetchGameJson(play.contentId);
         const playToken = await fetchPlayToken(play.id, play.contentId);
@@ -190,13 +200,7 @@ export async function GET(
                 chatEnabled: play.chatEnabled,
                 joinWord: play.joinWord ?? undefined,
                 inviteHash: play.inviteHash ?? undefined,
-                isGameMaster: isRoomOwner(
-                    {
-                        gameMasterId: play.gameMasterId,
-                        gmUserId: play.gmUser?.id ?? null,
-                    },
-                    user,
-                ),
+                isGameMaster: isOwner,
                 gameMaster: {
                     userId: play.gmUser?.id ?? undefined,
                     name: play.gmUser?.name ?? GUEST_NAME,
@@ -245,6 +249,10 @@ export async function GET(
                 return NextResponse.json({ ok: false, reason: "Banned" });
             }
             setPlayAccessCookie(res, play.id, user.id, req.cookies.getAll());
+            // ゲスト部屋主が入室し続ける限り owner 資格の期限を延長する
+            if (isOwner && !play.gmUser) {
+                refreshPlayOwnerCookie(res, play.id, play.gameMasterId);
+            }
         }
         return res;
     } catch (err) {

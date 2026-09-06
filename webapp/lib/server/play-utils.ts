@@ -7,7 +7,6 @@ import {
     internalContentBaseUrl,
     withAkashicServerAuth,
 } from "./akashic";
-import { isRoomOwner } from "./viewer-identity";
 
 export async function fetchPlayToken(playId: number, contentId: number) {
     const res = await fetch(`${akashicServerUrl}/join?playId=${playId}`, {
@@ -31,8 +30,6 @@ export async function checkLimitedPlayAccess(
     play: {
         isLimited: boolean;
         requireSignIn: boolean;
-        gameMasterId: string;
-        gmUserId: string | null;
         joinWord?: string | null;
         inviteHash?: string | null;
     },
@@ -41,13 +38,14 @@ export async function checkLimitedPlayAccess(
         joinWord?: string;
         inviteHash?: string;
     },
+    isOwner: boolean,
 ): Promise<{
     ok: false;
     reason: "JoinWordRequired" | "InvalidJoinWord" | "SignInRequired";
 } | null> {
-    // 部屋主は限定入室チェックを素通りする。生 id 比較だとゲストが部屋主の
-    // OAuth id を騙って GM 扱いになり join word 等を bypass できるため型別判定
-    if (isRoomOwner(play, user)) {
+    // 部屋主は限定入室チェックを素通りする。部屋主判定は呼び出し側で
+    // verifyRoomOwner（ゲストは署名 Cookie 検証）済みの結果を受け取る
+    if (isOwner) {
         return null;
     }
     if (play.requireSignIn && (!user || user.authType === "guest")) {

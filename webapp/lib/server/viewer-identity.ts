@@ -1,4 +1,5 @@
 import { User } from "../types";
+import { verifyPlayOwnerToken } from "./play-owner-token";
 
 /**
  * 閲覧者と投稿者が同一人物か、認証種別を含めて判定する。
@@ -22,21 +23,27 @@ export function isSameViewer(
 }
 
 /**
- * 視聴者がこの部屋の部屋主(GM)本人か、認証種別を含めて判定する。
- * `gmUserId` が入っていれば GM はサインイン利用者なので oauth 閲覧者のみ、
- * 無ければゲスト部屋主なので guest 閲覧者のみと突き合わせる。生 id 比較だと
- * ゲストが部屋主の公開 OAuth id を騙って GM 認可を得られてしまう。
+ * 視聴者がこの部屋の部屋主(GM)本人かを判定する。詐称できない資格で確かめるのが要点：
+ * - OAuth 部屋主（`gmUserId` あり）… next-auth セッションは詐称不能なので authType＋id 一致で足りる。
+ * - ゲスト部屋主（`gmUserId` なし）… gameMasterId(=guest_id) は in-game playerId として
+ *   参加者に公開されるため生 id 比較では偽造できる。作成時に本人へ発行した署名 Cookie
+ *   （`ownerToken`）を検証する。
  */
-export function isRoomOwner(
-    play: { gameMasterId: string; gmUserId: string | null },
+export function verifyRoomOwner(
+    play: { id: number; gameMasterId: string; gmUserId: string | null },
     viewer: Pick<User, "authType" | "id"> | null | undefined,
+    ownerToken: string | undefined,
 ): boolean {
     if (!viewer) {
         return false;
     }
-    return play.gmUserId
-        ? viewer.authType === "oauth" && viewer.id === play.gmUserId
-        : viewer.authType === "guest" && viewer.id === play.gameMasterId;
+    if (play.gmUserId) {
+        return viewer.authType === "oauth" && viewer.id === play.gmUserId;
+    }
+    return (
+        viewer.authType === "guest" &&
+        verifyPlayOwnerToken(ownerToken, play.id, play.gameMasterId)
+    );
 }
 
 /**

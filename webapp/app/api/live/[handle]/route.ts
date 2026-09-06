@@ -17,7 +17,7 @@ import { setPlayAccessCookie } from "@/lib/server/play-access-token";
 import { isBannedFromPlay } from "@/lib/server/ban";
 import { recordPlaySession } from "@/lib/server/play-session";
 import { kickViewerFromPlays } from "@/lib/server/play-kick";
-import { isRoomOwner, sessionViewerId } from "@/lib/server/viewer-identity";
+import { sessionViewerId, verifyRoomOwner } from "@/lib/server/viewer-identity";
 
 export async function GET(
     req: NextRequest,
@@ -112,12 +112,22 @@ export async function GET(
         if (!user) {
             return NextResponse.json({ ok: false, reason: "InternalError" });
         }
-        const denied = await checkLimitedPlayAccess(
-            { ...play, gmUserId: gmUser.id },
-            user,
+        // live の部屋主は必ずサインイン利用者。OAuth はセッションで判定できるので
+        // owner Cookie は不要（verifyRoomOwner が oauth 分岐で確定する）
+        const isOwner = verifyRoomOwner(
             {
-                joinWord,
+                id: play.id,
+                gameMasterId: play.gameMasterId,
+                gmUserId: gmUser.id,
             },
+            user,
+            undefined,
+        );
+        const denied = await checkLimitedPlayAccess(
+            play,
+            user,
+            { joinWord },
+            isOwner,
         );
         if (denied) {
             return NextResponse.json({
@@ -169,13 +179,7 @@ export async function GET(
                     chatEnabled: play.chatEnabled,
                     joinWord: play.joinWord ?? undefined,
                     inviteHash: play.inviteHash ?? undefined,
-                    isGameMaster: isRoomOwner(
-                        {
-                            gameMasterId: play.gameMasterId,
-                            gmUserId: gmUser.id,
-                        },
-                        user,
-                    ),
+                    isGameMaster: isOwner,
                     gameMaster: {
                         userId: gmUser.id,
                         name: gmUser.name ?? GUEST_NAME,
