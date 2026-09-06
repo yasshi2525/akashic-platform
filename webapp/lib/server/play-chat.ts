@@ -33,12 +33,20 @@ export async function authorizePlayChat(playId: number): Promise<
           ok: true;
           user: NonNullable<Awaited<ReturnType<typeof getAuth>>>;
           needsRenew: boolean;
+          gameMasterId: string;
+          gmUserId: string | null;
       }
     | { ok: false; reason: PlayChatDenial }
 > {
     const play = await prisma.play.findUnique({
         where: { id: playId },
-        select: { id: true, isActive: true, chatEnabled: true, gmUserId: true },
+        select: {
+            id: true,
+            isActive: true,
+            chatEnabled: true,
+            gameMasterId: true,
+            gmUserId: true,
+        },
     });
     if (!play) {
         return { ok: false, reason: "NotFound" };
@@ -63,7 +71,13 @@ export async function authorizePlayChat(playId: number): Promise<
     ) {
         return { ok: false, reason: "Forbidden" };
     }
-    return { ok: true, user, needsRenew: access.needsRenew };
+    return {
+        ok: true,
+        user,
+        needsRenew: access.needsRenew,
+        gameMasterId: play.gameMasterId,
+        gmUserId: play.gmUserId,
+    };
 }
 
 type PlayChatWhere = {

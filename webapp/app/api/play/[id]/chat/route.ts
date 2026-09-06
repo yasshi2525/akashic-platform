@@ -6,9 +6,13 @@ import {
     PLAY_CHAT_FETCH_LIMIT,
 } from "@/lib/server/play-chat";
 import { setPlayAccessCookie } from "@/lib/server/play-access-token";
+import {
+    playOwnerCookieName,
+    refreshPlayOwnerCookie,
+} from "@/lib/server/play-owner-token";
 import { anonKey } from "@/lib/server/anon-key";
 import { getMuteSet, isMuted, MuteSet } from "@/lib/server/mute";
-import { isSameViewer } from "@/lib/server/viewer-identity";
+import { isSameViewer, verifyRoomOwner } from "@/lib/server/viewer-identity";
 
 type PlayChatRecord = {
     id: number;
@@ -97,6 +101,23 @@ export async function GET(
                 auth.user.id,
                 req.cookies.getAll(),
             );
+        }
+        // ゲスト部屋主が在室し続ける限り owner 資格の期限を延長する。チャット
+        // ポーリングは部屋が生きている間ずっと走るので、入室 GET だけの延長では
+        // 12h を超える長時間部屋で失効してしまう問題をここで埋める
+        if (
+            !auth.gmUserId &&
+            verifyRoomOwner(
+                {
+                    id: playId,
+                    gameMasterId: auth.gameMasterId,
+                    gmUserId: auth.gmUserId,
+                },
+                auth.user,
+                req.cookies.get(playOwnerCookieName(playId))?.value,
+            )
+        ) {
+            refreshPlayOwnerCookie(res, playId, auth.gameMasterId);
         }
         return res;
     } catch (err) {
