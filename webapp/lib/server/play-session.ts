@@ -3,21 +3,15 @@ import { prisma } from "@yasshi2525/persist-schema";
 /**
  * 入室時に視聴者へ発行した playToken を記録する。BAN 時に対象の socket を
  * 即時切断するためのハンドルになる。部屋終了時に akashic-server 側で削除する。
- * 記録は付随処理のため、失敗しても入室自体は妨げない。
+ * 記録に失敗すると追跡・kick 不能な token を渡すことになるため、握りつぶさず
+ * 例外を伝播させ、呼び出し側（入室ルート）で token を返さず入室を失敗に倒す。
  */
 export async function recordPlaySession(
     playId: number,
     viewerId: string,
     playToken: string,
 ) {
-    try {
-        await prisma.playSession.create({
-            data: { playId, viewerId, playToken },
-        });
-    } catch (err) {
-        console.warn(
-            `failed to record play session (playId = "${playId}")`,
-            err,
-        );
-    }
+    await prisma.playSession.create({
+        data: { playId, viewerId, playToken },
+    });
 }

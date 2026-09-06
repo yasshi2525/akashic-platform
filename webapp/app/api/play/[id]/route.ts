@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma, prisma } from "@yasshi2525/persist-schema";
 import { GUEST_NAME, PlayResponse } from "@/lib/types";
 import { getAuth } from "@/lib/server/auth";
-import { getAuthEnsuringGuest } from "@/lib/server/auth-ensure";
 import { publicContentBaseUrl } from "@/lib/server/akashic";
 import { fetchLicense } from "@/lib/server/game-info";
 import { getContentExternal } from "@/lib/server/content-get-external";
@@ -138,9 +137,12 @@ export async function GET(
                 reason: "NotFound",
             });
         }
-        // 身元の無い呼び出しにもゲストを発行し、発行する playToken を必ず
-        // PlaySession に紐づける（追跡不能・kick 不能な token をなくす）
-        const user = await getAuthEnsuringGuest();
+        // guest_id は proxy が発行済みで通常 null にならないが、万一
+        // 身元が取れないなら追跡不能な playToken を発行しないよう入室を止める
+        const user = await getAuth();
+        if (!user) {
+            return NextResponse.json({ ok: false, reason: "InternalError" });
+        }
         if (!play.isActive) {
             return closedPlayResponse(play, user);
         }

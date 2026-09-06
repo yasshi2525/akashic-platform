@@ -3,8 +3,8 @@ import { getGuest } from "./auth-guest";
 import { auth } from "./auth-next";
 
 // 読み取り専用・nullable。Server Component を含めどの経路からでも呼べる。
-// ゲストを新規発行して必ず非 null を返したい入室系は auth-ensure.ts の
-// getAuthEnsuringGuest を使う（cookie を書くため SA/RH 専用）。
+// guest_id は proxy が全リクエストの入口で発行するため、実運用では
+// 通常ゲストが載り非 null になる（型は保証しないので呼び出し側で null を扱う）。
 export async function getAuth() {
     const session = await auth();
     if (session?.user?.id && session.user.name) {
