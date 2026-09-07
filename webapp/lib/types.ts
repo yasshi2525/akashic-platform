@@ -1,5 +1,9 @@
 import type { NicoliveSupportedModes } from "@akashic/game-configuration";
-import type { NotificationType } from "@yasshi2525/persist-schema";
+import type {
+    NotificationType,
+    ReportReason,
+    ReportTargetType,
+} from "@yasshi2525/persist-schema";
 
 const authTypes = ["guest", "oauth"] as const;
 type AuthType = (typeof authTypes)[number];
@@ -21,6 +25,9 @@ export interface OAuthUser extends User {
 
 export const GUEST_IDKEY = "guest_id";
 export const GUEST_NAME = "ゲスト";
+// 端末永続の識別子にする。セッション Cookie だと閉じるたびに guest_id が変わり、
+// 端末内ミュートの匿名キーが全て変わってしまう
+export const GUEST_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
 export const GAMELIST_LIMITS = 10;
 
@@ -57,12 +64,17 @@ export interface PlayInfo {
         userId?: string;
         name: string;
         iconURL?: string;
+        /** 未サインイン利用者が端末内ミュートで部屋を隠すのに使う */
+        anonKey?: string;
     };
     participants: number;
     createdAt: Date;
 }
 
-export type AnonymousPlayInfo = Omit<PlayInfo, "playName" | "gameMaster">;
+export type AnonymousPlayInfo = Omit<PlayInfo, "playName" | "gameMaster"> & {
+    /** 未サインイン利用者が端末内ミュートで部屋を隠すのに使う（身元は含まない） */
+    ownerAnonKey?: string;
+};
 
 export const FEEDBACK_LIMITS = 10;
 
@@ -194,15 +206,102 @@ export type ClientLogsGetResponse =
 export const BOARD_MESSAGE_BODY_MAX = 200;
 export const BOARD_MESSAGE_NAME_MAX = 20;
 
+export const MUTE_LIMIT_DEFAULT = 200;
+export const MUTE_LABEL_BODY_MAX = 40;
+export const BAN_LIMIT_DEFAULT = 200;
+
+export const REPORT_DETAIL_MAX = 1000;
+export const CONTACT_BODY_MAX = 2000;
+export const CONTACT_NAME_MAX = 40;
+
+// 通報理由の表示ラベル。選択肢の順序もこの定義順に従う
+export const REPORT_REASON_LABELS: Record<ReportReason, string> = {
+    HARASSMENT: "嫌がらせ・誹謗中傷",
+    INAPPROPRIATE: "不適切な内容・不快にさせる表現",
+    PRIVACY: "個人情報・プライバシー侵害",
+    SPAM: "スパム・宣伝",
+    OTHER: "その他",
+};
+
+export const REPORT_REASONS = Object.keys(
+    REPORT_REASON_LABELS,
+) as ReportReason[];
+
+export type ReportSource = "board" | "chat";
+
+// 投稿以外の通報対象の指定に使う
+export type ReportTargetInput =
+    | { kind: "message"; source: ReportSource; messageId: number }
+    | { kind: "play"; playId: number }
+    | { kind: "user"; userId: string };
+
+export type ReportFormState = {
+    ok: boolean;
+    message?: string;
+    submitted: boolean;
+    submittedAt?: number;
+};
+
+export type ContactFormState = {
+    ok: boolean;
+    message?: string;
+    submitted: boolean;
+    submittedAt?: number;
+};
+
+export type { ReportReason, ReportTargetType };
+
+export interface LocalMuteEntry {
+    anonKey: string;
+    label: string;
+    createdAt: number;
+}
+
+export interface MuteInfo {
+    id: number;
+    label: string;
+    createdAt: Date;
+}
+
+const mutesGetErrReasons = ["Unauthorized", "InternalError"] as const;
+export type MutesGetErrorType = (typeof mutesGetErrReasons)[number];
+export type MutesGetResponse =
+    { ok: true; data: MuteInfo[] } | { ok: false; reason: MutesGetErrorType };
+
+export interface BanInfo {
+    id: number;
+    label: string;
+    /** サインイン部屋主の全部屋 BAN なら true、ゲスト部屋主の部屋単位 BAN なら false */
+    allRooms: boolean;
+    createdAt: Date;
+}
+
+const bansGetErrReasons = ["Unauthorized", "InternalError"] as const;
+export type BansGetErrorType = (typeof bansGetErrReasons)[number];
+export type BansGetResponse =
+    { ok: true; data: BanInfo[] } | { ok: false; reason: BansGetErrorType };
+
+export interface MessageAuthorInfo {
+    id?: string;
+    name: string;
+    iconURL?: string;
+    /**
+     * 投稿者を指すための匿名キー。閲覧者ごとに異なる値になるため、
+     * 利用者同士で突き合わせても同一人物を特定できない。
+     * 未サインイン利用者が端末内ミュートの対象を記録するのに使う。
+     */
+    anonKey?: string;
+    /** 閲覧者自身の投稿。自分をミュート・BANできないよう UI で判定に使う */
+    isSelf?: boolean;
+}
+
 export interface BoardMessageInfo {
     id: number;
-    author: {
-        id?: string;
-        name: string;
-        iconURL?: string;
-    };
+    author: MessageAuthorInfo;
     body: string;
     createdAt: Date;
+    /** サーバー側 (サインイン利用者) のミュート判定結果 */
+    muted?: boolean;
 }
 
 const boardMessagesGetErrReasons = ["InternalError"] as const;
@@ -217,13 +316,11 @@ export const PLAY_CHAT_NAME_MAX = 16;
 
 export interface PlayChatMessageInfo {
     id: number;
-    author: {
-        id?: string;
-        name: string;
-        iconURL?: string;
-    };
+    author: MessageAuthorInfo;
     body: string;
     createdAt: Date;
+    /** サーバー側 (サインイン利用者) のミュート判定結果 */
+    muted?: boolean;
 }
 
 const playChatGetErrReasons = [
@@ -327,6 +424,7 @@ const playErrReasons = [
     "JoinWordRequired",
     "InvalidJoinWord",
     "SignInRequired",
+    "Banned",
     "InternalError",
 ] as const;
 export type PlayErrorType = (typeof playErrReasons)[number];
@@ -340,9 +438,13 @@ interface BasePlayViewInfo {
     isLimited: boolean;
     requireSignIn: boolean;
     chatEnabled: boolean;
+    /** 閲覧者がこの部屋の部屋主か。サーバーが認証種別込みで判定して返す */
+    isGameMaster: boolean;
     game: GameInfo;
     gameMaster: {
-        id: string;
+        // ゲスト部屋主の gameMasterId は httpOnly な guest_id そのもので、
+        // 応答に載せると参加者に詐称されるため id は返さない（部屋主判定は
+        // 上の isGameMaster を使う）。userId は OAuth 利用者の公開 id のみ
         userId?: string;
         name: string;
         iconURL?: string;
@@ -353,6 +455,8 @@ interface BasePlayViewInfo {
 
 export interface ActivePlayViewInfo extends BasePlayViewInfo {
     playToken: string;
+    /** ゲームに申告する playerId。guest_id を秘匿するため非可逆な派生値 */
+    playerId: string;
     joinWord?: string;
     inviteHash?: string;
     width: number;
@@ -385,7 +489,11 @@ export type LiveInfo = {
 } & (
     | {
           requiresJoinWord: true;
-          reason: "JoinWordRequired" | "InvalidJoinWord" | "SignInRequired";
+          reason:
+              | "JoinWordRequired"
+              | "InvalidJoinWord"
+              | "SignInRequired"
+              | "Banned";
       }
     | {
           requiresJoinWord: false;

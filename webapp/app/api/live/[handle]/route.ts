@@ -13,7 +13,15 @@ import {
     getContentViewSize,
 } from "@/lib/server/play-utils";
 import { isFavorited } from "@/lib/server/favorite";
+import { gamePlayerId } from "@/lib/server/game-player-id";
 import { setPlayAccessCookie } from "@/lib/server/play-access-token";
+import { isBannedFromPlay } from "@/lib/server/ban";
+import {
+    findPlaySessionToken,
+    recordPlaySession,
+} from "@/lib/server/play-session";
+import { kickViewerFromPlays } from "@/lib/server/play-kick";
+import { sessionViewerId, verifyRoomOwner } from "@/lib/server/viewer-identity";
 
 export async function GET(
     req: NextRequest,
@@ -102,10 +110,29 @@ export async function GET(
                 },
             });
         }
+        // guest_id は proxy が発行済みで通常 null にならないが、万一
+        // 身元が取れないなら追跡不能な playToken を発行しないよう入室を止める
         const user = await getAuth();
-        const denied = await checkLimitedPlayAccess(play, user, {
-            joinWord,
-        });
+        if (!user) {
+            return NextResponse.json({ ok: false, reason: "InternalError" });
+        }
+        // live の部屋主は必ずサインイン利用者。OAuth はセッションで判定できるので
+        // owner Cookie は不要（verifyRoomOwner が oauth 分岐で確定する）
+        const isOwner = verifyRoomOwner(
+            {
+                id: play.id,
+                gameMasterId: play.gameMasterId,
+                gmUserId: gmUser.id,
+            },
+            user,
+            undefined,
+        );
+        const denied = await checkLimitedPlayAccess(
+            play,
+            user,
+            { joinWord },
+            isOwner,
+        );
         if (denied) {
             return NextResponse.json({
                 ok: true,
@@ -113,6 +140,18 @@ export async function GET(
                     owner,
                     requiresJoinWord: true,
                     reason: denied.reason,
+                },
+            });
+        }
+        if (
+            await isBannedFromPlay(user, { id: play.id, gmUserId: gmUser.id })
+        ) {
+            return NextResponse.json({
+                ok: true,
+                data: {
+                    owner,
+                    requiresJoinWord: true,
+                    reason: "Banned",
                 },
             });
         }
@@ -129,6 +168,12 @@ export async function GET(
         }
         const { remainingMs, expiresAt } = remaining;
         const gameJson = await fetchGameJson(play.contentId);
+        // revalidation で毎回発行すると使われない token が累積するため、この視聴者に
+        // 既発行の token があれば再利用する（新規時のみ発行・記録）
+        const viewerId = sessionViewerId(user);
+        const existingToken = await findPlaySessionToken(play.id, viewerId);
+        const playToken =
+            existingToken ?? (await fetchPlayToken(play.id, play.contentId));
         const res = NextResponse.json<LiveResponse>({
             ok: true,
             data: {
@@ -136,15 +181,16 @@ export async function GET(
                 requiresJoinWord: false,
                 info: {
                     id: play.id,
-                    playToken: await fetchPlayToken(play.id, play.contentId),
+                    playToken,
+                    playerId: gamePlayerId(user),
                     playName: play.name,
                     isLimited: play.isLimited,
                     requireSignIn: play.requireSignIn,
                     chatEnabled: play.chatEnabled,
                     joinWord: play.joinWord ?? undefined,
                     inviteHash: play.inviteHash ?? undefined,
+                    isGameMaster: isOwner,
                     gameMaster: {
-                        id: play.gameMasterId,
                         userId: gmUser.id,
                         name: gmUser.name ?? GUEST_NAME,
                         iconURL: gmUser.image ?? undefined,
@@ -182,7 +228,29 @@ export async function GET(
             },
         });
         if (user) {
-            setPlayAccessCookie(res, play.id, user.id, req.cookies.getAll());
+            // 新規発行時のみ記録する。再利用時は既に記録済み
+            if (!existingToken) {
+                await recordPlaySession(play.id, viewerId, playToken);
+            }
+            // 記録の後にもう一度 BAN 判定し、入室と BAN 発行の競合を潰す
+            if (
+                await isBannedFromPlay(user, {
+                    id: play.id,
+                    gmUserId: gmUser.id,
+                })
+            ) {
+                await kickViewerFromPlays([play.id], viewerId);
+                return NextResponse.json({
+                    ok: true,
+                    data: { owner, requiresJoinWord: true, reason: "Banned" },
+                });
+            }
+            setPlayAccessCookie(
+                res,
+                play.id,
+                sessionViewerId(user),
+                req.cookies.getAll(),
+            );
         }
         return res;
     } catch (err) {

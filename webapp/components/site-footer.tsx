@@ -45,19 +45,20 @@ export function SiteFooter() {
                             <Typography variant="body2">
                                 © 2026 みんなでゲーム!
                             </Typography>
-                            <Typography
-                                variant="body2"
-                                sx={{
-                                    display: { xs: "none", sm: "inherit" },
-                                }}
-                            >
+                            <Typography variant="body2">
                                 All rights reserved.
                             </Typography>
                         </Stack>
                         <Stack
                             direction="row"
-                            sx={{ justifyContent: "center" }}
-                            spacing={{ xs: 0.5, sm: 1 }}
+                            sx={{
+                                flexWrap: "wrap",
+                                // spacing は margin-left で実装されるため、
+                                // 折り返した 2 行目の先頭がインデントされてしまう
+                                gap: 0.5,
+                                mt: 0.5,
+                                justifyContent: "center",
+                            }}
                         >
                             <Link href="/terms" color="inherit" variant="body2">
                                 利用規約
@@ -71,32 +72,36 @@ export function SiteFooter() {
                                 プライバシーポリシー
                             </Link>
                             <Typography variant="body2"> / </Typography>
-                            <Typography variant="body2">問い合わせ:</Typography>
-                            <Typography
-                                variant="body2"
-                                sx={{
-                                    display: { xs: "none", sm: "inherit" },
-                                }}
-                            >
-                                やっしー
-                            </Typography>
                             <Link
-                                href="https://x.com/yasshi2525"
-                                target="_blank"
+                                href="/contact"
                                 color="inherit"
                                 variant="body2"
                             >
-                                X
+                                お問い合わせ
                             </Link>
-                            <Typography variant="body2">, </Typography>
-                            <Link
-                                href="https://github.com/yasshi2525/akashic-platform"
-                                target="_blank"
-                                color="inherit"
-                                variant="body2"
-                            >
-                                GitHub
-                            </Link>
+                            <Typography variant="body2"> / </Typography>
+                            <Stack direction="row" spacing="0.5">
+                                <Typography variant="body2">
+                                    開発: やっしー
+                                </Typography>
+                                <Link
+                                    href="https://x.com/yasshi2525"
+                                    target="_blank"
+                                    color="inherit"
+                                    variant="body2"
+                                >
+                                    X
+                                </Link>
+                                <Typography variant="body2">, </Typography>
+                                <Link
+                                    href="https://github.com/yasshi2525/akashic-platform"
+                                    target="_blank"
+                                    color="inherit"
+                                    variant="body2"
+                                >
+                                    GitHub
+                                </Link>
+                            </Stack>
                         </Stack>
                     </Stack>
                 </Stack>

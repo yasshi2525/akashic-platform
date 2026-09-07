@@ -35,6 +35,8 @@ const http = new HttpServer({
     manager,
     webappApiToken,
     serverRunnerApiToken,
+    storageAdminUrl,
+    storageAdminToken,
 });
 
 const exit = async () => {

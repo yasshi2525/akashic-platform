@@ -1,30 +1,53 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@yasshi2525/persist-schema";
-import { PlayChatGetResponse, PlayChatMessageInfo } from "@/lib/types";
+import { PlayChatGetResponse, PlayChatMessageInfo, User } from "@/lib/types";
 import {
     authorizePlayChat,
     PLAY_CHAT_FETCH_LIMIT,
 } from "@/lib/server/play-chat";
 import { setPlayAccessCookie } from "@/lib/server/play-access-token";
+import {
+    playOwnerCookieName,
+    refreshPlayOwnerCookie,
+} from "@/lib/server/play-owner-token";
+import { anonKey } from "@/lib/server/anon-key";
+import { getMuteSet, isMuted, MuteSet } from "@/lib/server/mute";
+import {
+    isSameViewer,
+    sessionViewerId,
+    verifyRoomOwner,
+} from "@/lib/server/viewer-identity";
 
 type PlayChatRecord = {
     id: number;
     authorName: string;
+    guestId: string | null;
     body: string;
     createdAt: Date;
     author: { id: string; image: string | null } | null;
 };
 
-function toInfo(message: PlayChatRecord): PlayChatMessageInfo {
+function toInfo(
+    message: PlayChatRecord,
+    viewer: User,
+    muteSet: MuteSet,
+): PlayChatMessageInfo {
+    const subject = {
+        authorId: message.author?.id,
+        guestId: message.guestId,
+    };
     return {
         id: message.id,
         author: {
             id: message.author?.id ?? undefined,
             name: message.authorName,
             iconURL: message.author?.image ?? undefined,
+            anonKey: anonKey(subject, viewer.id),
+            isSelf: isSameViewer(subject, viewer),
         },
         body: message.body,
         createdAt: message.createdAt,
+        muted: isMuted(muteSet, subject) || undefined,
     };
 }
 
@@ -47,6 +70,7 @@ export async function GET(
         if (!auth.ok) {
             return NextResponse.json({ ok: false, reason: auth.reason });
         }
+        const muteSet = await getMuteSet(auth.user);
         const messages = await prisma.playChatMessage.findMany({
             where: {
                 playId,
@@ -57,6 +81,7 @@ export async function GET(
             select: {
                 id: true,
                 authorName: true,
+                guestId: true,
                 body: true,
                 createdAt: true,
                 author: {
@@ -69,15 +94,34 @@ export async function GET(
         });
         const res = NextResponse.json<PlayChatGetResponse>({
             ok: true,
-            data: messages.reverse().map(toInfo),
+            data: messages
+                .reverse()
+                .map((message) => toInfo(message, auth.user, muteSet)),
         });
         if (auth.needsRenew) {
             setPlayAccessCookie(
                 res,
                 playId,
-                auth.user.id,
+                sessionViewerId(auth.user),
                 req.cookies.getAll(),
             );
+        }
+        // ゲスト部屋主が在室し続ける限り owner 資格の期限を延長する。チャット
+        // ポーリングは部屋が生きている間ずっと走るので、入室 GET だけの延長では
+        // 12h を超える長時間部屋で失効してしまう問題をここで埋める
+        if (
+            !auth.gmUserId &&
+            verifyRoomOwner(
+                {
+                    id: playId,
+                    gameMasterId: auth.gameMasterId,
+                    gmUserId: auth.gmUserId,
+                },
+                auth.user,
+                req.cookies.get(playOwnerCookieName(playId))?.value,
+            )
+        ) {
+            refreshPlayOwnerCookie(res, playId, auth.gameMasterId);
         }
         return res;
     } catch (err) {

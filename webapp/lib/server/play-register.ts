@@ -10,6 +10,8 @@ import {
     withAkashicServerAuth,
 } from "./akashic";
 import { getAuth } from "./auth";
+import { gamePlayerId } from "./game-player-id";
+import { grantPlayOwner } from "./play-owner-token";
 import { isWriteBlocked } from "./drain-state";
 
 interface PlayForm {
@@ -109,7 +111,10 @@ export async function registerPlay({
                 contentUrl: `${internalBaseUrl}/api/internal/content/${contentId}`,
                 assetBaseUrl: `${internalContentBaseUrl}/${contentId}`,
                 configurationUrl: `${internalContentBaseUrl}/${contentId}/game.json`,
-                playerId: gameMasterId,
+                // in-game playerId は guest_id を秘匿した派生値、gameMasterId は
+                // webapp の identity 判定用に生 id を永続する（両者を分離）
+                playerId: gamePlayerId(auth),
+                gameMasterId,
                 playerUserId: gmUserId,
                 playerName,
                 playName: !!playName
@@ -135,6 +140,12 @@ export async function registerPlay({
         } else {
             const { playId } = (await res.json()) as { playId: number };
             await incrementPlayCount(contentId);
+            // ゲスト部屋主は公開される guest_id では本人証明できないため、作成者
+            // 本人にだけ署名 Cookie を発行して以後の GM 認可に使う（OAuth 部屋主は
+            // セッションで判定できるので不要）
+            if (auth.authType === "guest") {
+                await grantPlayOwner(playId, gameMasterId);
+            }
             return {
                 ok: true,
                 playId,

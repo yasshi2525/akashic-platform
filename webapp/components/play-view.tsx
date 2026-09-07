@@ -58,6 +58,7 @@ import { TroubleshootButton } from "./troubleshoot-button";
 import { FavoriteButton } from "./favorite-button";
 import { renderTextWithLinks } from "./text-with-links";
 import { HandleSetDialog } from "./handle-set-dialog";
+import { ReportMenu } from "./report-menu";
 import { CopyLinkBox, CopyStatusSnackbar } from "./copy-link-box";
 import { PlayChatProvider } from "./play-chat/play-chat-provider";
 import { PlayChatTicker } from "./play-chat/play-chat-ticker";
@@ -96,6 +97,7 @@ const EXTEND_WINDOW_MS = 10 * 60 * 1000;
 export function PlayView({
     playId,
     playToken,
+    playerId,
     playName,
     isLimited,
     requireSignIn,
@@ -120,6 +122,7 @@ export function PlayView({
 }: {
     playId: string;
     playToken: string;
+    playerId: string;
     playName: string | null;
     isLimited: boolean;
     requireSignIn: boolean;
@@ -457,6 +460,7 @@ export function PlayView({
         container.create({
             parent: ref.current,
             user,
+            playerId,
             contentId: game.contentId,
             playId,
             playToken,
@@ -764,6 +768,7 @@ export function PlayView({
             )}
             <PlayChatProvider
                 playId={playId}
+                isGameMaster={isGameMaster}
                 enabled={chatEnabled}
                 fullscreen={fullscreenOn}
                 playerName={playerName}
@@ -1241,6 +1246,22 @@ export function PlayView({
                                                 avatarSize={32}
                                                 openInNewWindow
                                             />
+                                            {!isGameMaster && (
+                                                <>
+                                                    <Box sx={{ flexGrow: 1 }} />
+                                                    <ReportMenu
+                                                        ariaLabel="部屋の操作"
+                                                        target={{
+                                                            kind: "play",
+                                                            playId: Number(
+                                                                playId,
+                                                            ),
+                                                        }}
+                                                        dialogTitle="部屋を通報"
+                                                        dialogDescription="この部屋を運営に通報します。部屋主には通知されません。"
+                                                    />
+                                                </>
+                                            )}
                                         </Stack>
                                         <Stack direction="row">
                                             <Typography

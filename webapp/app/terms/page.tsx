@@ -3,6 +3,7 @@
 import {
     Box,
     Container,
+    Link,
     List,
     ListItem,
     Stack,
@@ -82,12 +83,28 @@ export default function TermsPage() {
                     本サービスは、提供する情報や機能の完全性・正確性を保証しません。利用者に生じた損害について、運営者は一切の責任を負いません。
                 </Typography>
                 <Typography variant="h6" component="h2">
-                    6. 規約の変更
+                    6. 通報と対応
+                </Typography>
+                <Typography variant="body1" gutterBottom>
+                    利用者は、他の利用者の投稿・部屋・アカウントが本規約に違反すると考える場合、本サービス上の通報機能により運営者へ報告できます。運営者は、通報の有無にかかわらず、違反または不適切と判断した投稿・部屋・アカウントについて、削除・利用制限・入室制限（BAN）等の措置を、事前の通知なく講じることがあります。
+                </Typography>
+                <Typography variant="h6" component="h2">
+                    7. 規約の変更
                 </Typography>
                 <Typography variant="body1" gutterBottom>
                     運営者は、必要と判断した場合には、本規約を変更することができます。変更後の規約は本サービス上に表示した時点から効力を生じます。
                 </Typography>
-                <Typography variant="body2">2026年2月4日 制定</Typography>
+                <Typography variant="h6" component="h2">
+                    8. お問い合わせ
+                </Typography>
+                <Typography variant="body1" gutterBottom>
+                    本規約に関するお問い合わせは、
+                    <Link href="/contact">お問い合わせフォーム</Link>
+                    よりご連絡ください。
+                </Typography>
+                <Typography variant="body2">
+                    2026年2月4日 制定, 2026年7月26日 改定
+                </Typography>
             </Stack>
         </Container>
     );

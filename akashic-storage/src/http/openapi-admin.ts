@@ -6,6 +6,52 @@ export const openapi = {
     },
     security: [{ InternalToken: [] }],
     paths: {
+        "/join": {
+            get: {
+                summary: "Issue a passive viewer token for a play session",
+                security: [{ InternalToken: [] }],
+                parameters: [
+                    {
+                        name: "playId",
+                        in: "query",
+                        required: true,
+                        schema: { type: "string" },
+                    },
+                ],
+                responses: {
+                    "200": {
+                        description: "OK",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/PlayTokenResponse",
+                                },
+                            },
+                        },
+                    },
+                    "400": {
+                        description: "Bad Request",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
+                    "422": {
+                        description: "Unprocessable Entity",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    $ref: "#/components/schemas/ErrorResponse",
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
         "/start": {
             get: {
                 summary: "Start a play session on storage",

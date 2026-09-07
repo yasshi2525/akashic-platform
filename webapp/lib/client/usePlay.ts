@@ -29,6 +29,11 @@ const fetcher = async (url: string) => {
                 err.name = res.reason;
                 throw err;
             }
+            case "Banned": {
+                const err = new Error("あなたはこの部屋に入室できません。");
+                err.name = res.reason;
+                throw err;
+            }
             case "InternalError":
             default:
                 throw new Error(
@@ -43,6 +48,8 @@ const requiresJoinWord = (err?: Error) =>
     err?.name === "InvalidJoinWord" || err?.name === "JoinWordRequired";
 
 const requiresSignIn = (err?: Error) => err?.name === "SignInRequired";
+
+const isBanned = (err?: Error) => err?.name === "Banned";
 
 export function usePlay(
     playId: string,
@@ -65,14 +72,11 @@ export function usePlay(
     );
     return {
         isLoading: isLoading || !user,
-        data: data
-            ? {
-                  ...data,
-                  isGameMaster: !!user && user.id === data.gameMaster.id,
-              }
-            : undefined,
+        // isGameMaster はサーバーが認証種別込みで判定して返す
+        data: data ?? undefined,
         requiresJoinWord: requiresJoinWord(error),
         requiresSignIn: requiresSignIn(error),
+        banned: isBanned(error),
         error: error ? error.message : undefined,
     };
 }

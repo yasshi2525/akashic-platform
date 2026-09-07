@@ -43,7 +43,11 @@ export function useLive(
         data: data
             ? {
                   ...data,
-                  isGameMaster: !!user && user.id === data.owner.userId,
+                  // live の部屋主は必ずサインイン利用者。ゲストが guest_id を
+                  // owner の user id に詐称しても GM 扱いにしないよう authType も見る
+                  isGameMaster:
+                      user?.authType === "oauth" &&
+                      user.id === data.owner.userId,
               }
             : undefined,
         error: error ? error.message : undefined,

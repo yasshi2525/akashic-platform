@@ -5,14 +5,13 @@ import { User } from "../types";
 import {
     akashicServerUrl,
     internalContentBaseUrl,
-    internalPlaylogServerUrl,
     withAkashicServerAuth,
 } from "./akashic";
 
 export async function fetchPlayToken(playId: number, contentId: number) {
-    const res = await fetch(
-        `${internalPlaylogServerUrl}/join?playId=${playId}`,
-    );
+    const res = await fetch(`${akashicServerUrl}/join?playId=${playId}`, {
+        headers: withAkashicServerAuth(),
+    });
     if (res.status !== 200) {
         throw new Error(
             `playlog server responded error message. (contentId = "${contentId}", detail = "${await res.text()}")`,
@@ -31,7 +30,6 @@ export async function checkLimitedPlayAccess(
     play: {
         isLimited: boolean;
         requireSignIn: boolean;
-        gameMasterId: string;
         joinWord?: string | null;
         inviteHash?: string | null;
     },
@@ -40,11 +38,14 @@ export async function checkLimitedPlayAccess(
         joinWord?: string;
         inviteHash?: string;
     },
+    isOwner: boolean,
 ): Promise<{
     ok: false;
     reason: "JoinWordRequired" | "InvalidJoinWord" | "SignInRequired";
 } | null> {
-    if (user?.id === play.gameMasterId) {
+    // 部屋主は限定入室チェックを素通りする。部屋主判定は呼び出し側で
+    // verifyRoomOwner（ゲストは署名 Cookie 検証）済みの結果を受け取る
+    if (isOwner) {
         return null;
     }
     if (play.requireSignIn && (!user || user.authType === "guest")) {

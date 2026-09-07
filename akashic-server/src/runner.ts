@@ -32,7 +32,10 @@ export interface RunnerParameterObject {
     contentUrl: string;
     assetBaseUrl: string;
     configurationUrl: string;
+    /** ゲームに申告する in-game playerId（ゲストは guest_id を秘匿した派生値）。Join で配布される */
     playerId: string;
+    /** Play.gameMasterId として永続する部屋主の生 id（webapp の identity 判定用） */
+    gameMasterId: string;
     playerUserId?: string;
     playerName: string;
     isLimited: boolean;
@@ -347,7 +350,7 @@ export class Runner {
             await prisma.play.create({
                 data: {
                     contentId: this._param.contentId,
-                    gameMasterId: this._param.playerId,
+                    gameMasterId: this._param.gameMasterId,
                     gmUserId: this._param.playerUserId,
                     name: this._param.playName,
                     isLimited: this._param.isLimited,
@@ -392,6 +395,24 @@ export class Runner {
         } catch (err) {
             console.warn(
                 `failed to delete play chat messages (playId = "${playId}")`,
+                err,
+            );
+        }
+        try {
+            // 発行済み playToken の記録は部屋終了で不要になる
+            await prisma.playSession.deleteMany({ where: { playId } });
+        } catch (err) {
+            console.warn(
+                `failed to delete play sessions (playId = "${playId}")`,
+                err,
+            );
+        }
+        try {
+            // ゲスト部屋主の部屋単位 BAN は部屋終了で意味を失う
+            await prisma.ban.deleteMany({ where: { playId } });
+        } catch (err) {
+            console.warn(
+                `failed to delete room-scoped bans (playId = "${playId}")`,
                 err,
             );
         }

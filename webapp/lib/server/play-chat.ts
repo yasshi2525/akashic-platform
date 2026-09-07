@@ -4,6 +4,8 @@ import { prisma } from "@yasshi2525/persist-schema";
 import { getS3Client } from "./content-utils";
 import { getAuth } from "./auth";
 import { checkPlayAccess } from "./play-access-token";
+import { isBannedFromPlay } from "./ban";
+import { sessionViewerId } from "./viewer-identity";
 
 const SHORT_WINDOW_SECONDS = parseInt(
     process.env.PLAY_CHAT_RATE_SHORT_WINDOW_SECONDS ?? "10",
@@ -32,12 +34,20 @@ export async function authorizePlayChat(playId: number): Promise<
           ok: true;
           user: NonNullable<Awaited<ReturnType<typeof getAuth>>>;
           needsRenew: boolean;
+          gameMasterId: string;
+          gmUserId: string | null;
       }
     | { ok: false; reason: PlayChatDenial }
 > {
     const play = await prisma.play.findUnique({
         where: { id: playId },
-        select: { isActive: true, chatEnabled: true },
+        select: {
+            id: true,
+            isActive: true,
+            chatEnabled: true,
+            gameMasterId: true,
+            gmUserId: true,
+        },
     });
     if (!play) {
         return { ok: false, reason: "NotFound" };
@@ -52,11 +62,23 @@ export async function authorizePlayChat(playId: number): Promise<
     if (!user) {
         return { ok: false, reason: "Forbidden" };
     }
-    const access = await checkPlayAccess(playId, user.id);
+    const access = await checkPlayAccess(playId, sessionViewerId(user));
     if (!access.ok) {
         return { ok: false, reason: "Forbidden" };
     }
-    return { ok: true, user, needsRenew: access.needsRenew };
+    // 入室ガードをすり抜けた古い Cookie でも投稿させない
+    if (
+        await isBannedFromPlay(user, { id: play.id, gmUserId: play.gmUserId })
+    ) {
+        return { ok: false, reason: "Forbidden" };
+    }
+    return {
+        ok: true,
+        user,
+        needsRenew: access.needsRenew,
+        gameMasterId: play.gameMasterId,
+        gmUserId: play.gmUserId,
+    };
 }
 
 type PlayChatWhere = {
