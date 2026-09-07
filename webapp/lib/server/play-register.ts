@@ -111,7 +111,10 @@ export async function registerPlay({
                 contentUrl: `${internalBaseUrl}/api/internal/content/${contentId}`,
                 assetBaseUrl: `${internalContentBaseUrl}/${contentId}`,
                 configurationUrl: `${internalContentBaseUrl}/${contentId}/game.json`,
+                // in-game playerId は guest_id を秘匿した派生値、gameMasterId は
+                // webapp の identity 判定用に生 id を永続する（両者を分離）
                 playerId: gamePlayerId(auth),
+                gameMasterId,
                 playerUserId: gmUserId,
                 playerName,
                 playName: !!playName

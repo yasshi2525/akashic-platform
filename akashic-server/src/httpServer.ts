@@ -185,6 +185,7 @@ export class HttpServer {
                 assetBaseUrl,
                 configurationUrl,
                 playerId,
+                gameMasterId,
                 playerUserId,
                 playerName,
                 joinWord,
@@ -199,6 +200,7 @@ export class HttpServer {
                 !assetBaseUrl?.toString() ||
                 !configurationUrl?.toString() ||
                 !playerId?.toString() ||
+                !gameMasterId?.toString() ||
                 !playerName?.toString()
             ) {
                 res.status(400).json({ ok: false, reason: "BadRequest" });
@@ -212,6 +214,7 @@ export class HttpServer {
                     assetBaseUrl: assetBaseUrl.toString(),
                     configurationUrl: configurationUrl.toString(),
                     playerId: playerId.toString(),
+                    gameMasterId: gameMasterId.toString(),
                     playerUserId: playerUserId?.toString(),
                     playerName: playerName.toString(),
                     isLimited: !!(
