@@ -35,7 +35,7 @@ export function PlayBanConsentDialog({
             aria-describedby="ban-consent-dialog-description"
         >
             <DialogTitle id="ban-consent-dialog-title">
-                ゲームによるBANを許可しますか？
+                本当に参加者をBANしますか？
             </DialogTitle>
             <DialogContent>
                 <DialogContentText id="ban-consent-dialog-description">

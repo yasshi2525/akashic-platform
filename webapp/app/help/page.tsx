@@ -263,7 +263,7 @@ export default function HelpPage() {
                         </ListItem>
                         <ListItem disableGutters sx={{ display: "list-item" }}>
                             "playerBan"
-                            は、部屋主がゲームの進行から視聴者をBANするための拡張です。
+                            は、部屋主が進行中のゲームから参加者を即時退室(BAN)させるための拡張です。
                             コンテンツに{" "}
                             <code>@multi-indiegame/akashic-player-ban</code>{" "}
                             を組み込むと利用できます。BANの成立は全インスタンスへ同一
