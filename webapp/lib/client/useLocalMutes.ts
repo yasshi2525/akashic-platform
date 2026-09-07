@@ -56,8 +56,18 @@ export function useLocalMutes() {
     useEffect(() => {
         setEntries(read());
         listeners.add(setEntries);
+        // 同一タブ内は listeners で伝わるが、別タブの変更は browser の storage
+        // イベントでしか届かない。購読して entries を追従させる（key===null は
+        // localStorage.clear() のケース）
+        const onStorage = (e: StorageEvent) => {
+            if (e.key === STORAGE_KEYS.LOCAL_MUTES || e.key === null) {
+                setEntries(read());
+            }
+        };
+        window.addEventListener("storage", onStorage);
         return () => {
             listeners.delete(setEntries);
+            window.removeEventListener("storage", onStorage);
         };
     }, []);
 

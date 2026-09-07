@@ -5,6 +5,7 @@ import { getS3Client } from "./content-utils";
 import { getAuth } from "./auth";
 import { checkPlayAccess } from "./play-access-token";
 import { isBannedFromPlay } from "./ban";
+import { sessionViewerId } from "./viewer-identity";
 
 const SHORT_WINDOW_SECONDS = parseInt(
     process.env.PLAY_CHAT_RATE_SHORT_WINDOW_SECONDS ?? "10",
@@ -61,7 +62,7 @@ export async function authorizePlayChat(playId: number): Promise<
     if (!user) {
         return { ok: false, reason: "Forbidden" };
     }
-    const access = await checkPlayAccess(playId, user.id);
+    const access = await checkPlayAccess(playId, sessionViewerId(user));
     if (!access.ok) {
         return { ok: false, reason: "Forbidden" };
     }

@@ -12,7 +12,11 @@ import {
 } from "@/lib/server/play-owner-token";
 import { anonKey } from "@/lib/server/anon-key";
 import { getMuteSet, isMuted, MuteSet } from "@/lib/server/mute";
-import { isSameViewer, verifyRoomOwner } from "@/lib/server/viewer-identity";
+import {
+    isSameViewer,
+    sessionViewerId,
+    verifyRoomOwner,
+} from "@/lib/server/viewer-identity";
 
 type PlayChatRecord = {
     id: number;
@@ -98,7 +102,7 @@ export async function GET(
             setPlayAccessCookie(
                 res,
                 playId,
-                auth.user.id,
+                sessionViewerId(auth.user),
                 req.cookies.getAll(),
             );
         }

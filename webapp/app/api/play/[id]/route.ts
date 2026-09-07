@@ -260,7 +260,12 @@ export async function GET(
                 await kickViewerFromPlays([play.id], viewerId);
                 return NextResponse.json({ ok: false, reason: "Banned" });
             }
-            setPlayAccessCookie(res, play.id, user.id, req.cookies.getAll());
+            setPlayAccessCookie(
+                res,
+                play.id,
+                sessionViewerId(user),
+                req.cookies.getAll(),
+            );
             // ゲスト部屋主が入室し続ける限り owner 資格の期限を延長する
             if (isOwner && !play.gmUser) {
                 refreshPlayOwnerCookie(res, play.id, play.gameMasterId);

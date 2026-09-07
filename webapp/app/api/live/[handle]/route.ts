@@ -245,7 +245,12 @@ export async function GET(
                     data: { owner, requiresJoinWord: true, reason: "Banned" },
                 });
             }
-            setPlayAccessCookie(res, play.id, user.id, req.cookies.getAll());
+            setPlayAccessCookie(
+                res,
+                play.id,
+                sessionViewerId(user),
+                req.cookies.getAll(),
+            );
         }
         return res;
     } catch (err) {
