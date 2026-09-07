@@ -97,6 +97,7 @@ const EXTEND_WINDOW_MS = 10 * 60 * 1000;
 export function PlayView({
     playId,
     playToken,
+    playerId,
     playName,
     isLimited,
     requireSignIn,
@@ -121,6 +122,7 @@ export function PlayView({
 }: {
     playId: string;
     playToken: string;
+    playerId: string;
     playName: string | null;
     isLimited: boolean;
     requireSignIn: boolean;
@@ -458,6 +460,7 @@ export function PlayView({
         container.create({
             parent: ref.current,
             user,
+            playerId,
             contentId: game.contentId,
             playId,
             playToken,

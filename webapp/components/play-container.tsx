@@ -124,6 +124,7 @@ export function PlayContainer() {
         <PlayView
             playId={id}
             playToken={data.playToken}
+            playerId={data.playerId}
             playName={data.playName}
             isLimited={data.isLimited}
             requireSignIn={data.requireSignIn}

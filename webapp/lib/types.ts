@@ -455,6 +455,8 @@ interface BasePlayViewInfo {
 
 export interface ActivePlayViewInfo extends BasePlayViewInfo {
     playToken: string;
+    /** ゲームに申告する playerId。guest_id を秘匿するため非可逆な派生値 */
+    playerId: string;
     joinWord?: string;
     inviteHash?: string;
     width: number;

@@ -10,6 +10,7 @@ import {
     withAkashicServerAuth,
 } from "./akashic";
 import { getAuth } from "./auth";
+import { gamePlayerId } from "./game-player-id";
 import { grantPlayOwner } from "./play-owner-token";
 import { isWriteBlocked } from "./drain-state";
 
@@ -110,7 +111,7 @@ export async function registerPlay({
                 contentUrl: `${internalBaseUrl}/api/internal/content/${contentId}`,
                 assetBaseUrl: `${internalContentBaseUrl}/${contentId}`,
                 configurationUrl: `${internalContentBaseUrl}/${contentId}/game.json`,
-                playerId: gameMasterId,
+                playerId: gamePlayerId(auth),
                 playerUserId: gmUserId,
                 playerName,
                 playName: !!playName

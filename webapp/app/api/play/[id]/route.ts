@@ -13,6 +13,7 @@ import {
     getContentViewSize,
 } from "@/lib/server/play-utils";
 import { isFavorited } from "@/lib/server/favorite";
+import { gamePlayerId } from "@/lib/server/game-player-id";
 import { setPlayAccessCookie } from "@/lib/server/play-access-token";
 import { isBannedFromPlay } from "@/lib/server/ban";
 import {
@@ -202,6 +203,7 @@ export async function GET(
             data: {
                 isActive: play.isActive,
                 playToken,
+                playerId: gamePlayerId(user),
                 playName: play.name,
                 isLimited: play.isLimited,
                 requireSignIn: play.requireSignIn,

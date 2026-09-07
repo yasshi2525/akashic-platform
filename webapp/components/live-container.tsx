@@ -423,6 +423,7 @@ export function LiveContainer({ handle }: { handle: string }) {
                 key={liveInfo.id}
                 playId={`${liveInfo.id}`}
                 playToken={liveInfo.playToken}
+                playerId={liveInfo.playerId}
                 playName={liveInfo.playName}
                 isLimited={liveInfo.isLimited}
                 requireSignIn={liveInfo.requireSignIn}

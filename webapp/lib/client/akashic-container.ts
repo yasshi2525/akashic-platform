@@ -22,6 +22,8 @@ import { SendPlugin } from "./akashic-plugins/send-plugin";
 interface AkashicContainerCreateParameterObject {
     parent: HTMLDivElement;
     user: User;
+    /** ゲームに申告する playerId。guest_id を秘匿するためサーバーで非可逆化した値 */
+    playerId: string;
     contentId: number;
     playId: string;
     playToken: string;
@@ -145,7 +147,8 @@ export class AkashicContainer {
     ) {
         const content = new GameContent({
             player: {
-                id: param.user.id,
+                // guest_id を秘匿するため、ゲーム上の id はサーバー派生の playerId を使う
+                id: param.playerId,
                 name: param.user.name,
             },
             playConfig: {
