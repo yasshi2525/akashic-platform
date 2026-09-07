@@ -270,6 +270,7 @@ export function PlayView({
         action: "banned" | "unbanned";
         label: string;
         playerId: string;
+        effective: boolean;
     }>();
     const [banError, setBanError] = useState<string>();
 
@@ -334,6 +335,7 @@ export function PlayView({
                 action: kind === "ban" ? "banned" : "unbanned",
                 label: res.label,
                 playerId: targetPlayerId,
+                effective: res.effective,
             });
             return { ok: true, playerId: targetPlayerId };
         },
@@ -1089,7 +1091,7 @@ export function PlayView({
                     onClose={() => setBanNotice(undefined)}
                 >
                     <Alert
-                        severity="info"
+                        severity={banNotice.effective ? "info" : "warning"}
                         action={
                             banNotice.action === "banned" ? (
                                 <Button
@@ -1109,7 +1111,9 @@ export function PlayView({
                     >
                         {banNotice.action === "banned"
                             ? `ゲームが ${banNotice.label} さんをBANしました。`
-                            : `ゲームが ${banNotice.label} さんのBANを解除しました。`}
+                            : banNotice.effective
+                              ? `ゲームが ${banNotice.label} さんのBANを解除しました。`
+                              : `${banNotice.label} さんはブロック中のため、BANは解除されませんでした。`}
                     </Alert>
                 </Snackbar>
             )}

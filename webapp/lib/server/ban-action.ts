@@ -95,6 +95,18 @@ export async function banFromChatAction(
         where: { ...scope, ...target, origin: "MANUAL" },
         select: { id: true },
     });
+    // 上限超過は監査ログより先に判定する。あとで弾く順序にすると、BAN 行を
+    // 作らずに終わる要求が applied: true として記録されてしまう
+    if (
+        !existing &&
+        user.authType === "oauth" &&
+        (await countGmBans(user.id)) >= BAN_LIMIT
+    ) {
+        // ゲスト部屋主の BAN は解除 UI が無く部屋終了で消えるため上限の対象外
+        return failure(
+            `BAN は ${BAN_LIMIT} 件までです。モデレーション設定から不要なものを解除してください。`,
+        );
+    }
     // 監査ログを先に書く。書けないまま BAN すると後から調査できなくなるため、
     // 失敗したら BAN せずエラーを返す（チャット投稿と同じ audit-first 方針）
     try {
@@ -120,15 +132,6 @@ export async function banFromChatAction(
         );
     }
     if (!existing) {
-        // ゲスト部屋主の BAN は解除 UI が無く部屋終了で消えるため上限の対象外
-        if (
-            user.authType === "oauth" &&
-            (await countGmBans(user.id)) >= BAN_LIMIT
-        ) {
-            return failure(
-                `BAN は ${BAN_LIMIT} 件までです。モデレーション設定から不要なものを解除してください。`,
-            );
-        }
         try {
             await prisma.ban.create({
                 data: {

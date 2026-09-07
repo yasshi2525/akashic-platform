@@ -61,8 +61,14 @@ export async function applyBanChange(param: {
     if (playIds.length === 0) {
         return;
     }
-    // 通知を先に出す。切断が先だと、切断される本人の画面には退場が反映されない
-    // まま接続が切れる
+    // 注入を kick より先に行う。逆順だと、切断される本人の画面に退場が反映され
+    // ないまま接続が切れる可能性が上がるため。
+    //
+    // ただし順序は保証できない。/send-event は storage が Valkey へ publish した
+    // 時点で 200 を返し、active インスタンスがそれを tick に載せて配るのは非同期
+    // なので、本人が tick を受け取る前に kick が届くことはありうる。保証するには
+    // tick へ載ったことの ack が要るが、AMFlow にその口が無い。
+    // 本人以外は切断されないので、進行から外す側の決定性には影響しない。
     const event = buildBanNotificationEvent(
         param.action,
         gamePlayerId(param.target),

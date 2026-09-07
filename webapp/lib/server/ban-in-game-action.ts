@@ -26,7 +26,16 @@ const RATE_MAX = parseInt(
 );
 
 export type InGameBanResponse =
-    { ok: true; label: string } | { ok: false; reason: BanResultReason };
+    | {
+          ok: true;
+          label: string;
+          /**
+           * 要求が実際に効いたか。解除で false になるのは、ブロック連動など
+           * ゲームから外せない BAN が残っていて入室禁止が続く場合。
+           */
+          effective: boolean;
+      }
+    | { ok: false; reason: BanResultReason };
 
 /**
  * 部屋単位の連打窓。
@@ -223,7 +232,7 @@ export async function banPlayerInGameAction(
     }
 
     await applyBanChange({ scope, target, action: "banned" });
-    return { ok: true, label };
+    return { ok: true, label, effective: true };
 }
 
 /**
@@ -262,9 +271,19 @@ export async function unbanPlayerInGameAction(
     if (existing) {
         await prisma.ban.deleteMany({ where });
     }
-    await applyBanChange({ scope, target, action: "unbanned" });
+    // ブロック連動 (VIA_BLOCK) の BAN は同じ発行者・対象で別行として残る。それを
+    // 消さずに unbanned を配ると、コンテンツは進行へ戻すのに入室ガードは拒否し
+    // 続け、ゲーム状態と実態がずれる。残っていれば通知しない
+    const remaining = await prisma.ban.findFirst({
+        where: { ...scope, ...banTarget },
+        select: { id: true },
+    });
+    if (!remaining) {
+        await applyBanChange({ scope, target, action: "unbanned" });
+    }
     return {
         ok: true,
         label: existing?.labelSnapshot ?? (await buildLabel(playId, target)),
+        effective: !remaining,
     };
 }
