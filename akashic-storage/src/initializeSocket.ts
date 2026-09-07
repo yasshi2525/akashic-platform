@@ -9,7 +9,7 @@ import {
     Attributes,
 } from "@opentelemetry/api";
 import type { Permission } from "@akashic/amflow";
-import type { Tick } from "@akashic/playlog";
+import type { Event, Tick } from "@akashic/playlog";
 import {
     ListenSchema,
     EmitSchema,
@@ -67,6 +67,17 @@ const withAmflowSpan = async <T>(
                 }
             },
         ),
+    );
+};
+
+/** 実行基盤とエンジンが予約する playerId の接頭辞 */
+const RESERVED_PLAYER_ID_PREFIX = ":";
+
+const isReservedPlayerIdEvent = (event: Event): boolean => {
+    const playerId = event[2];
+    return (
+        typeof playerId === "string" &&
+        playerId.startsWith(RESERVED_PLAYER_ID_PREFIX)
     );
 };
 
@@ -174,6 +185,13 @@ export const initializeSocket = (
         try {
             assertsOpen();
             if (!permission?.sendEvent) {
+                return;
+            }
+            // 予約 playerId (":" 始まり) を名乗るイベントは、サーバーが注入する
+            // 拡張向け通知をクライアントから偽装できてしまうため破棄する。ただし
+            // Akashic Engine 自身が起動時に ":akashic" を送るので、tick 書き込み
+            // 権限を持つ active インスタンスだけは通す
+            if (!permission.writeTick && isReservedPlayerIdEvent(event)) {
                 return;
             }
             server!.sendEvent(event);

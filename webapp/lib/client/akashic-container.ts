@@ -17,6 +17,10 @@ import {
     ResolvingPlayerInfoRequest,
 } from "./akashic-plugins/coe-limited-plugin";
 import { CoePlugin } from "./akashic-plugins/coe-plugin";
+import {
+    PlayerBanBackend,
+    PlayerBanPlugin,
+} from "./akashic-plugins/player-ban-plugin";
 import { SendPlugin } from "./akashic-plugins/send-plugin";
 
 interface AkashicContainerCreateParameterObject {
@@ -39,6 +43,7 @@ interface AkashicContainerCreateParameterObject {
     onRequestPlayerInfo: (
         param: ResolvingPlayerInfoRequest | undefined,
     ) => void;
+    playerBanBackend: PlayerBanBackend;
 }
 
 export class AkashicContainer {
@@ -79,6 +84,9 @@ export class AkashicContainer {
                 new CoeLimitedPlugin({
                     onRequest: param.onRequestPlayerInfo,
                 }),
+            );
+            view.registerExternalPlugin(
+                new PlayerBanPlugin(param.playerBanBackend),
             );
             const logStore = new LogStore(this._clientLogMaxEntries);
             const logHandler = new LogHandler(logStore);

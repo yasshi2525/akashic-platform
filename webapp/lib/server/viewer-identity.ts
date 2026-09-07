@@ -55,18 +55,46 @@ export function sessionViewerId(viewer: Pick<User, "authType" | "id">): string {
 }
 
 /**
+ * BAN 対象（authorId か guestId のどちらか）を、認証種別付きの視聴者へ落とす。
+ * oauth 投稿者は authorId、ゲスト投稿者は guestId を使う。
+ */
+export function targetViewer(target: {
+    authorId?: string | null;
+    guestId?: string | null;
+}): Pick<User, "authType" | "id"> | null {
+    if (target.authorId) {
+        return { authType: "oauth", id: target.authorId };
+    }
+    if (target.guestId) {
+        return { authType: "guest", id: target.guestId };
+    }
+    return null;
+}
+
+/**
  * BAN 対象（authorId か guestId のどちらか）から、sessionViewerId と同形式の
- * kick 用識別子を導く。oauth 投稿者は authorId、ゲスト投稿者は guestId を使う。
+ * kick 用識別子を導く。
  */
 export function targetSessionViewerId(target: {
     authorId?: string | null;
     guestId?: string | null;
 }): string | null {
-    if (target.authorId) {
-        return `oauth:${target.authorId}`;
+    const viewer = targetViewer(target);
+    return viewer ? sessionViewerId(viewer) : null;
+}
+
+/** sessionViewerId を認証種別と id に戻す */
+export function parseSessionViewerId(
+    viewerId: string,
+): Pick<User, "authType" | "id"> | null {
+    const separator = viewerId.indexOf(":");
+    if (separator < 0) {
+        return null;
     }
-    if (target.guestId) {
-        return `guest:${target.guestId}`;
+    const authType = viewerId.slice(0, separator);
+    const id = viewerId.slice(separator + 1);
+    if (!id || (authType !== "oauth" && authType !== "guest")) {
+        return null;
     }
-    return null;
+    return { authType, id };
 }

@@ -1,5 +1,8 @@
 import { createHmac } from "node:crypto";
+import { prisma } from "@yasshi2525/persist-schema";
 import { User } from "../types";
+import { BanScope } from "./ban";
+import { parseSessionViewerId, targetViewer } from "./viewer-identity";
 
 /**
  * ゲーム（Akashic）に申告する in-game playerId。ゲストの guest_id は認証 Cookie の
@@ -32,4 +35,44 @@ export function gamePlayerId(user: Pick<User, "authType" | "id">): string {
         .update(user.id)
         .digest("base64url")
         .slice(0, KEY_LENGTH);
+}
+
+/**
+ * ゲームから渡された in-game playerId を、webapp の視聴者へ戻す。
+ *
+ * WHY: 派生は非可逆なので逆算できない。候補（この部屋の在籍者と、この発行者が
+ * 既に BAN 済みの相手）の側から派生値を組んで突き合わせる。BAN 済みも候補に
+ * 含めるのは、kick が PlaySession を消した後に解除・再送が来るため。
+ */
+export async function resolveGamePlayer(
+    playerId: string,
+    candidates: {
+        playId: number;
+        banScope: BanScope;
+    },
+): Promise<Pick<User, "authType" | "id"> | null> {
+    const sessions = await prisma.playSession.findMany({
+        where: { playId: candidates.playId },
+        select: { viewerId: true },
+    });
+    for (const session of sessions) {
+        const viewer = parseSessionViewerId(session.viewerId);
+        if (viewer && gamePlayerId(viewer) === playerId) {
+            return viewer;
+        }
+    }
+    const bans = await prisma.ban.findMany({
+        where: candidates.banScope,
+        select: { targetUserId: true, targetGuestId: true },
+    });
+    for (const ban of bans) {
+        const viewer = targetViewer({
+            authorId: ban.targetUserId,
+            guestId: ban.targetGuestId,
+        });
+        if (viewer && gamePlayerId(viewer) === playerId) {
+            return viewer;
+        }
+    }
+    return null;
 }

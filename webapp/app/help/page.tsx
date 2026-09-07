@@ -253,13 +253,36 @@ export default function HelpPage() {
                             <code>"multi"</code>
                         </ListItem>
                         <ListItem disableGutters sx={{ display: "list-item" }}>
-                            <code>environment.external</code>: "coe" および
-                            "coeLimited" に対応。
+                            <code>environment.external</code>: "coe"、
+                            "coeLimited" および "playerBan" に対応。
                             <br />
                             <code>
                                 @akashic-extension/instance-storage
                             </code>{" "}
                             は機能しない点に注意してください。
+                        </ListItem>
+                        <ListItem disableGutters sx={{ display: "list-item" }}>
+                            "playerBan"
+                            は、部屋主がゲームの進行から視聴者をBANするための拡張です。
+                            コンテンツに{" "}
+                            <code>@multi-indiegame/akashic-player-ban</code>{" "}
+                            を組み込むと利用できます。BANの成立は全インスタンスへ同一
+                            tick
+                            で届くため、ターン順から外すといったゲーム状態の変更に使えます。
+                            <br />
+                            <Button
+                                component={Link}
+                                endIcon={<OpenInNew />}
+                                href="https://github.com/multi-indiegame/akashic-player-ban"
+                                target="_blank"
+                                rel="noreferrer"
+                                sx={{
+                                    textTransform: "none",
+                                    color: theme.palette.primary.light,
+                                }}
+                            >
+                                akashic-player-ban
+                            </Button>
                         </ListItem>
                     </List>
                 </Box>
