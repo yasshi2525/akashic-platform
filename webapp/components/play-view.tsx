@@ -263,6 +263,13 @@ export function PlayView({
         false,
     );
     const banAllowedRef = useRef(banAllowed);
+    // この部屋で BAN した相手を、kick で PlaySession が消えた後も指せるようにする。
+    // サーバーが BAN と同時に発行した署名で、部屋主のブラウザだけが持つ。
+    // 再読込でも失われないよう部屋単位で永続する（署名側の TTL は 1 時間）
+    const [banUndoTokens, setBanUndoTokens] = useLocalStorage<
+        Record<string, string>
+    >(`${STORAGE_KEYS.PLAY_BAN_UNDO}:${playId}`, {});
+    const banUndoTokensRef = useRef(banUndoTokens);
     const [banConsentOpen, setBanConsentOpen] = useState(false);
     // 確認中に次の要求が来ても取りこぼさないよう、待たせている callback を溜める
     const banConsentResolvers = useRef<((accepted: boolean) => void)[]>([]);
@@ -274,6 +281,20 @@ export function PlayView({
         undoToken?: string;
     }>();
     const [banError, setBanError] = useState<string>();
+
+    const rememberBanUndoToken = useCallback(
+        (targetPlayerId: string, token: string | undefined) => {
+            const next = { ...banUndoTokensRef.current };
+            if (token) {
+                next[targetPlayerId] = token;
+            } else {
+                delete next[targetPlayerId];
+            }
+            banUndoTokensRef.current = next;
+            setBanUndoTokens(next);
+        },
+        [setBanUndoTokens],
+    );
 
     const requestBanConsent = useCallback(() => {
         if (banAllowedRef.current) {
@@ -324,7 +345,10 @@ export function PlayView({
                     : await unbanPlayerInGameAction(
                           parseInt(playId),
                           targetPlayerId,
-                          undoToken,
+                          // コンテンツの unban() は署名を渡してこないので、BAN
+                          // 時に控えたものを引く。これが無いと、ゲームが自分で
+                          // BAN した相手を解除できない
+                          undoToken ?? banUndoTokensRef.current[targetPlayerId],
                       );
             if (!res.ok) {
                 setBanError(toBanErrorMessage(res.reason));
@@ -333,6 +357,12 @@ export function PlayView({
                     playerId: targetPlayerId,
                     reason: res.reason,
                 };
+            }
+            // BAN したら署名を控え、解除しきれたら捨てる
+            if (kind === "ban") {
+                rememberBanUndoToken(targetPlayerId, res.undoToken);
+            } else if (res.effective) {
+                rememberBanUndoToken(targetPlayerId, undefined);
             }
             setBanNotice({
                 action: kind === "ban" ? "banned" : "unbanned",
@@ -343,7 +373,7 @@ export function PlayView({
             });
             return { ok: true, playerId: targetPlayerId };
         },
-        [playId, requestBanConsent],
+        [playId, requestBanConsent, rememberBanUndoToken],
     );
 
     const playerBanBackend = useMemo<PlayerBanBackend>(

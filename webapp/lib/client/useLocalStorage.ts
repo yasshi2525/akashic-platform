@@ -14,6 +14,8 @@ export const STORAGE_KEYS = {
     LOCAL_MUTES: "akashic-platform:moderation:mutes",
     /** 部屋ごとに playId を付けて使う。ゲーム内BANを許可したかの記憶 */
     PLAY_BAN_ALLOWED: "akashic-platform:play:banAllowed",
+    /** 部屋ごとに playId を付けて使う。この部屋で BAN した相手の取り消し用署名 */
+    PLAY_BAN_UNDO: "akashic-platform:play:banUndo",
 } as const;
 
 export function useLocalStorage<T>(key: string, defaultValue: T) {

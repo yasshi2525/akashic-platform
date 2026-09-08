@@ -11,6 +11,17 @@ import { kickViewerFromPlays } from "./play-kick";
 import { sessionViewerId } from "./viewer-identity";
 
 /**
+ * 通知の注入を待つ上限。
+ *
+ * WHY: 通知は best-effort だが kick は BAN の実効化そのもので、遅らせてよい
+ * ものではない。上限を設けないと、通知先 1 部屋の応答が返らないだけで全部屋の
+ * 切断が止まり、BAN 済みの相手が接続したまま残る。
+ */
+const SEND_EVENT_TIMEOUT_MS = parseInt(
+    process.env.BAN_SEND_EVENT_TIMEOUT_MS ?? "3000",
+);
+
+/**
  * 拡張向けの通知イベントを 1 部屋へ注入する。best-effort とし、失敗しても
  * BAN 自体は入室ガードで担保される（kick と同じ方針）。
  */
@@ -25,6 +36,7 @@ async function sendPlayEvent(playId: number, event: unknown) {
                     ...withAkashicServerAuth(),
                 },
                 body: JSON.stringify({ event }),
+                signal: AbortSignal.timeout(SEND_EVENT_TIMEOUT_MS),
             },
         );
         if (!res.ok) {
@@ -62,7 +74,8 @@ export async function applyBanChange(param: {
         return;
     }
     // 注入を kick より先に行う。逆順だと、切断される本人の画面に退場が反映され
-    // ないまま接続が切れる可能性が上がるため。
+    // ないまま接続が切れる可能性が上がるため。待つのは SEND_EVENT_TIMEOUT_MS まで
+    // で、通知が滞っても kick は必ず実行する。
     //
     // ただし順序は保証できない。/send-event は storage が Valkey へ publish した
     // 時点で 200 を返し、active インスタンスがそれを tick に載せて配るのは非同期
