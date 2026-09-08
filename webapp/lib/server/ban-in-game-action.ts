@@ -234,6 +234,18 @@ export async function banPlayerInGameAction(
 
 /**
  * コンテンツからの要求で、部屋主が BAN を解除する。
+ *
+ * WHY: 対象はこの部屋の在籍者に限る（resolveGamePlayer）。BAN すると kick で
+ * PlaySession が消えるため、実質「まだ部屋に居る相手」しか解除できない。これは
+ * 制限であって不足ではない。ban は保護をかける操作で誤っても設定画面で戻せるが、
+ * unban は保護を外す操作で、外された側が得をする。部屋をまたいで解除できると
+ * 「BAN された人が自作ゲームを公開し、部屋主に遊ばせて自分の BAN を外させる」が
+ * 成立する（in-game playerId は OAuth なら userId そのもので狙い撃ちできる）。
+ * 在籍者限定なら、攻撃者は入室できないので成立しない。
+ *
+ * 解除の本来の導線は /settings/moderation。設定画面での解除は applyBanChange を
+ * 通って全 active 部屋へ配られるので、コンテンツは解除を知る手段は失わない。
+ *
  * VIA_BLOCK の BAN はブロック解除でのみ外れるべきなので、ゲームには触らせない。
  */
 export async function unbanPlayerInGameAction(

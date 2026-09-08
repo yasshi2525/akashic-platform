@@ -270,6 +270,8 @@ export default function HelpPage() {
                             tick
                             で届くため、ターン順から外すといったゲーム状態の変更に使えます。
                             <br />
+                            ゲームから行えるのはBANまでで、解除はその部屋にまだいる相手にしか行えません。BANの解除はモデレーション設定から行ってください。
+                            <br />
                             <Button
                                 component={Link}
                                 endIcon={<OpenInNew />}
