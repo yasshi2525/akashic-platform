@@ -271,6 +271,7 @@ export function PlayView({
         label: string;
         playerId: string;
         effective: boolean;
+        undoToken?: string;
     }>();
     const [banError, setBanError] = useState<string>();
 
@@ -304,6 +305,7 @@ export function PlayView({
         async (
             kind: "ban" | "unban",
             targetPlayerId: string,
+            undoToken?: string,
         ): Promise<BanResult> => {
             setBanError(undefined);
             if (!(await requestBanConsent())) {
@@ -322,6 +324,7 @@ export function PlayView({
                     : await unbanPlayerInGameAction(
                           parseInt(playId),
                           targetPlayerId,
+                          undoToken,
                       );
             if (!res.ok) {
                 setBanError(toBanErrorMessage(res.reason));
@@ -336,6 +339,7 @@ export function PlayView({
                 label: res.label,
                 playerId: targetPlayerId,
                 effective: res.effective,
+                undoToken: res.undoToken,
             });
             return { ok: true, playerId: targetPlayerId };
         },
@@ -1098,9 +1102,14 @@ export function PlayView({
                                     color="inherit"
                                     size="small"
                                     onClick={() => {
-                                        const playerId = banNotice.playerId;
+                                        const { playerId, undoToken } =
+                                            banNotice;
                                         setBanNotice(undefined);
-                                        void sendBanRequest("unban", playerId);
+                                        void sendBanRequest(
+                                            "unban",
+                                            playerId,
+                                            undoToken,
+                                        );
                                     }}
                                 >
                                     取り消す

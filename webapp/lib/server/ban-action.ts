@@ -224,11 +224,24 @@ export async function unbanAction(
         guestId: ban.targetGuestId,
     });
     if (viewer) {
-        await applyBanChange({
-            scope: { gmUserId: user.id, playId: null },
-            target: viewer,
-            action: "unbanned",
+        // 同じ相手に MANUAL と VIA_BLOCK の行が並ぶことがあり、一覧では別行として
+        // 見える。片方だけ消して unbanned を配ると、入室ガードは残った行で拒否し
+        // 続けるのにコンテンツは進行へ戻してしまう
+        const remaining = await prisma.ban.findFirst({
+            where: {
+                gmUserId: user.id,
+                targetUserId: ban.targetUserId,
+                targetGuestId: ban.targetGuestId,
+            },
+            select: { id: true },
         });
+        if (!remaining) {
+            await applyBanChange({
+                scope: { gmUserId: user.id, playId: null },
+                target: viewer,
+                action: "unbanned",
+            });
+        }
     }
     return success();
 }

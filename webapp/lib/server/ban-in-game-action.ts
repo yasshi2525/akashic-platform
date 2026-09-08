@@ -13,6 +13,7 @@ import { getAuth } from "./auth";
 import { BAN_LIMIT, BanScope, buildBanLabel, countGmBans } from "./ban";
 import { archiveBanRequest } from "./ban-audit";
 import { applyBanChange } from "./ban-broadcast";
+import { issueBanUndoToken, verifyBanUndoToken } from "./ban-undo-token";
 import { gamePlayerId, resolveGamePlayer } from "./game-player-id";
 import { playOwnerCookieName } from "./play-owner-token";
 import { verifyRoomOwner } from "./viewer-identity";
@@ -34,6 +35,11 @@ export type InGameBanResponse =
            * ゲームから外せない BAN が残っていて入室禁止が続く場合。
            */
           effective: boolean;
+          /**
+           * この BAN を取り消すときに指定する署名。kick 後は in-game playerId から
+           * 対象を引けなくなるため、UI の「取り消す」はこれを送り返す。
+           */
+          undoToken?: string;
       }
     | { ok: false; reason: BanResultReason };
 
@@ -74,7 +80,11 @@ function banTargetOf(target: Pick<User, "authType" | "id">) {
         : { targetGuestId: target.id };
 }
 
-async function authorize(playId: number, targetPlayerId: string) {
+async function authorize(
+    playId: number,
+    targetPlayerId: string,
+    undoToken?: string,
+) {
     if (!Number.isSafeInteger(playId) || !targetPlayerId) {
         return { ok: false, reason: "InternalError" } as const;
     }
@@ -109,10 +119,13 @@ async function authorize(playId: number, targetPlayerId: string) {
         return { ok: false, reason: "LimitExceeded" } as const;
     }
     const scope = banScopeOf(user, play.id);
-    const target = await resolveGamePlayer(targetPlayerId, {
-        playId: play.id,
-        banScope: scope,
-    });
+    // 在籍者から引くのが基本。kick 済みで PlaySession が消えている相手は、BAN 時に
+    // サーバーが発行した署名でのみ指せる。token が別人を指していたら採用しない
+    const undoTarget = verifyBanUndoToken(undoToken, play.id);
+    const target =
+        undoTarget && gamePlayerId(undoTarget) === targetPlayerId
+            ? undoTarget
+            : await resolveGamePlayer(targetPlayerId, play.id);
     if (!target) {
         return { ok: false, reason: "NotInRoom" } as const;
     }
@@ -232,7 +245,12 @@ export async function banPlayerInGameAction(
     }
 
     await applyBanChange({ scope, target, action: "banned" });
-    return { ok: true, label, effective: true };
+    return {
+        ok: true,
+        label,
+        effective: true,
+        undoToken: issueBanUndoToken(playId, target),
+    };
 }
 
 /**
@@ -242,8 +260,9 @@ export async function banPlayerInGameAction(
 export async function unbanPlayerInGameAction(
     playId: number,
     targetPlayerId: string,
+    undoToken?: string,
 ): Promise<InGameBanResponse> {
-    const auth = await authorize(playId, targetPlayerId);
+    const auth = await authorize(playId, targetPlayerId, undoToken);
     if (!auth.ok) {
         return { ok: false, reason: auth.reason };
     }
