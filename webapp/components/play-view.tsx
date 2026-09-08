@@ -263,13 +263,6 @@ export function PlayView({
         false,
     );
     const banAllowedRef = useRef(banAllowed);
-    // この部屋で BAN した相手を、kick で PlaySession が消えた後も指せるようにする。
-    // サーバーが BAN と同時に発行した署名で、部屋主のブラウザだけが持つ。
-    // 再読込でも失われないよう部屋単位で永続する（署名側の TTL は 1 時間）
-    const [banUndoTokens, setBanUndoTokens] = useLocalStorage<
-        Record<string, string>
-    >(`${STORAGE_KEYS.PLAY_BAN_UNDO}:${playId}`, {});
-    const banUndoTokensRef = useRef(banUndoTokens);
     const [banConsentOpen, setBanConsentOpen] = useState(false);
     // 確認中に次の要求が来ても取りこぼさないよう、待たせている callback を溜める
     const banConsentResolvers = useRef<((accepted: boolean) => void)[]>([]);
@@ -278,23 +271,8 @@ export function PlayView({
         label: string;
         playerId: string;
         effective: boolean;
-        undoToken?: string;
     }>();
     const [banError, setBanError] = useState<string>();
-
-    const rememberBanUndoToken = useCallback(
-        (targetPlayerId: string, token: string | undefined) => {
-            const next = { ...banUndoTokensRef.current };
-            if (token) {
-                next[targetPlayerId] = token;
-            } else {
-                delete next[targetPlayerId];
-            }
-            banUndoTokensRef.current = next;
-            setBanUndoTokens(next);
-        },
-        [setBanUndoTokens],
-    );
 
     const requestBanConsent = useCallback(() => {
         if (banAllowedRef.current) {
@@ -326,7 +304,6 @@ export function PlayView({
         async (
             kind: "ban" | "unban",
             targetPlayerId: string,
-            undoToken?: string,
         ): Promise<BanResult> => {
             setBanError(undefined);
             if (!(await requestBanConsent())) {
@@ -345,10 +322,6 @@ export function PlayView({
                     : await unbanPlayerInGameAction(
                           parseInt(playId),
                           targetPlayerId,
-                          // コンテンツの unban() は署名を渡してこないので、BAN
-                          // 時に控えたものを引く。これが無いと、ゲームが自分で
-                          // BAN した相手を解除できない
-                          undoToken ?? banUndoTokensRef.current[targetPlayerId],
                       );
             if (!res.ok) {
                 setBanError(toBanErrorMessage(res.reason));
@@ -358,22 +331,15 @@ export function PlayView({
                     reason: res.reason,
                 };
             }
-            // BAN したら署名を控え、解除しきれたら捨てる
-            if (kind === "ban") {
-                rememberBanUndoToken(targetPlayerId, res.undoToken);
-            } else if (res.effective) {
-                rememberBanUndoToken(targetPlayerId, undefined);
-            }
             setBanNotice({
                 action: kind === "ban" ? "banned" : "unbanned",
                 label: res.label,
                 playerId: targetPlayerId,
                 effective: res.effective,
-                undoToken: res.undoToken,
             });
             return { ok: true, playerId: targetPlayerId };
         },
-        [playId, requestBanConsent, rememberBanUndoToken],
+        [playId, requestBanConsent],
     );
 
     const playerBanBackend = useMemo<PlayerBanBackend>(
@@ -1130,17 +1096,11 @@ export function PlayView({
                         action={
                             banNotice.action === "banned" ? (
                                 <Button
-                                    color="inherit"
                                     size="small"
                                     onClick={() => {
-                                        const { playerId, undoToken } =
-                                            banNotice;
+                                        const playerId = banNotice.playerId;
                                         setBanNotice(undefined);
-                                        void sendBanRequest(
-                                            "unban",
-                                            playerId,
-                                            undoToken,
-                                        );
+                                        void sendBanRequest("unban", playerId);
                                     }}
                                 >
                                     取り消す

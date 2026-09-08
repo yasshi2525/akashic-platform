@@ -34,3 +34,19 @@ export async function recordPlaySession(
         data: { playId, viewerId, playToken },
     });
 }
+
+/**
+ * 対象視聴者の記録を指定した部屋群から消す。BAN 解除時に呼ぶ。
+ *
+ * WHY: kick は token を失効させるが行は残す（[play-kick] の WHY）。解除後もその
+ * まま残すと、再入室時に findPlaySessionToken が失効済み token を再利用させ、
+ * 認証に失敗して部屋終了まで入れなくなる。解除の時点で捨てて新規発行に戻す。
+ */
+export async function releasePlaySessions(playIds: number[], viewerId: string) {
+    if (playIds.length === 0) {
+        return;
+    }
+    await prisma.playSession.deleteMany({
+        where: { playId: { in: playIds }, viewerId },
+    });
+}

@@ -8,6 +8,7 @@ import { akashicServerUrl, withAkashicServerAuth } from "./akashic";
 import { BanScope } from "./ban";
 import { gamePlayerId } from "./game-player-id";
 import { kickViewerFromPlays } from "./play-kick";
+import { releasePlaySessions } from "./play-session";
 import { sessionViewerId } from "./viewer-identity";
 
 /**
@@ -87,7 +88,10 @@ export async function applyBanChange(param: {
         gamePlayerId(param.target),
     );
     await Promise.all(playIds.map((playId) => sendPlayEvent(playId, event)));
+    const viewerId = sessionViewerId(param.target);
     if (param.action === "banned") {
-        await kickViewerFromPlays(playIds, sessionViewerId(param.target));
+        await kickViewerFromPlays(playIds, viewerId);
+    } else {
+        await releasePlaySessions(playIds, viewerId);
     }
 }
