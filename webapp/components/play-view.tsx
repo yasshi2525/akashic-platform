@@ -55,10 +55,7 @@ import { AkashicContainer } from "@/lib/client/akashic-container";
 import { BanResult, BanResultReason } from "@/lib/player-ban-protocol";
 import { useCopyToClipboard } from "@/lib/client/useCopyToClipboard";
 import { extendPlay } from "@/lib/server/play-extend";
-import {
-    banPlayerInGameAction,
-    unbanPlayerInGameAction,
-} from "@/lib/server/ban-in-game-action";
+import { banPlayerInGameAction } from "@/lib/server/ban-in-game-action";
 import { uploadPlayShareScreenshot } from "@/lib/server/play-share";
 import { PlayBanConsentDialog } from "./play-ban-consent-dialog";
 import { PlayCloseDialog } from "./play-close-dialog";
@@ -104,8 +101,6 @@ const toMessage = (typ?: WarningType) => {
 
 const toBanErrorMessage = (reason: BanResultReason) => {
     switch (reason) {
-        case "NotGameMaster":
-            return "この部屋の部屋主のみがBANできます。";
         case "NotInRoom":
             return "対象がこの部屋にいないためBANできませんでした。";
         case "SelfBan":
@@ -113,7 +108,7 @@ const toBanErrorMessage = (reason: BanResultReason) => {
         case "LimitExceeded":
             return "BANの要求が多すぎます。しばらく待ってから再度お試しください。";
         case "Unauthorized":
-            return "ページを更新してから再度お試しください。";
+            return "この部屋の部屋主のみがBANできます。";
         default:
             return "予期しないエラーが発生しました。時間をおいてリトライしてください。";
     }
@@ -266,11 +261,7 @@ export function PlayView({
     const [banConsentOpen, setBanConsentOpen] = useState(false);
     // 確認中に次の要求が来ても取りこぼさないよう、待たせている callback を溜める
     const banConsentResolvers = useRef<((accepted: boolean) => void)[]>([]);
-    const [banNotice, setBanNotice] = useState<{
-        action: "banned" | "unbanned";
-        label: string;
-        effective: boolean;
-    }>();
+    const [banNotice, setBanNotice] = useState<string>();
     const [banError, setBanError] = useState<string>();
 
     const requestBanConsent = useCallback(() => {
@@ -300,11 +291,17 @@ export function PlayView({
     );
 
     const sendBanRequest = useCallback(
-        async (
-            kind: "ban" | "unban",
-            targetPlayerId: string,
-        ): Promise<BanResult> => {
+        async (targetPlayerId: string): Promise<BanResult> => {
             setBanError(undefined);
+            // 部屋主でないインスタンスはサーバーへ投げない。ただしこれは通信を
+            // 減らすためで、発行元の判定はサーバー側でも必ず行う
+            if (!isGameMaster) {
+                return {
+                    ok: false,
+                    playerId: targetPlayerId,
+                    reason: "Unauthorized",
+                };
+            }
             if (!(await requestBanConsent())) {
                 return {
                     ok: false,
@@ -312,16 +309,10 @@ export function PlayView({
                     reason: "Rejected",
                 };
             }
-            const res =
-                kind === "ban"
-                    ? await banPlayerInGameAction(
-                          parseInt(playId),
-                          targetPlayerId,
-                      )
-                    : await unbanPlayerInGameAction(
-                          parseInt(playId),
-                          targetPlayerId,
-                      );
+            const res = await banPlayerInGameAction(
+                parseInt(playId),
+                targetPlayerId,
+            );
             if (!res.ok) {
                 setBanError(toBanErrorMessage(res.reason));
                 return {
@@ -330,23 +321,15 @@ export function PlayView({
                     reason: res.reason,
                 };
             }
-            setBanNotice({
-                action: kind === "ban" ? "banned" : "unbanned",
-                label: res.label,
-                effective: res.effective,
-            });
+            setBanNotice(`ゲームが ${res.label} さんをBANしました。`);
             return { ok: true, playerId: targetPlayerId };
         },
-        [playId, requestBanConsent],
+        [playId, isGameMaster, requestBanConsent],
     );
 
     const playerBanBackend = useMemo<PlayerBanBackend>(
-        () => ({
-            isGameMaster: () => isGameMaster,
-            ban: (targetPlayerId) => sendBanRequest("ban", targetPlayerId),
-            unban: (targetPlayerId) => sendBanRequest("unban", targetPlayerId),
-        }),
-        [isGameMaster, sendBanRequest],
+        () => ({ ban: sendBanRequest }),
+        [sendBanRequest],
     );
 
     function formatRemaining(ms: number | undefined) {
@@ -1090,15 +1073,11 @@ export function PlayView({
                 >
                     <Alert
                         variant="filled"
-                        severity={banNotice.effective ? "info" : "warning"}
+                        severity="info"
                         onClose={() => setBanNotice(undefined)}
                         sx={{ color: "inherit" }}
                     >
-                        {banNotice.action === "banned"
-                            ? `ゲームが ${banNotice.label} さんをBANしました。`
-                            : banNotice.effective
-                              ? `ゲームが ${banNotice.label} さんのBANを解除しました。`
-                              : `${banNotice.label} さんのBANは解除されませんでした。モデレーション設定をご確認ください。`}
+                        {banNotice}
                     </Alert>
                 </Snackbar>
             )}

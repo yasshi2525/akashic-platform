@@ -26,16 +26,7 @@ const RATE_MAX = parseInt(
 );
 
 export type InGameBanResponse =
-    | {
-          ok: true;
-          label: string;
-          /**
-           * 要求が実際に効いたか。解除で false になるのは、ゲームから外せない
-           * BAN（ブロック連動など MANUAL 以外）が残り入室禁止が続く場合。
-           */
-          effective: boolean;
-      }
-    | { ok: false; reason: BanResultReason };
+    { ok: true; label: string } | { ok: false; reason: BanResultReason };
 
 /**
  * 部屋単位の連打窓。
@@ -99,8 +90,10 @@ async function authorize(playId: number, targetPlayerId: string) {
     const ownerToken = (await cookies()).get(
         playOwnerCookieName(play.id),
     )?.value;
+    // 本サイトの決めごととして、BAN を発行できるのは部屋主だけ。プロトコルには
+    // 役割名を持ち込まないので Unauthorized で返す
     if (!verifyRoomOwner(play, user, ownerToken)) {
-        return { ok: false, reason: "NotGameMaster" } as const;
+        return { ok: false, reason: "Unauthorized" } as const;
     }
     if (gamePlayerId(user) === targetPlayerId) {
         return { ok: false, reason: "SelfBan" } as const;
@@ -143,7 +136,6 @@ async function buildLabel(
 
 async function archive(param: {
     playId: number;
-    action: "BAN" | "UNBAN";
     scope: BanScope;
     target: Pick<User, "authType" | "id">;
     applied: boolean;
@@ -152,7 +144,7 @@ async function archive(param: {
     await archiveBanRequest({
         playId: param.playId,
         source: "IN_GAME",
-        action: param.action,
+        action: "BAN",
         gmUserId: "gmUserId" in param.scope ? param.scope.gmUserId : undefined,
         gmGuestId:
             "gmGuestId" in param.scope ? param.scope.gmGuestId : undefined,
@@ -198,7 +190,6 @@ export async function banPlayerInGameAction(
     try {
         await archive({
             playId,
-            action: "BAN",
             scope,
             target,
             applied: !existing,
@@ -229,73 +220,5 @@ export async function banPlayerInGameAction(
     }
 
     await applyBanChange({ scope, target, action: "banned" });
-    return { ok: true, label, effective: true };
-}
-
-/**
- * コンテンツからの要求で、部屋主が BAN を解除する。
- *
- * WHY: 対象はこの部屋の在籍者に限る（resolveGamePlayer）。BAN すると kick で
- * PlaySession が消えるため、実質「まだ部屋に居る相手」しか解除できない。これは
- * 制限であって不足ではない。ban は保護をかける操作で誤っても設定画面で戻せるが、
- * unban は保護を外す操作で、外された側が得をする。部屋をまたいで解除できると
- * 「BAN された人が自作ゲームを公開し、部屋主に遊ばせて自分の BAN を外させる」が
- * 成立する（in-game playerId は OAuth なら userId そのもので狙い撃ちできる）。
- * 在籍者限定なら、攻撃者は入室できないので成立しない。
- *
- * 解除の本来の導線は /settings/moderation。設定画面での解除は applyBanChange を
- * 通って全 active 部屋へ配られるので、コンテンツは解除を知る手段は失わない。
- *
- * VIA_BLOCK の BAN はブロック解除でのみ外れるべきなので、ゲームには触らせない。
- */
-export async function unbanPlayerInGameAction(
-    playId: number,
-    targetPlayerId: string,
-): Promise<InGameBanResponse> {
-    const auth = await authorize(playId, targetPlayerId);
-    if (!auth.ok) {
-        return { ok: false, reason: auth.reason };
-    }
-    const { scope, target } = auth;
-    const banTarget = banTargetOf(target);
-    const where = { ...scope, ...banTarget, origin: "MANUAL" as const };
-
-    const existing = await prisma.ban.findFirst({
-        where,
-        select: { id: true, labelSnapshot: true },
-    });
-    try {
-        await archive({
-            playId,
-            action: "UNBAN",
-            scope,
-            target,
-            applied: !!existing,
-        });
-    } catch (err) {
-        console.warn("failed to archive in-game unban request to S3", err);
-        return { ok: false, reason: "InternalError" };
-    }
-
-    if (existing) {
-        await prisma.ban.deleteMany({ where });
-    }
-    // MANUAL 以外の BAN（ブロック連動の VIA_BLOCK）は同じ発行者・対象で別行として
-    // 残る。それを消さずに unbanned を配ると、コンテンツは進行へ戻すのに入室ガードは
-    // 拒否し続け、ゲーム状態と実態がずれる。残っていれば通知しない。
-    //
-    // VIA_BLOCK を作る経路はまだ無い（ブロックは未着手）ので現状この分岐には
-    // 入らないが、後から足すと入れ忘れて静かに壊れるため先に置く。
-    const remaining = await prisma.ban.findFirst({
-        where: { ...scope, ...banTarget },
-        select: { id: true },
-    });
-    if (!remaining) {
-        await applyBanChange({ scope, target, action: "unbanned" });
-    }
-    return {
-        ok: true,
-        label: existing?.labelSnapshot ?? (await buildLabel(playId, target)),
-        effective: !remaining,
-    };
+    return { ok: true, label };
 }

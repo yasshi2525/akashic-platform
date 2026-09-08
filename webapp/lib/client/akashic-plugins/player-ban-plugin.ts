@@ -6,7 +6,6 @@ import {
     PLAYER_BAN_EXTERNAL_KEY,
     PLAYER_BAN_UNTRUSTED_SIGNATURE,
     PlayerBanExternal,
-    PlayerBanExternalContext,
 } from "../../player-ban-protocol";
 
 /**
@@ -14,10 +13,7 @@ import {
  * すべてこちらの責務で、プラグインは呼び出しを橋渡しするだけ。
  */
 export interface PlayerBanBackend {
-    /** この視聴者が部屋主か。ローカル判定 */
-    isGameMaster: () => boolean;
     ban: (playerId: string) => Promise<BanResult>;
-    unban: (playerId: string) => Promise<BanResult>;
 }
 
 /**
@@ -39,33 +35,14 @@ export class PlayerBanPlugin implements ExternalPlugin {
 
     onload(game: Game, databus: MemoryQueueDataBus, content: GameContent) {
         game.external[PLAYER_BAN_EXTERNAL_KEY] = {
-            getContext: ({ callback }) => {
-                callback({
-                    canBan: this._backend.isGameMaster(),
-                } satisfies PlayerBanExternalContext);
-            },
             ban: ({ playerId, callback }) => {
-                this._request("ban", playerId, callback);
-            },
-            unban: ({ playerId, callback }) => {
-                this._request("unban", playerId, callback);
+                this._request(playerId, callback);
             },
         } satisfies PlayerBanExternal;
     }
 
-    _request(
-        kind: "ban" | "unban",
-        playerId: string,
-        callback: (result: BanResult) => void,
-    ) {
-        // 部屋主でないインスタンスはここで握り潰しサーバーへ投げない。ただし
-        // コンテンツは同一オリジンで動きこのプラグインを経由せず server action を
-        // 直接叩けるため、これは境界ではない。発行元はサーバー側でも再判定する
-        if (!this._backend.isGameMaster()) {
-            callback({ ok: false, playerId, reason: "NotGameMaster" });
-            return;
-        }
-        this._backend[kind](playerId).then(
+    _request(playerId: string, callback: (result: BanResult) => void) {
+        this._backend.ban(playerId).then(
             (result) => {
                 callback(
                     result ?? {
@@ -76,7 +53,7 @@ export class PlayerBanPlugin implements ExternalPlugin {
                 );
             },
             (err) => {
-                console.warn(`failed to request player ${kind}`, err);
+                console.warn("failed to request player ban", err);
                 callback({ ok: false, playerId, reason: "InternalError" });
             },
         );

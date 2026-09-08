@@ -48,20 +48,24 @@ const EVENT_CODE_MESSAGE = 32;
 
 export type PlayerBanAction = "banned" | "unbanned";
 
+/**
+ * 「誰が BAN を発行してよいか」は実行基盤の決めごとなので、プロトコル側に
+ * その基盤固有の役割名は持ち込まない。本サイトでは部屋主のみ許可し、それ以外は
+ * Unauthorized で返す。
+ */
 export type BanResultReason =
     /** 拡張が無い環境（headless runner、akashic-cli-serve、非対応の実行基盤） */
     | "NotSupported"
-    /** 部屋主ではないインスタンス */
-    | "NotGameMaster"
-    /** 対象がこの部屋の視聴者ではない */
+    /** 実行基盤が発行を認めなかった。権限が無い場合はこれ */
+    | "Unauthorized"
+    /** 対象がこのセッションの参加者ではない */
     | "NotInRoom"
-    /** 自分自身は追放できない */
+    /** 自分自身は BAN できない */
     | "SelfBan"
     /** 件数上限・レート制限 */
     | "LimitExceeded"
-    /** 部屋主が確認ダイアログで拒否した */
+    /** 実行基盤の確認 UI で拒否された */
     | "Rejected"
-    | "Unauthorized"
     | "InternalError";
 
 export interface BanResult {
@@ -70,20 +74,12 @@ export interface BanResult {
     reason?: BanResultReason;
 }
 
-export interface PlayerBanExternalContext {
-    canBan: boolean;
-}
-
-/** `g.game.external.playerBan` に生えるオブジェクト */
+/**
+ * `g.game.external.playerBan` に生えるオブジェクト。BAN を要求する口だけを置く。
+ * 解除はモデレーション設定の仕事で、部屋主かどうかもサーバー側で判定する。
+ */
 export interface PlayerBanExternal {
-    getContext: (param: {
-        callback: (context: PlayerBanExternalContext) => void;
-    }) => void;
     ban: (param: {
-        playerId: string;
-        callback: (result: BanResult) => void;
-    }) => void;
-    unban: (param: {
         playerId: string;
         callback: (result: BanResult) => void;
     }) => void;
@@ -96,9 +92,7 @@ export interface PlayerBanExternal {
 export const PLAYER_BAN_UNTRUSTED_SIGNATURE = {
     type: "object",
     content: {
-        getContext: { type: "function", callbackProp: "arguments[0].callback" },
         ban: { type: "function", callbackProp: "arguments[0].callback" },
-        unban: { type: "function", callbackProp: "arguments[0].callback" },
     },
 } as const;
 
