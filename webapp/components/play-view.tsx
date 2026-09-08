@@ -892,7 +892,7 @@ export function PlayView({
         <>
             {error && (
                 <Container maxWidth="md" sx={{ mt: 2 }}>
-                    <Alert variant="filled" severity="error">
+                    <Alert variant="outlined" severity="error">
                         {error}
                     </Alert>
                 </Container>
@@ -1095,6 +1095,7 @@ export function PlayView({
                     onClose={() => setBanNotice(undefined)}
                 >
                     <Alert
+                        variant="outlined"
                         severity={banNotice.effective ? "info" : "warning"}
                         action={
                             banNotice.action === "banned" ? (
@@ -1122,7 +1123,7 @@ export function PlayView({
                             ? `ゲームが ${banNotice.label} さんをBANしました。`
                             : banNotice.effective
                               ? `ゲームが ${banNotice.label} さんのBANを解除しました。`
-                              : `${banNotice.label} さんはブロック中のため、BANは解除されませんでした。`}
+                              : `${banNotice.label} さんをブロックしているため、BANは解除されませんでした。モデレーション設定からブロックを解除してください。`}
                     </Alert>
                 </Snackbar>
             )}
@@ -1134,6 +1135,7 @@ export function PlayView({
                     onClose={() => setBanError(undefined)}
                 >
                     <Alert
+                        variant="outlined"
                         severity="error"
                         onClose={() => setBanError(undefined)}
                     >
@@ -1165,7 +1167,9 @@ export function PlayView({
                     }}
                     onClose={handleClose}
                 >
-                    <Alert severity="warning">{toMessage(warning)}</Alert>
+                    <Alert variant="outlined" severity="warning">
+                        {toMessage(warning)}
+                    </Alert>
                 </Snackbar>
             )}
             <CopyStatusSnackbar
@@ -1181,6 +1185,7 @@ export function PlayView({
                     onClose={() => setScreenshotStatus(undefined)}
                 >
                     <Alert
+                        variant="outlined"
                         severity={
                             screenshotStatus === "error"
                                 ? "error"
@@ -1207,6 +1212,7 @@ export function PlayView({
                     onClose={() => setXShareStatus(undefined)}
                 >
                     <Alert
+                        variant="outlined"
                         severity={
                             xShareStatus === "error" ? "error" : "success"
                         }
