@@ -1123,7 +1123,7 @@ export function PlayView({
                             ? `ゲームが ${banNotice.label} さんをBANしました。`
                             : banNotice.effective
                               ? `ゲームが ${banNotice.label} さんのBANを解除しました。`
-                              : `${banNotice.label} さんをブロックしているため、BANは解除されませんでした。モデレーション設定からブロックを解除してください。`}
+                              : `${banNotice.label} さんのBANは解除されませんでした。モデレーション設定をご確認ください。`}
                     </Alert>
                 </Snackbar>
             )}

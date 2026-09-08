@@ -226,7 +226,8 @@ export async function unbanAction(
     if (viewer) {
         // 同じ相手に MANUAL と VIA_BLOCK の行が並ぶことがあり、一覧では別行として
         // 見える。片方だけ消して unbanned を配ると、入室ガードは残った行で拒否し
-        // 続けるのにコンテンツは進行へ戻してしまう
+        // 続けるのにコンテンツは進行へ戻してしまう。
+        // VIA_BLOCK を作る経路はまだ無いが、後から足すときのために先に置く
         const remaining = await prisma.ban.findFirst({
             where: {
                 gmUserId: user.id,

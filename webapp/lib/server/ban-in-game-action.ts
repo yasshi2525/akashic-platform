@@ -31,8 +31,8 @@ export type InGameBanResponse =
           ok: true;
           label: string;
           /**
-           * 要求が実際に効いたか。解除で false になるのは、ブロック連動など
-           * ゲームから外せない BAN が残っていて入室禁止が続く場合。
+           * 要求が実際に効いたか。解除で false になるのは、ゲームから外せない
+           * BAN（ブロック連動など MANUAL 以外）が残り入室禁止が続く場合。
            */
           effective: boolean;
           /**
@@ -290,9 +290,12 @@ export async function unbanPlayerInGameAction(
     if (existing) {
         await prisma.ban.deleteMany({ where });
     }
-    // ブロック連動 (VIA_BLOCK) の BAN は同じ発行者・対象で別行として残る。それを
-    // 消さずに unbanned を配ると、コンテンツは進行へ戻すのに入室ガードは拒否し
-    // 続け、ゲーム状態と実態がずれる。残っていれば通知しない
+    // MANUAL 以外の BAN（ブロック連動の VIA_BLOCK）は同じ発行者・対象で別行として
+    // 残る。それを消さずに unbanned を配ると、コンテンツは進行へ戻すのに入室ガードは
+    // 拒否し続け、ゲーム状態と実態がずれる。残っていれば通知しない。
+    //
+    // VIA_BLOCK を作る経路はまだ無い（ブロックは未着手）ので現状この分岐には
+    // 入らないが、後から足すと入れ忘れて静かに壊れるため先に置く。
     const remaining = await prisma.ban.findFirst({
         where: { ...scope, ...banTarget },
         select: { id: true },
