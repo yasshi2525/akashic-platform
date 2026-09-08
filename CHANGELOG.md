@@ -3,25 +3,11 @@
 ## 2.3.1
 
 - Feature
-  - ゲーム内BAN拡張への対応を追加
+  - ゲーム内BANプラグイン（`@multi-indiegame/akashic-player-ban`）に対応
     - `./webapp`
-      - `g.game.external.playerBan` を追加。コンテンツ (`@multi-indiegame/akashic-player-ban`) から
-        部屋主が参加者をBAN・解除できるようにした
-      - BAN / 解除の確定を、その部屋主の全 active 部屋のコンテンツへ通知するようにした
-        （チャット・モデレーション設定からの操作も同じ経路を通る）
-      - BAN / 解除の要求を S3 の監査ログへ記録するようにした
+      - BAN/解除の確定をその部屋主の全 active 部屋のコンテンツへ通知
     - `./akashic-server`
-      - `POST /send-event` を追加。`webapp` からの通知イベントを storage admin へ中継
     - `./akashic-storage`
-      - admin `POST /send-event` を追加。playlog へ通知イベントを注入
-      - active 権限を持たない接続からの、予約 playerId (`:` 始まり) を名乗るイベントを破棄
-
-- Fix
-  - OpenAPI 定義の記載漏れを補完
-    - `./akashic-server`
-      - `/join`, `/kick` を追記
-    - `./akashic-storage`
-      - admin `/kick` を追記
 
 ## 2.3.0
 
