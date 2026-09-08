@@ -892,7 +892,7 @@ export function PlayView({
         <>
             {error && (
                 <Container maxWidth="md" sx={{ mt: 2 }}>
-                    <Alert variant="outlined" severity="error">
+                    <Alert variant="filled" severity="error">
                         {error}
                     </Alert>
                 </Container>
@@ -1095,7 +1095,7 @@ export function PlayView({
                     onClose={() => setBanNotice(undefined)}
                 >
                     <Alert
-                        variant="outlined"
+                        variant="filled"
                         severity={banNotice.effective ? "info" : "warning"}
                         action={
                             banNotice.action === "banned" ? (
@@ -1135,7 +1135,7 @@ export function PlayView({
                     onClose={() => setBanError(undefined)}
                 >
                     <Alert
-                        variant="outlined"
+                        variant="filled"
                         severity="error"
                         onClose={() => setBanError(undefined)}
                     >
