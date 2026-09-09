@@ -70,7 +70,7 @@ const withAmflowSpan = async <T>(
     );
 };
 
-/** 実行基盤とエンジンが予約する playerId の接頭辞 */
+/** 実行基盤が予約する playerId の接頭辞 */
 const RESERVED_PLAYER_ID_PREFIX = ":";
 
 const isReservedPlayerIdEvent = (event: Event): boolean => {
@@ -189,8 +189,11 @@ export const initializeSocket = (
             }
             // 予約 playerId (":" 始まり) を名乗るイベントは、サーバーが注入する
             // 拡張向け通知をクライアントから偽装できてしまうため破棄する。ただし
-            // Akashic Engine 自身が起動時に ":akashic" を送るので、tick 書き込み
-            // 権限を持つ active インスタンスだけは通す
+            // 実行基盤が起動時に ":akashic" の start 通知を送るので、tick 書き込み
+            // 権限を持つ active インスタンスだけは通す。
+            //
+            // WHY: これは拡張の仕様が課す義務ではなく、本サイト側の自主的な堅牢化。
+            // 誰に何を許すかは実行基盤の裁量とされている
             if (!permission.writeTick && isReservedPlayerIdEvent(event)) {
                 return;
             }

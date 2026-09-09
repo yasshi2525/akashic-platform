@@ -54,7 +54,7 @@ export type PlayerBanAction = "banned" | "unbanned";
  * Unauthorized で返す。
  */
 export type BanResultReason =
-    /** 拡張が無い環境（headless runner、akashic-cli-serve、非対応の実行基盤） */
+    /** 拡張が無い環境（headless runner や、この拡張に対応していない実行基盤） */
     | "NotSupported"
     /** 実行基盤が発行を認めなかった。権限が無い場合はこれ */
     | "Unauthorized"
